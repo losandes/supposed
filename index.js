@@ -74,6 +74,7 @@ function Suite (suiteConfig) {
   }
 
   const report = (results) => {
+// TODO: depending on the reporter, we may want to report earlier - so there's a better feed
     config.reporter.report(TestEvent.startTest)
     config.reporter.report(results)
     return Promise.resolve(results)

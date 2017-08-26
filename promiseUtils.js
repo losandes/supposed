@@ -15,6 +15,17 @@ function allSettled (tasks, onError) {
   }
 
   const results = []
+  const addResults = (result) => {
+    if (Array.isArray(result)) {
+      result.forEach(r => results.push(r))
+    } else {
+      results.push(result)
+    }
+  }
+  const addErrors = (err) => {
+    onError(err)
+    addResults(err)
+  }
   tasks = Object.assign([], tasks)
 
   function next () {
@@ -25,21 +36,10 @@ function allSettled (tasks, onError) {
       return Promise.resolve(results)
     }
 
-    return task.then(result => {
-      if (Array.isArray(result)) {
-        result.forEach(r => results.push(r))
-      } else {
-        results.push(result)
-      }
-    }).catch(err => {
-      onError(err)
-
-      if (Array.isArray(err)) {
-        err.forEach(r => results.push(r))
-      } else {
-        results.push(err)
-      }
-    }).then(next)
+    return task
+      .then(addResults)
+      .catch(addErrors)
+      .then(next)
   }
 
   return next()
