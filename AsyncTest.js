@@ -19,11 +19,9 @@ function AsyncTest (test, config) {
         timer: null,
         when: null,
         outcomes: []
-      }).then(promises.promiseTask(report))
-        .then(promises.promiseTask(makeWhenPromise))
+      }).then(promises.promiseTask(makeWhenPromise))
         .then(promises.promiseTask(runBehavior))
         .then(promises.promiseTask(checkAssertions))
-        // .then(promises.promiseTask(report))
         .then(context => {
           return resolve(context.outcomes)
         })
@@ -85,11 +83,6 @@ function checkAssertions (context, resolve, reject) {
 
   return resolve(context)
 } // /checkAssertions
-
-function report (context, resolve, reject) {
-  context.config.reporter.report(context.outcomes)
-  return resolve(context)
-}
 
 function assertOne (assertion, test) {
   try {
