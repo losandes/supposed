@@ -3,27 +3,29 @@
 const assert = require('assert')
 const TestBatch = require('./TestBatch.js')
 const AsyncTest = require('./AsyncTest.js')
-const Reporter = require('./reporters/DefaultReporter.js')
+const reporters = require('./reporters/reporterFactory.js')
 const configFactory = require('./configFactory.js')
+const promises = require('./promiseUtils.js')
+const TestEvent = require('./TestEvent.js')
 var configDefaults = {
   assertionLibrary: assert,
-  reporter: new Reporter()
+  reporter: reporters.types.DEFAULT
 }
 
 process.argv.forEach((val, idx, vals) => {
   if (val === '--tap' || val === '-t') {
-    const TapReporter = require('./reporters/TapReporter.js')
-    configDefaults.reporter = new TapReporter()
+    configDefaults.reporter = reporters.types.TAP
   } else if (val === '--brief' || (val === '-r' && vals[idx + 1] === 'brief')) {
-    const BrevityReporter = require('./reporters/BrevityReporter.js')
-    configDefaults.reporter = new BrevityReporter()
+    configDefaults.reporter = reporters.types.BRIEF
+  } else if (val === '--quiet' || (val === '-r' && vals[idx + 1] === 'quiet')) {
+    configDefaults.reporter = reporters.types.QUIET
   }
 })
 
 module.exports = Suite()
 
 function Suite (suiteConfig) {
-  const config = configFactory.makeSuiteConfig(configDefaults, suiteConfig)
+  const config = configFactory.makeSuiteConfig(configDefaults, suiteConfig, reporters)
   const uncaught = []
 
   process.on('uncaughtException', err => {
@@ -36,10 +38,79 @@ function Suite (suiteConfig) {
   })
 
   process.on('exit', () => {
-    config.reporter.report({
-      type: 'end'
-    })
+    config.reporter.report(TestEvent.end)
   })
+
+  const normalizeBatch = (behaviorOrBatch, sut) => {
+    if (typeof behaviorOrBatch === 'object') {
+      return Promise.resolve(behaviorOrBatch)
+    } else if (typeof behaviorOrBatch === 'string') {
+      var t = {}
+      t[behaviorOrBatch] = typeof sut === 'function' ? { '': sut } : sut
+      return Promise.resolve(t)
+    } else {
+      return Promise.reject(new Error('An invalid test was found: a test or batch of tests is required'))
+    }
+  }
+
+  const mapToTests = (batch) => {
+    return Promise.resolve(new TestBatch(batch).map(theory => {
+      return new AsyncTest(theory, config.makeTheoryConfig(theory))
+    }))
+  }
+
+  const run = (batch) => {
+    config.reporter.report(TestEvent.start)
+
+    return promises.allSettled(batch, err => {
+      while (uncaught.length) {
+        config.reporter.report({
+          type: TestEvent.types.BROKEN,
+          behavior: err.behavior,
+          error: uncaught.shift()
+        })
+      }
+    })
+  }
+
+  const report = (results) => {
+    config.reporter.report(TestEvent.startTest)
+    config.reporter.report(results)
+    return Promise.resolve(results)
+  }
+
+  const prepareOutput = (results) => {
+    var totals = {
+      passed: 0,
+      skipped: 0,
+      failed: 0,
+      broken: 0
+      // startTime: null,
+      // endTime: null
+    }
+
+    results.forEach(result => {
+      switch (result.type) {
+        case TestEvent.types.PASSED:
+          totals.passed += 1
+          break
+        case TestEvent.types.SKIPPED:
+          totals.skipped += 1
+          break
+        case TestEvent.types.FAILED:
+          totals.failed += 1
+          break
+        case TestEvent.types.BROKEN:
+          totals.broken += 1
+          break
+      }
+    })
+
+    return Promise.resolve({
+      results: results,
+      totals: totals
+    })
+  }
 
   // test('when dividing a number by zero', {
   //   when: resolve => { resolve(42 / 0) },
@@ -59,46 +130,23 @@ function Suite (suiteConfig) {
   //   }
   // })
   function test (behaviorOrBatch, sut) {
-    if (typeof behaviorOrBatch === 'object') {
-      runBatch(behaviorOrBatch)
-    } else if (typeof behaviorOrBatch === 'string') {
-      var t = {}
-      t[behaviorOrBatch] = typeof sut === 'function' ? { '': sut } : sut
-      runBatch(t)
-    } else {
-      throw new Error('A test or batch of tests is required')
-    }
+    return normalizeBatch(behaviorOrBatch, sut)
+      .then(mapToTests)
+      .then(run)
+      .then(report)
+      .then(prepareOutput)
+      .catch(err => {
+        console.log()
+        console.log(err)
+        console.log()
+        return Promise.reject(err)
+      })
   }
 
   /**
   // Make a newly configured suite
   */
   test.Suite = Suite
-
-  function runBatch (batch) {
-    config.reporter.report({
-      type: 'start'
-    })
-    run(new TestBatch(batch).map(theory => {
-      return new AsyncTest(theory, config.makeTheoryConfig(theory))
-    }))
-  }
-
-  function run (batch) {
-    batch.forEach(test => {
-      test.then(() => {
-
-      }).catch(err => {
-        while (uncaught.length) {
-          config.reporter.report({
-            type: 'error',
-            behavior: err.behavior,
-            error: uncaught.shift()
-          })
-        }
-      })
-    })
-  }
 
   return test
 }

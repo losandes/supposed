@@ -1,45 +1,62 @@
-'use strict';
+'use strict'
 
 module.exports = {
-    allSettled: allSettled
-};
+  allSettled: allSettled,
+  promiseTask: promiseTask
+}
 
-function allSettled (tasks) {
-    const passed = [];
-    const failed = [];
-    const errors = [];
+function allSettled (tasks, onError) {
+  if (!Array.isArray(tasks)) {
+    return Promise.reject(
+      new Error(
+        'allSettled expects an array of task functions as the first argument'
+      )
+    )
+  }
 
-    if (!Array.isArray(tasks)) {
-        return Promise.reject(
-            new Error(
-              'allSettled expects an array of task functions as the first argument'
-            )
-        );
+  const results = []
+  tasks = Object.assign([], tasks)
+
+  function next () {
+    var task = tasks.shift()
+
+    if (!task) {
+      // we're at the end
+      return Promise.resolve(results)
     }
 
-    tasks = Object.assign([], tasks);
+    return task.then(result => {
+      if (Array.isArray(result)) {
+        result.forEach(r => results.push(r))
+      } else {
+        results.push(result)
+      }
+    }).catch(err => {
+      onError(err)
 
-    function next () {
-        var task = tasks.shift();
+      if (Array.isArray(err)) {
+        err.forEach(r => results.push(r))
+      } else {
+        results.push(err)
+      }
+    }).then(next)
+  }
 
-        if (!task) {
-            // we're at the end
-            return Promise.resolve({
-                passed: passed,
-                failed: failed,
-                errors: errors
-            });
-        }
+  return next()
+}
 
-        return task.then(result => {
-            result.passed.forEach(test => { passed.push(test); });
-            result.failed.forEach(test => { failed.push(test); });
-            result.errors.forEach(test => { errors.push(test); });
-        }).catch(err => {
-            errors.push(err);
-            return Promise.resolve();
-        }).then(next);
+function promiseTask (task) {
+  if (typeof task !== 'function' || task.length < 2) {
+    return payload => {
+      let err = new Error('Tasks must be functions, and must at least accept the `payload` and `resolve` arguments')
+      err.data = { task: task }
+      return Promise.reject(err)
     }
+  }
 
-    return next();
+  return payload => {
+    return new Promise((resolve, reject) => {
+      task(payload, resolve, reject)
+    })
+  }
 }
