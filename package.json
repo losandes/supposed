@@ -12,23 +12,16 @@
   },
   "keywords": [
     "test-runner",
-    "ava",
+    "assay",
     "javascript",
-    "concurrency",
-    "async-functions",
     "tap",
     "assert",
-    "babel",
-    "es2015",
     "nodejs",
-    "cli",
-    "async",
-    "performance",
-    "unicorns",
     "unit-testing",
-    "cli-app",
     "node",
     "tdd",
+    "bdd",
+    "ddd",
     "testing",
     "test-framework"
   ],
@@ -37,5 +30,13 @@
   "bugs": {
     "url": "https://github.com/losandes/assay/issues"
   },
-  "homepage": "https://github.com/losandes/assay#readme"
+  "homepage": "https://github.com/losandes/assay#readme",
+  "devDependencies": {
+    "eslint": "^4.5.0",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-plugin-import": "^2.7.0",
+    "eslint-plugin-node": "^5.1.1",
+    "eslint-plugin-promise": "^3.5.0",
+    "eslint-plugin-standard": "^3.0.1"
+  }
 }
