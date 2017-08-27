@@ -1,4 +1,6 @@
+require('./suite-specs')
 require('./test-ava-specs')
+require('./test-config-specs')
 require('./test-errors-specs')
 require('./test-nowhen-specs')
 require('./test-skip-specs')

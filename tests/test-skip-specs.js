@@ -24,6 +24,28 @@ describe('skipping tests', {
       })
     }
   },
+  'when a named behavior is skipped': {
+    when: namedBehaviorIsSkipped,
+    'it should NOT run the behavior': (t, err, actual) => {
+      t.ifError(err)
+      t.equal(actual.behaviorRan, false)
+    },
+    'it should NOT run any assertions': (t, err, actual) => {
+      t.ifError(err)
+      t.equal(actual.assertion1Ran, false)
+      t.equal(actual.assertion2Ran, false)
+    },
+    'it should count the assertions that were skipped': (t, err, actual) => {
+      t.ifError(err)
+      t.equal(actual.results.totals.skipped, 2)
+    },
+    'it should produce outcomes with a type of SKIPPED': (t, err, actual) => {
+      t.ifError(err)
+      actual.results.results.forEach(result => {
+        t.equal(result.type, 'SKIPPED')
+      })
+    }
+  },
   'when an assertion is skipped': {
     when: assertionIsSkipped,
     'it should run the behavior': (t, err, actual) => {
@@ -61,6 +83,34 @@ function behaviorIsSkipped (resolve, reject) {
   var assertion2Ran = false
 
   sut({
+    '// when behavior': {
+      when: (resolve, reject) => {
+        behaviorRan = true
+        resolve()
+      },
+      'assertion 1': t => {
+        assertion1Ran = true
+      },
+      'assertion 2': t => {
+        assertion2Ran = true
+      }
+    }
+  }).then(results => {
+    resolve({
+      behaviorRan: behaviorRan,
+      assertion1Ran: assertion1Ran,
+      assertion2Ran: assertion2Ran,
+      results: results
+    })
+  })
+}
+
+function namedBehaviorIsSkipped (resolve, reject) {
+  var behaviorRan = false
+  var assertion1Ran = false
+  var assertion2Ran = false
+
+  sut('named', {
     '// when behavior': {
       when: (resolve, reject) => {
         behaviorRan = true

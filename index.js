@@ -74,7 +74,9 @@ function Suite (suiteConfig) {
   }
 
   const report = (results) => {
-// TODO: depending on the reporter, we may want to report earlier - so there's a better feed
+    // TODO: reporting all at once was necessary to format the TAP output.
+    // For other reporters, we may want to report earlier - so there's a better feed
+    // It could be similar to the onError function that gets passed to allSettled
     config.reporter.report(TestEvent.startTest)
     config.reporter.report(results)
     return Promise.resolve(results)
