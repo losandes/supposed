@@ -25,7 +25,7 @@ describe('assay', {
       t.equal(actual.totals.passed, 1)
     }
   }
-})
+}) // /describe
 
 function descriptionsAreDeeplyNested (resolve) {
   sut({

@@ -1,10 +1,8 @@
 'use strict'
 
-const TestEvent = require('../TestEvent.js')
-
 module.exports = Reporter
 
-function Reporter (printer) {
+function Reporter (printer, TestEvent) {
   var totals = {
     passed: 0,
     skipped: 0,
@@ -31,7 +29,7 @@ function Reporter (printer) {
         totals.startTime = totals.startTime || new Date()
         break
       case TestEvent.types.START_TEST:
-        printer.print.startTest()
+        printer.print.startTest(result.plan)
         break
       case TestEvent.types.PASSED:
         totals.passed += 1

@@ -3,11 +3,17 @@ const sut = describe.Suite({ reporter: 'QUIET', timeout: 10 })
 
 describe('assay', {
   'when `when` is never resolved real': {
-    when: () => {},
-    'it should throw a timeout exception': t => {
-      t.fail('it should not get here')
+    when: (resolve) => { resolve(42) },
+    'it should throw a timeout exception': (t, err, actual) => {
+      t.equal(actual, 41)
     }
   }
+  // 'when `when` is never resolved real': {
+  //   when: () => {},
+  //   'it should throw a timeout exception': t => {
+  //     t.fail('it should not get here')
+  //   }
+  // }
   // 'when the `when` is synchronous': {
   //   when: resolve => {
   //     resolve(41)

@@ -1,29 +1,46 @@
 'use strict'
 
+// dependencies
 const assert = require('assert')
-const TestBatch = require('./TestBatch.js')
-const AsyncTest = require('./AsyncTest.js')
-const reporters = require('./reporters/reporterFactory.js')
-const configFactory = require('./configFactory.js')
-const promises = require('./promiseUtils.js')
-const TestEvent = require('./TestEvent.js')
+// src
+const ArgumentProcessor = require('./src/ArgumentProcessor.js')
+const AsyncTest = require('./src/AsyncTest.js')
+const configFactory = require('./src/configFactory.js')
+const promises = require('./src/promiseUtils.js')
+const TestBatch = require('./src/TestBatch.js')
+const TestEvent = require('./src/TestEvent.js')
+// reporters
+const ReporterFactory = require('./reporters/ReporterFactory.js')
+const DefaultPrinter = require('./reporters/DefaultPrinter.js')
+const StreamPrinter = require('./reporters/StreamPrinter')
+const TapPrinter = require('./reporters/TapPrinter.js')
+const BriefPrinter = require('./reporters/BrevityPrinter.js')
+const QuietPrinter = require('./reporters/QuietPrinter.js')
+const Reporter = require('./reporters/Reporter.js')
+// resolve the dependency graph
+const reporters = new ReporterFactory({
+  DEFAULT: new Reporter(new DefaultPrinter(), TestEvent),
+  TAP: new Reporter(new TapPrinter(new StreamPrinter()), TestEvent),
+  QUIET_TAP: new Reporter(new TapPrinter(new QuietPrinter()), TestEvent),
+  BRIEF: new Reporter(new BriefPrinter(), TestEvent),
+  QUIET: new Reporter(new QuietPrinter(), TestEvent)
+})
+const argumentProcessor = new ArgumentProcessor(reporters)
+const args = argumentProcessor.get()
 var configDefaults = {
   assertionLibrary: assert,
-  reporter: reporters.types.DEFAULT
+  reporter: args.reporter
 }
 
-process.argv.forEach((val, idx, vals) => {
-  if (val === '--tap' || val === '-t') {
-    configDefaults.reporter = reporters.types.TAP
-  } else if (val === '--brief' || (val === '-r' && vals[idx + 1] === 'brief')) {
-    configDefaults.reporter = reporters.types.BRIEF
-  } else if (val === '--quiet' || (val === '-r' && vals[idx + 1] === 'quiet')) {
-    configDefaults.reporter = reporters.types.QUIET
-  }
-})
-
+// export a default Suite, so consumers don't have to construct anything
+// to use this library. Suite has a `Suite` property on it, so consumers
+// can customize it if they choose to
 module.exports = Suite()
 
+/**
+ * The test library
+ * @param {Object} suiteConfig : optional configuration
+*/
 function Suite (suiteConfig) {
   const config = configFactory.makeSuiteConfig(configDefaults, suiteConfig, reporters)
   const uncaught = []
@@ -54,15 +71,32 @@ function Suite (suiteConfig) {
   }
 
   const mapToTests = (batch) => {
-    return Promise.resolve(new TestBatch(batch).map(theory => {
-      return new AsyncTest(theory, config.makeTheoryConfig(theory))
-    }))
+    const processed = new TestBatch(batch)
+    return Promise.resolve({
+      batch: processed,
+      tests: processed.map(theory => {
+        return new AsyncTest(theory, config.makeTheoryConfig(theory))
+      })
+    })
   }
 
-  const run = (batch) => {
+  const makePlan = (context) => {
+    var count = 0
+
+    context.batch.forEach(item => {
+      count += item.assertions.length
+    })
+
+    context.plan = {
+      count: count
+    }
+    return Promise.resolve(context)
+  }
+
+  const run = (context) => {
     config.reporter.report(TestEvent.start)
 
-    return promises.allSettled(batch, err => {
+    return promises.allSettled(context.tests, err => {
       while (uncaught.length) {
         config.reporter.report({
           type: TestEvent.types.BROKEN,
@@ -70,20 +104,27 @@ function Suite (suiteConfig) {
           error: uncaught.shift()
         })
       }
+    }).then(results => {
+      context.results = results
+      return Promise.resolve(context)
     })
   }
 
-  const report = (results) => {
+  const report = (context) => {
     // TODO: reporting all at once was necessary to format the TAP output.
     // For other reporters, we may want to report earlier - so there's a better feed
     // It could be similar to the onError function that gets passed to allSettled
-    config.reporter.report(TestEvent.startTest)
-    config.reporter.report(results)
-    return Promise.resolve(results)
+    config.reporter.report(new TestEvent({
+      type: TestEvent.types.START_TEST,
+      plan: context.plan
+    }))
+    config.reporter.report(context.results)
+    return Promise.resolve(context.results)
   }
 
   const prepareOutput = (results) => {
     var totals = {
+      total: results.length,
       passed: 0,
       skipped: 0,
       failed: 0,
@@ -135,6 +176,7 @@ function Suite (suiteConfig) {
   function test (behaviorOrBatch, sut) {
     return normalizeBatch(behaviorOrBatch, sut)
       .then(mapToTests)
+      .then(makePlan)
       .then(run)
       .then(report)
       .then(prepareOutput)

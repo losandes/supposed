@@ -1,11 +1,8 @@
 'use strict'
-const StreamPrinter = require('./StreamPrinter')
-const streamPrinter = new StreamPrinter()
-
 module.exports = Printer
 
 // http://testanything.org/tap-version-13-specification.html
-function Printer () {
+function Printer (streamPrinter) {
   var printedVersion = false
   var specCount = 0
   var testCount = 0
@@ -18,10 +15,10 @@ function Printer () {
     }
   }
 
-  print.startTest = function () {
+  print.startTest = function (plan) {
     specCount += 1
     testCount = 0
-    print(`1..${specCount}`)
+    print(`${specCount}..${(plan && plan.count) || 1}`)
   }
 
   print.success = function (behavior) {
@@ -31,35 +28,47 @@ function Printer () {
 
   print.skipped = function (behavior) {
     testCount += 1
-    print(`ok ${testCount} # skip ${behavior}`)
+    print(`ok ${testCount} # SKIP ${behavior}`)
   }
 
   print.failed = function (behavior, e) {
     testCount += 1
     print(`not ok ${testCount} - ${behavior}`)
-    optionallyPrintError(e)
+    optionallyPrintError(e, 'fail')
   }
 
   print.broken = function (behavior, e) {
     testCount += 1
     print(`not ok ${testCount} - ${behavior}`)
-    optionallyPrintError(e)
+    optionallyPrintError(e, 'broken')
+    // TODO: I'm not sure there is ever a reason to print "bail out!" with this test runner
+    // It might be something we tie to `given`?
     print(`bail out! ${e && e.message}`)
   }
 
   print.info = function (behavior, e) {
     print(`# ${behavior} \n`)
-    optionallyPrintError(e)
+    optionallyPrintError(e, 'info')
   }
 
-  function optionallyPrintError (e) {
-    if (e && e.expected && e.actual) {
-      print(`# expected: ${e.expected}  actual: ${e.actual}\n`)
-    }
-
+  function optionallyPrintError (e, severity) {
     if (e) {
-      print(`# ${e.message} \n`)
-      print(`# ${e.stack} \n`)
+      print('  ---')
+      print(`  message: '${e.message}'`)
+      print(`  severity: ${severity}`)
+      print('  data:')
+
+      if (e.expected && e.actual) {
+        print(`    got: ${e.actual}`)
+        print(`    expect: ${e.expected}`)
+      }
+
+      if (e.stack) {
+        let stack = e.stack.replace(/\s{4}at/g, '      at')
+        print(`    stack: ${stack}`)
+      }
+
+      print('  ...')
     }
   }
 
