@@ -1,0 +1,5 @@
+require('./test-ava-specs')
+require('./test-errors-specs')
+require('./test-nowhen-specs')
+require('./test-skip-specs')
+require('./test-specs')

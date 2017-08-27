@@ -17,14 +17,17 @@ function allSettled (tasks, onError) {
   const results = []
   const addResults = (result) => {
     if (Array.isArray(result)) {
-      result.forEach(r => results.push(r))
+      result.forEach(addOneResult)
     } else {
-      results.push(result)
+      addOneResult(result)
     }
   }
-  const addErrors = (err) => {
-    onError(err)
-    addResults(err)
+  const addOneResult = (result) => {
+    if (result.type === 'BROKEN') {
+      onError(result)
+    }
+
+    results.push(result)
   }
   tasks = Object.assign([], tasks)
 
@@ -38,7 +41,7 @@ function allSettled (tasks, onError) {
 
     return task
       .then(addResults)
-      .catch(addErrors)
+      .catch(addResults)
       .then(next)
   }
 

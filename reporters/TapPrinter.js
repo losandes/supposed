@@ -4,6 +4,7 @@ const streamPrinter = new StreamPrinter()
 
 module.exports = Printer
 
+// http://testanything.org/tap-version-13-specification.html
 function Printer () {
   var printedVersion = false
   var specCount = 0

@@ -29,10 +29,9 @@ function AsyncTest (test, config) {
           let output = new TestEvent({
             type: TestEvent.types.BROKEN,
             behavior: test.behavior,
-            error: err
+            error: err && err.error ? err.error : err
           })
 
-          config.reporter.report(output)
           return reject(output)
         })
     }, 0)
@@ -40,32 +39,46 @@ function AsyncTest (test, config) {
 } // /AsyncTest
 
 function makeWhenPromise (context, resolve, reject) {
-  context.when = new Promise((resolve, reject) => {
+  if (context.test.skipped) {
+    context.when = (resolve) => { resolve() }
+    return resolve(context)
+  }
+
+  context.when = (resolve, reject) => {
     // wrap the when in a new Promise to enforce a timeout policy
     // and so the when's don't have to define their own promises
     context.timer = setTimeout(function () {
       let result = new TestEvent({
         type: TestEvent.types.BROKEN,
         behavior: context.test.behavior,
-        error: new Error('Timeout: the test exceeded 2000 ms')
+        error: new Error(`Timeout: the test exceeded ${context.config.timeout} ms`)
       })
-      context.config.reporter.report(result)
       return reject(result)
     }, context.config.timeout)
 
     context.test.when(resolve, reject)
-  })
+  }
 
   return resolve(context)
 } // /makeWhenPromise
 
 function runBehavior (context, resolve, reject) {
-  context.when.then(outcome => {
+  new Promise(context.when).then(outcome => {
     // the `when` was resolved - run the assertion to see if
     // it produced the expected result
     context.outcome = outcome
     return resolve(context)
   }).catch(err => {
+    if (
+      err &&
+      err.error &&
+      err.error.message.indexOf('Timeout: the test exceeded') > -1
+    ) {
+      // then `when` thew an error, so a timeout exception was experienced
+      context.err = err
+      return reject(err)
+    }
+
     // the `when` was rejected - run the assertion to see if
     // it produced the expected result
     context.err = err
