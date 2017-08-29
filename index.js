@@ -5,7 +5,7 @@ const assert = require('assert')
 
 // src
 const ArgumentProcessor = require('./src/ArgumentProcessor.js')
-const AsyncTest = require('./src/AsyncTest.js')
+const AsyncTestFactory = require('./src/AsyncTest.js')
 const configFactory = require('./src/configFactory.js')
 const promises = require('./src/promiseUtils.js')
 const TestBatch = require('./src/TestBatch.js')
@@ -23,6 +23,7 @@ const Reporter = require('./src/reporters/Reporter.js')
 const consoleStyles = require('./src/reporters/console-styles.js')
 
 // resolve the dependency graph
+const AsyncTest = new AsyncTestFactory(TestEvent)
 const reporters = new ReporterFactory(
   TestEvent,
   DefaultPrinter,
