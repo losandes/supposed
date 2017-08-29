@@ -10,21 +10,23 @@ const promises = require('./src/promiseUtils.js')
 const TestBatch = require('./src/TestBatch.js')
 const TestEvent = require('./src/TestEvent.js')
 // reporters
-const ReporterFactory = require('./reporters/ReporterFactory.js')
-const DefaultPrinter = require('./reporters/DefaultPrinter.js')
-const StreamPrinter = require('./reporters/StreamPrinter')
-const TapPrinter = require('./reporters/TapPrinter.js')
-const BriefPrinter = require('./reporters/BrevityPrinter.js')
-const QuietPrinter = require('./reporters/QuietPrinter.js')
-const Reporter = require('./reporters/Reporter.js')
+const ReporterFactory = require('./src/reporters/ReporterFactory.js')
+const DefaultPrinter = require('./src/reporters/DefaultPrinter.js')
+const StreamPrinter = require('./src/reporters/StreamPrinter')
+const TapPrinter = require('./src/reporters/TapPrinter.js')
+const BriefPrinter = require('./src/reporters/BrevityPrinter.js')
+const QuietPrinter = require('./src/reporters/QuietPrinter.js')
+const Reporter = require('./src/reporters/Reporter.js')
 // resolve the dependency graph
-const reporters = new ReporterFactory({
-  DEFAULT: new Reporter(new DefaultPrinter(), TestEvent),
-  TAP: new Reporter(new TapPrinter(new StreamPrinter()), TestEvent),
-  QUIET_TAP: new Reporter(new TapPrinter(new QuietPrinter()), TestEvent),
-  BRIEF: new Reporter(new BriefPrinter(), TestEvent),
-  QUIET: new Reporter(new QuietPrinter(), TestEvent)
-})
+const reporters = new ReporterFactory(
+  TestEvent,
+  DefaultPrinter,
+  TapPrinter,
+  BriefPrinter,
+  QuietPrinter,
+  StreamPrinter,
+  Reporter
+)
 const argumentProcessor = new ArgumentProcessor(reporters)
 const args = argumentProcessor.get()
 var configDefaults = {
@@ -156,6 +158,7 @@ function Suite (suiteConfig) {
     })
   }
 
+  // examples:
   // test('when dividing a number by zero', {
   //   when: resolve => { resolve(42 / 0) },
   //   'we get Infinity': (t, outcome) => {

@@ -4,6 +4,7 @@ module.exports = Reporter
 
 function Reporter (printer, TestEvent) {
   var totals = {
+    total: 0,
     passed: 0,
     skipped: 0,
     failed: 0,

@@ -1,11 +1,9 @@
 'use strict'
 
-const DefaultPrinter = require('./DefaultPrinter.js')
-
 module.exports = Printer
 
-function Printer () {
-  var self = Object.assign({}, new DefaultPrinter())
+function Printer (defaultPrinter) {
+  var self = Object.assign({}, defaultPrinter)
   self.print.success = function () { /* suppressed */ }
   self.print.skipped = function () { /* suppressed */ }
   self.print.info = function () { /* suppressed */ }
