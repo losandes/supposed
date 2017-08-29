@@ -17,6 +17,7 @@ const TapPrinter = require('./src/reporters/TapPrinter.js')
 const BriefPrinter = require('./src/reporters/BrevityPrinter.js')
 const QuietPrinter = require('./src/reporters/QuietPrinter.js')
 const Reporter = require('./src/reporters/Reporter.js')
+const consoleStyles = require('./src/reporters/console-styles.js')
 // resolve the dependency graph
 const reporters = new ReporterFactory(
   TestEvent,
@@ -25,11 +26,12 @@ const reporters = new ReporterFactory(
   BriefPrinter,
   QuietPrinter,
   StreamPrinter,
-  Reporter
+  Reporter,
+  consoleStyles
 )
 const argumentProcessor = new ArgumentProcessor(reporters)
 const args = argumentProcessor.get()
-var configDefaults = {
+const configDefaults = {
   assertionLibrary: assert,
   reporter: args.reporter
 }
