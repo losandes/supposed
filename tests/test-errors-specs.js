@@ -2,6 +2,24 @@ const describe = require('../index.js')
 const sut = describe.Suite({ reporter: 'QUIET', timeout: 10 })
 
 describe('errors', {
+  'when the `given` throws an error': {
+    when: (resolve) => {
+      sut({
+        'when the `given` throws an error': {
+          given: () => { throw new Error('GIVEN!') },
+          when: (resolve) => (given) => { resolve() },
+          'it should pass the error to the assertions': (t, err) => {
+            t.fail('it should not get here')
+          }
+        }
+      }).then(resolve)
+    },
+    'it should bail out': (t, err, actual) => {
+      t.ifError(err)
+      t.equal(actual.totals.broken, 1)
+      t.equal(actual.results[0].error.message, 'GIVEN!')
+    }
+  },
   'when the `when` throws an error': {
     when: (resolve) => {
       sut({
@@ -17,6 +35,28 @@ describe('errors', {
     'it should pass the error to the assertions': (t, err, actual) => {
       t.ifError(err)
       t.equal(actual.totals.passed, 1)
+    }
+  },
+  'when the `given` rejects': {
+    when: (resolve) => {
+      sut({
+        'when the `given` rejects': {
+          given: (resolve, reject) => {
+            reject(new Error('GIVEN!'))
+          },
+          when: (resolve, reject) => (given) => {
+            resolve()
+          },
+          'it should pass the rejection to the `err` argument': (t, err) => {
+            t.fail('it should not get here')
+          }
+        }
+      }).then(resolve)
+    },
+    'it should bail out': (t, err, actual) => {
+      t.ifError(err)
+      t.equal(actual.totals.broken, 1)
+      t.equal(actual.results[0].error.message, 'GIVEN!')
     }
   },
   'when the `when` rejects': {
@@ -52,6 +92,24 @@ describe('errors', {
       t.ifError(err)
       t.equal(actual.totals.failed, 1)
       t.equal(actual.results[0].error.message, 'assertion ERROR!')
+    }
+  },
+  'when `given` is never resolved': {
+    when: (resolve) => {
+      sut({
+        'when `given` is never resolved': {
+          given: () => {},
+          when: (resolve) => (given) => { resolve() },
+          'it should throw a timeout exception': t => {
+            t.fail('it should not get here')
+          }
+        }
+      }).then(resolve)
+    },
+    'the test should be reported as BROKEN': (t, err, actual) => {
+      t.ifError(err)
+      t.equal(actual.totals.broken, 1)
+      t.equal(actual.results[0].error.message, 'Timeout: the test exceeded 10 ms')
     }
   },
   'when `when` is never resolved': {

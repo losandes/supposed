@@ -1,16 +1,14 @@
 'use strict'
 
-const styles = require('./console-styles.js')
-const SYMBOLS = {
-  passed: styles.green('✓ '), // heavy-check: '✔',
-  failed: styles.red('✗ '), // heavy-x '✘',
-  skipped: styles.yellow('⸕ '),
-  info: styles.cyan('→ ')
-}
-
 module.exports = Printer
 
-function Printer () {
+function Printer (styles) {
+  const SYMBOLS = {
+    passed: styles.green('✓ '), // heavy-check: '✔',
+    failed: styles.red('✗ '), // heavy-x '✘',
+    skipped: styles.yellow('⸕ '),
+    info: styles.cyan('→ ')
+  }
   var specCount = 0
   var print = console.log
 

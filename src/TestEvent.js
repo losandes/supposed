@@ -15,6 +15,10 @@ const TestEvent = function (result) {
     self.error = result.error
   }
 
+  if (result.plan) {
+    self.plan = result.plan
+  }
+
   return Object.freeze(self)
 }
 

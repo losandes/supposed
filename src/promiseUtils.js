@@ -1,8 +1,7 @@
 'use strict'
 
 module.exports = {
-  allSettled: allSettled,
-  promiseTask: promiseTask
+  allSettled: allSettled
 }
 
 function allSettled (tasks, onError) {
@@ -39,27 +38,11 @@ function allSettled (tasks, onError) {
       return Promise.resolve(results)
     }
 
-    return task
+    return task()
       .then(addResults)
       .catch(addResults)
       .then(next)
   }
 
   return next()
-}
-
-function promiseTask (task) {
-  if (typeof task !== 'function' || task.length < 2) {
-    return payload => {
-      let err = new Error('Tasks must be functions, and must at least accept the `payload` and `resolve` arguments')
-      err.data = { task: task }
-      return Promise.reject(err)
-    }
-  }
-
-  return payload => {
-    return new Promise((resolve, reject) => {
-      task(payload, resolve, reject)
-    })
-  }
 }

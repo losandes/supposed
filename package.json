@@ -32,6 +32,7 @@
   },
   "homepage": "https://github.com/losandes/assay#readme",
   "devDependencies": {
+    "chai": "^4.1.1",
     "eslint": "^4.5.0",
     "eslint-config-standard": "^10.2.1",
     "eslint-plugin-import": "^2.7.0",

@@ -1,10 +1,8 @@
 'use strict'
 
-const styles = require('./console-styles.js')
-
 module.exports = Printer
 
-function Printer () {
+function Printer (styles) {
   var print = function () { /* suppressed */ }
 
   print.start = print
