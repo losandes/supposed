@@ -1,12 +1,6 @@
 module.exports = function (TestEvent) {
   'use strict'
 
-  const isTimeout = (err) => {
-    return err &&
-      err.error &&
-      err.error.message.indexOf('Timeout: the test exceeded') > -1
-  }
-
   // {
   //   given: [Function: when],
   //   when: [Function: when],
@@ -52,12 +46,7 @@ module.exports = function (TestEvent) {
       // wrap the when in a new Promise to enforce a timeout policy
       // and so the when's don't have to define their own promises
       context.givenTimer = setTimeout(function () {
-        let result = new TestEvent({
-          type: TestEvent.types.BROKEN,
-          behavior: context.test.behavior,
-          error: new Error(`Timeout: the test exceeded ${context.config.timeout} ms`)
-        })
-        return reject(result)
+        return reject(new Error(`Timeout: the test exceeded ${context.config.timeout} ms`))
       }, context.config.timeout)
 
       context.test.given(resolve, reject)
@@ -80,12 +69,7 @@ module.exports = function (TestEvent) {
       // wrap the when in a new Promise to enforce a timeout policy
       // and so the when's don't have to define their own promises
       context.whenTimer = setTimeout(function () {
-        let result = new TestEvent({
-          type: TestEvent.types.BROKEN,
-          behavior: context.test.behavior,
-          error: new Error(`Timeout: the test exceeded ${context.config.timeout} ms`)
-        })
-        return reject(result)
+        return reject(new Error(`Timeout: the test exceeded ${context.config.timeout} ms`))
       }, context.config.timeout)
 
       return context.test.when(resolve, reject)
@@ -169,8 +153,12 @@ module.exports = function (TestEvent) {
         context.resultOfWhen = outcome
         return context
       }).catch(err => {
-        if (isTimeout(err)) {
-          // then `when` thew an error, so a timeout exception was experienced
+        if (
+          err &&
+          err.message.indexOf('Timeout: the test exceeded') > -1
+        ) {
+          // then `when` never resolved, or it thew an error,
+          // so a timeout exception was experienced
           context.err = err
           throw err
         }

@@ -1,7 +1,7 @@
 'use strict'
 
 const tests = require('./sample-tests.js')
-const TestBatch = require('../src/TestBatch.js')
+const TestBatch = require('../../src/TestBatch.js')
 
 var batch = {
   'when dividing a number by zero': {

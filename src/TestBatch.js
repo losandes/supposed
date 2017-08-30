@@ -16,9 +16,12 @@ function TestBatch (tests) {
   return parsed
 }
 
-function parseOne (behavior, node, given, when, skipped, count = 0) {
-  var pass = new Pass(behavior, node, given, when, skipped, count)
+function parseOne (behavior, node, given, when, skipped, timeout, assertionLib, count = 0) {
+  var pass
   var passes = []
+  timeout = timeout || node.timeout
+  assertionLib = assertionLib || node.assertionLibrary
+  pass = new Pass(behavior, node, given, when, skipped, timeout, assertionLib, count)
 
   if (Array.isArray(pass.assertions) && pass.assertions.length) {
     passes.push(pass)
@@ -33,6 +36,8 @@ function parseOne (behavior, node, given, when, skipped, count = 0) {
       pass.given,
       pass.when,
       pass.skipped || isSkipped(key),
+      node[key].timeout || node.timeout || pass.timeout,
+      node[key].assertionLibrary || node.assertionLibrary || pass.assertionLibrary,
       (count += 1)
     )
   }).forEach(mappedPasses => {
@@ -85,7 +90,7 @@ function concatBehavior (behavior, key) {
   return `${trimBehavior(behavior)}, ${trimBehavior(key)}`
 }
 
-function Pass (behavior, node, given, when, skipped, count) {
+function Pass (behavior, node, given, when, skipped, timeout, assertionLib, count) {
   const skip = skipped || isSkipped(behavior)
   var arrange = getGiven(node) || given
   var act = getWhen(node) || when
@@ -100,7 +105,9 @@ function Pass (behavior, node, given, when, skipped, count) {
     behavior: trimBehavior(behavior),
     given: arrange,
     when: act,
-    assertions: getAssertions(behavior, node, skip),
-    skipped: skip
+    assertions: getAssertions(behavior, node, skip, timeout),
+    skipped: skip,
+    timeout: timeout,
+    assertionLibrary: assertionLib
   }
 }
