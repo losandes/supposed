@@ -17,28 +17,28 @@ function TestBatch (tests) {
 }
 
 function parseOne (behavior, node, given, when, skipped, timeout, assertionLib, count = 0) {
-  var pass
+  var parent
   var passes = []
   timeout = timeout || node.timeout
   assertionLib = assertionLib || node.assertionLibrary
   skipped = skipped || node.skipped
-  pass = new Pass(behavior, node, given, when, skipped, timeout, assertionLib, count)
+  parent = new Pass(behavior, node, given, when, skipped, timeout, assertionLib, count)
 
-  if (Array.isArray(pass.assertions) && pass.assertions.length) {
-    passes.push(pass)
+  if (Array.isArray(parent.assertions) && parent.assertions.length) {
+    passes.push(parent)
   }
 
-  Object.keys(node).filter(key => {
-    return typeof node[key] === 'object'
-  }).map(key => {
+  Object.keys(node).filter(childKey => {
+    return typeof node[childKey] === 'object'
+  }).map(childKey => {
     return parseOne(
-      concatBehavior(behavior, key),
-      node[key],
-      pass.given,
-      pass.when,
-      pass.skipped || isSkipped(key),
-      node[key].timeout || node.timeout || pass.timeout,
-      node[key].assertionLibrary || node.assertionLibrary || pass.assertionLibrary,
+      concatBehavior(behavior, childKey),
+      node[childKey],
+      parent.given,
+      parent.when,
+      parent.skipped || isSkipped(childKey),
+      node[childKey].timeout || parent.timeout,
+      node[childKey].assertionLibrary || parent.assertionLibrary,
       (count += 1)
     )
   }).forEach(mappedPasses => {
