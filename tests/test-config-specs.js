@@ -67,10 +67,11 @@ describe('test configuration', {
       expect(actual).to.equal(42)
     }
   },
-  'when a test sets an after hook': {
+  '// (maybe?) when a test sets an after hook': {
     when: (resolve) => {
       sut('sut', {
         'sut-description': {
+          after: () => {},
           when: (resolve) => { resolve(42) },
           'sut-assertion': (t, err, actual) => {
             t.equal(actual, 42)
