@@ -46,12 +46,12 @@ module.exports = function (
 
     const mapToTests = (batch) => {
       const processed = new TestBatch(batch)
-      return Promise.resolve({
+      return {
         batch: processed,
         tests: processed.map(theory => {
           return new AsyncTest(theory, config.makeTheoryConfig(theory))
         })
-      })
+      }
     }
 
     const makePlan = (context) => {
@@ -64,7 +64,7 @@ module.exports = function (
       context.plan = {
         count: count
       }
-      return Promise.resolve(context)
+      return context
     }
 
     const run = (context) => {
@@ -80,7 +80,7 @@ module.exports = function (
         }
       }).then(results => {
         context.results = results
-        return Promise.resolve(context)
+        return context
       })
     }
 

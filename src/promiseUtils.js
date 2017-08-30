@@ -38,7 +38,7 @@ function allSettled (tasks, onError) {
       return Promise.resolve(results)
     }
 
-    return task
+    return task()
       .then(addResults)
       .catch(addResults)
       .then(next)

@@ -7,7 +7,7 @@ describe('errors', {
       sut({
         'when the `given` throws an error': {
           given: () => { throw new Error('GIVEN!') },
-          when: (resolve) => { resolve() },
+          when: (resolve) => (given) => { resolve() },
           'it should pass the error to the assertions': (t, err) => {
             t.fail('it should not get here')
           }
@@ -44,7 +44,7 @@ describe('errors', {
           given: (resolve, reject) => {
             reject(new Error('GIVEN!'))
           },
-          when: (resolve, reject) => {
+          when: (resolve, reject) => (given) => {
             resolve()
           },
           'it should pass the rejection to the `err` argument': (t, err) => {
@@ -99,7 +99,7 @@ describe('errors', {
       sut({
         'when `given` is never resolved': {
           given: () => {},
-          when: (resolve) => { resolve() },
+          when: (resolve) => (given) => { resolve() },
           'it should throw a timeout exception': t => {
             t.fail('it should not get here')
           }
