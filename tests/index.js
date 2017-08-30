@@ -1,5 +1,4 @@
 require('./suite-specs')
-require('./test-aaa-specs')
 require('./test-ava-tape-specs')
 require('./test-bdd-specs')
 require('./test-chainability-specs')
