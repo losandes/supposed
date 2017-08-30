@@ -17,20 +17,6 @@ module.exports = function (
   */
   function Suite (suiteConfig) {
     const config = configFactory.makeSuiteConfig(configDefaults, suiteConfig, reporters)
-    const uncaught = []
-
-    process.on('uncaughtException', err => {
-      // TODO: Maybe we can avoid this by running each test in a separate process?
-      uncaught.push({
-        behavior: 'a timeout was caused by the following error',
-        error: err
-      })
-      /* ignore (this is an anti-pattern - don't follow it outside of tests) */
-    })
-
-    process.on('exit', () => {
-      config.reporter.report(TestEvent.end)
-    })
 
     const normalizeBatch = (behaviorOrBatch, sut) => {
       if (typeof behaviorOrBatch === 'object') {
@@ -70,18 +56,11 @@ module.exports = function (
     const run = (context) => {
       config.reporter.report(TestEvent.start)
 
-      return promises.allSettled(context.tests, err => {
-        while (uncaught.length) {
-          config.reporter.report({
-            type: TestEvent.types.BROKEN,
-            behavior: err.behavior,
-            error: uncaught.shift()
-          })
-        }
-      }).then(results => {
-        context.results = results
-        return context
-      })
+      return promises.allSettled(context.tests)
+        .then(results => {
+          context.results = results
+          return context
+        })
     }
 
     const report = (context) => {
@@ -97,14 +76,15 @@ module.exports = function (
     }
 
     const prepareOutput = (results) => {
+      var reporterTotals = Object.assign({}, config.reporter.getTotals())
       var totals = {
         total: results.length,
         passed: 0,
         skipped: 0,
         failed: 0,
-        broken: 0
-        // startTime: null,
-        // endTime: null
+        broken: 0,
+        startTime: reporterTotals.startTime,
+        endTime: reporterTotals.endTime
       }
 
       results.forEach(result => {

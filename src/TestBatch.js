@@ -31,12 +31,16 @@ function parseOne (behavior, node, given, when, skipped, timeout, assertionLib, 
   Object.keys(node).filter(childKey => {
     return typeof node[childKey] === 'object'
   }).map(childKey => {
+    let childBehavior = concatBehavior(behavior, childKey)
+
     return parseOne(
-      concatBehavior(behavior, childKey),
+      childBehavior,
       node[childKey],
       parent.given,
       parent.when,
+      // skipping favors the parent over the child
       parent.skipped || isSkipped(childKey),
+      // timeout and assertion lib favor the child over the parent
       node[childKey].timeout || parent.timeout,
       node[childKey].assertionLibrary || parent.assertionLibrary,
       (count += 1)
@@ -103,7 +107,7 @@ function Pass (behavior, node, given, when, skipped, timeout, assertionLib, coun
 
   return {
     count: count,
-    behavior: trimBehavior(behavior),
+    behavior: behavior,
     given: arrange,
     when: act,
     assertions: getAssertions(behavior, node, skip, timeout),
