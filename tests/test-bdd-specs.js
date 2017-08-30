@@ -31,6 +31,16 @@ describe('BDD', {
   }
 })
 
+describe('vows', {
+  'when topics are used for `when/act`': {
+    topic: (resolve) => { resolve(42) },
+    'it should execute the topic': (t) => (err, actual) => {
+      t.ifError(err)
+      t.equal(actual, 42)
+    }
+  }
+})
+
 function itShouldPass (t, err, actual) {
   t.ifError(err)
   t.equal(actual.totals.passed, 1)

@@ -1,7 +1,7 @@
 'use strict'
 
 const givenSynonyms = ['given', 'arrange']
-const whenSynonyms = ['when', 'act']
+const whenSynonyms = ['when', 'act', 'topic']
 const actions = givenSynonyms.concat(whenSynonyms)
 
 module.exports = TestBatch
@@ -21,6 +21,7 @@ function parseOne (behavior, node, given, when, skipped, timeout, assertionLib, 
   var passes = []
   timeout = timeout || node.timeout
   assertionLib = assertionLib || node.assertionLibrary
+  skipped = skipped || node.skipped
   pass = new Pass(behavior, node, given, when, skipped, timeout, assertionLib, count)
 
   if (Array.isArray(pass.assertions) && pass.assertions.length) {
@@ -58,7 +59,7 @@ function getGiven (node) {
 }
 
 function getWhen (node) {
-  return node.when || node.act
+  return node.when || node.act || node.topic
 }
 
 function getAssertions (behavior, node, skipped) {

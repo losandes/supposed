@@ -2,6 +2,27 @@ const describe = require('../index.js')
 const sut = describe.Suite({ reporter: 'QUIET' })
 
 describe('skipping tests', {
+  '// (maybe?) support using a skip flag': {
+    'it should NOT run the behavior': (t, err, actual) => {
+      t.ifError(err)
+      t.equal(actual.behaviorRan, false)
+    },
+    'it should NOT run any assertions': (t, err, actual) => {
+      t.ifError(err)
+      t.equal(actual.assertion1Ran, false)
+      t.equal(actual.assertion2Ran, false)
+    },
+    'it should count the assertions that were skipped': (t, err, actual) => {
+      t.ifError(err)
+      t.equal(actual.results.totals.skipped, 2)
+    },
+    'it should produce outcomes with a type of SKIPPED': (t, err, actual) => {
+      t.ifError(err)
+      actual.results.results.forEach(result => {
+        t.equal(result.type, 'SKIPPED')
+      })
+    }
+  },
   'when a behavior is skipped': {
     when: behaviorIsSkipped,
     'it should NOT run the behavior': (t, err, actual) => {
