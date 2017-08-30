@@ -15,7 +15,7 @@ describe('assertion styles', {
       t.equal(actual, 42)
     }
   },
-  'when the assertions ingore the results of when': {
+  'when the assertions ignore the results of when': {
     when: (resolve) => { resolve(42) },
     'it should support just accepting the assertion library': (t) => {
       t.equal(1, 1)
