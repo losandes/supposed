@@ -155,6 +155,7 @@ module.exports = function (TestEvent) {
       }).catch(err => {
         if (
           err &&
+          err.message &&
           err.message.indexOf('Timeout: the test exceeded') > -1
         ) {
           // then `when` never resolved, or it thew an error,
