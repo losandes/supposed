@@ -3,51 +3,38 @@ const sut = describe.Suite({ reporter: 'QUIET' })
 
 describe('AAA', {
   'when arrange, act, and assert(s) exist': {
-    when: whenGivenWhenAndThen('arrange', 'act'),
-    'given should produce to when, which should produce to the assertions': (t, err, actual) => {
-      t.ifError(err)
-      t.equal(actual.totals.passed, 1)
-    },
+    act: whenGivenWhenAndThen('arrange', 'act'),
+    'given should produce to when, which should produce to the assertions': itShouldPass,
     'and the `act` does not ask for the result of `arrange`': {
-      when: whenGivenWhenAndThenAndWhenIgnoresGiven('arrange', 'act'),
-      'it should show as broken': (t, err, actual) => {
-        t.ifError(err)
-        t.equal(actual.totals.passed, 1)
-      }
+      act: whenGivenWhenAndThenAndWhenIgnoresGiven('arrange', 'act'),
+      'it should work the same way it does when `arrange` is not present': itShouldPass
     }
   },
   'when arrange, and assert(s) exist without act': {
-    when: whenGivenThenAndNoWhen('arrange', 'act'),
-    '`arrange` should be swapped out for `act`': (t, err, actual) => {
-      t.ifError(err)
-      t.equal(actual.totals.passed, 1)
-    }
+    act: whenGivenThenAndNoWhen('arrange', 'act'),
+    '`arrange` should be swapped out for `act`': itShouldPass
   }
 })
 
 describe('BDD', {
   'when given, when, and then(s) exist': {
     when: whenGivenWhenAndThen('given', 'when'),
-    'given should produce to when, which should produce to the assertions': (t, err, actual) => {
-      t.ifError(err)
-      t.equal(actual.totals.passed, 1)
-    },
+    'given should produce to when, which should produce to the assertions': itShouldPass,
     'and the `when` does not ask for the result of `given`': {
       when: whenGivenWhenAndThenAndWhenIgnoresGiven('given', 'when'),
-      'it should show as broken': (t, err, actual) => {
-        t.ifError(err)
-        t.equal(actual.totals.passed, 1)
-      }
+      'it should work the same way it does when `given` is not present': itShouldPass
     }
   },
   'when given, and then(s) exist without when': {
     when: whenGivenThenAndNoWhen('given', 'when'),
-    '`given` should be swapped out for `when`': (t, err, actual) => {
-      t.ifError(err)
-      t.equal(actual.totals.passed, 1)
-    }
+    '`given` should be swapped out for `when`': itShouldPass
   }
 })
+
+function itShouldPass (t, err, actual) {
+  t.ifError(err)
+  t.equal(actual.totals.passed, 1)
+}
 
 function whenGivenWhenAndThen (given, when) {
   return (resolve) => {
