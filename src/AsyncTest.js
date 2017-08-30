@@ -180,7 +180,21 @@ module.exports = function (TestEvent) {
 
     context.test.assertions.forEach(assertion => {
       context.outcomes.push(assertOne(assertion, () => {
-        assertion.test(context.config.assertionLibrary, context.err, context.resultOfWhen)
+        if (assertion.test.length > 1) {
+          // the assertion accepts all arguments to a single function
+          return assertion.test(
+            context.config.assertionLibrary,
+            context.err,
+            context.resultOfWhen
+          )
+        }
+
+        var maybeFunc = assertion.test(context.config.assertionLibrary)
+
+        if (typeof maybeFunc === 'function') {
+          // the assertion curries: (t) => (err, actual) => { ... }
+          maybeFunc(context.err, context.resultOfWhen)
+        }
       }))
     })
 
