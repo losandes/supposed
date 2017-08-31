@@ -117,7 +117,7 @@ describe('skipping tests', {
     'it should produce outcomes with a type of SKIPPED': (t, err, actual) => {
       t.ifError(err)
       actual.results.results.forEach(result => {
-        if (result.behavior === 'when behavior, assertion 1 # SKIP') {
+        if (result.behavior === 'when behavior, # SKIP assertion 1') {
           t.equal(result.type, 'SKIPPED')
         } else {
           t.equal(result.type, 'PASSED')
@@ -222,7 +222,7 @@ function behaviorIsSkippedWithTapDirective (resolve, reject) {
         behaviorRan = true
         resolve()
       },
-      'assertion 1 # SKIP': t => {
+      '# SKIP assertion 1': t => {
         assertion1Ran = true
       },
       'assertion 2': t => {

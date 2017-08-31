@@ -3,7 +3,7 @@
 const givenSynonyms = ['given', 'arrange']
 const whenSynonyms = ['when', 'act', 'topic']
 const actions = givenSynonyms.concat(whenSynonyms)
-const tapSkipPattern = /# SKIP/i
+const tapSkipPattern = /^# SKIP/i
 
 module.exports = TestBatch
 
