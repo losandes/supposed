@@ -3,6 +3,7 @@
 const givenSynonyms = ['given', 'arrange']
 const whenSynonyms = ['when', 'act', 'topic']
 const actions = givenSynonyms.concat(whenSynonyms)
+const tapSkipPattern = /# SKIP/i
 
 module.exports = TestBatch
 
@@ -91,7 +92,15 @@ function isAssertion (node, key) {
 }
 
 function isSkipped (behavior) {
-  return behavior && behavior.trim().substring(0, 2) === '//'
+  return behavior && (isCommentedOut(behavior) || isTapSkipped(behavior))
+}
+
+function isCommentedOut (behavior) {
+  return behavior.length >= 2 && behavior.trim().substring(0, 2) === '//'
+}
+
+function isTapSkipped (behavior) {
+  return tapSkipPattern.test(behavior)
 }
 
 function trimBehavior (behavior) {
