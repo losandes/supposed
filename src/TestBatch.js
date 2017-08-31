@@ -4,6 +4,8 @@ const givenSynonyms = ['given', 'arrange']
 const whenSynonyms = ['when', 'act', 'topic']
 const actions = givenSynonyms.concat(whenSynonyms)
 const tapSkipPattern = /^# SKIP /i
+const tapTodoPattern = /^# TODO /i
+const tapSkipOrTodoPattern = /(^# SKIP )|(^# TODO )/i
 
 module.exports = TestBatch
 
@@ -100,14 +102,14 @@ function isCommentedOut (behavior) {
 }
 
 function isTapSkipped (behavior) {
-  return tapSkipPattern.test(behavior)
+  return tapSkipOrTodoPattern.test(behavior)
 }
 
 function trimBehavior (behavior) {
   if (isCommentedOut(behavior)) {
     // remove the comments
     return behavior.substring(2).trim()
-  } else if (isTapSkipped(behavior)) {
+  } else if (tapSkipPattern.test(behavior)) {
     // remove the directive - it will be replaced in the TAP output
     return behavior.substring(7).trim()
   } else {
