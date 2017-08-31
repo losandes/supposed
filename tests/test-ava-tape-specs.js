@@ -25,33 +25,5 @@ describe('ava and tape compatibility', {
       t.ifError(err)
       t.equal(actual.totals.passed, 3)
     }
-  },
-  'when an assertion returns a promise': {
-    when: (resolve) => {
-      var promiseFinished = false
-
-      sut({
-        't1': t => {
-          return new Promise((resolve, reject) => {
-            setTimeout(() => {
-              resolve(42)
-            }, 0)
-          }).then(actual => {
-            t.equal(actual, 42)
-            promiseFinished = true
-          })
-        }
-      }).then(results => {
-        resolve({
-          results: results,
-          promiseFinished: promiseFinished
-        })
-      })
-    },
-    'it should run the asserion asynchronously': (t) => (err, actual) => {
-      t.ifError(err)
-      t.equal(actual.results.totals.passed, 1)
-      t.equal(actual.promiseFinished, true)
-    }
   }
 })

@@ -13,10 +13,20 @@ module.exports = function (TestEvent) {
     return () => {
       return new Promise((resolve, reject) => {
         setTimeout(() => {
-          return Promise.resolve(new Context({
+          var context = new Context({
             test: test,
-            config: config
-          })).then(maybeWrapGivenWithTimeout)
+            config: config,
+            timer: setTimeout(function () {
+              return reject(new TestEvent({
+                type: TestEvent.types.BROKEN,
+                behavior: test.behavior,
+                error: new Error(`Timeout: the test exceeded ${context.config.timeout} ms`)
+              }))
+            }, config.timeout)
+          })
+
+          return Promise.resolve(context)
+            .then(maybeWrapGivenWithTimeout)
             .then(wrapWhenWithTimeout)
             .then(maybeRunGiven)
             .then(maybeMakeGivenWhenPromise)
@@ -24,8 +34,10 @@ module.exports = function (TestEvent) {
             .then(checkWhen)
             .then(checkAssertions)
             .then(context => {
+              clearTimeout(context.timer)
               return resolve(context.outcomes)
             }).catch(err => {
+              clearTimeout(context.timer)
               return reject(new TestEvent({
                 type: TestEvent.types.BROKEN,
                 behavior: test.behavior,
@@ -47,13 +59,7 @@ module.exports = function (TestEvent) {
     }
 
     context.given = (resolve, reject) => {
-      // wrap the when in a new Promise to enforce a timeout policy
-      // and so the when's don't have to define their own promises
-      context.givenTimer = setTimeout(function () {
-        return reject(new Error(`Timeout: the test exceeded ${context.config.timeout} ms`))
-      }, context.config.timeout)
-
-      context.test.given(resolve, reject)
+      return context.test.given(resolve, reject)
     }
 
     return context
@@ -70,12 +76,6 @@ module.exports = function (TestEvent) {
     }
 
     context.when = (resolve, reject) => {
-      // wrap the when in a new Promise to enforce a timeout policy
-      // and so the when's don't have to define their own promises
-      context.whenTimer = setTimeout(function () {
-        return reject(new Error(`Timeout: the test exceeded ${context.config.timeout} ms`))
-      }, context.config.timeout)
-
       return context.test.when(resolve, reject)
     }
 
@@ -181,8 +181,6 @@ module.exports = function (TestEvent) {
    */
   function checkAssertions (context) {
     const promises = []
-    clearTimeout(context.givenTimer)
-    clearTimeout(context.whenTimer)
 
     context.test.assertions.forEach(assertion => {
       promises.push(assertOne(assertion, () => {
@@ -267,8 +265,7 @@ module.exports = function (TestEvent) {
     var self = {
       test: context.test,
       config: context.config,
-      givenTimer: context.givenTimer,
-      whenTimer: context.whenTimer,
+      timer: context.timer,
       given: context.given,
       when: context.when,
       whenPromise: context.whenPromise,

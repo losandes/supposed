@@ -1,15 +1,18 @@
 const describe = require('../../index.js')
 // const sut = describe.Suite({ reporter: 'QUIET', timeout: 10 })
 
-describe('when assertion returns a promise', t => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve(42)
-    }, 0)
-  }).then(actual => {
-    console.log(actual)
-    t.equal(actual, 42)
-  })
+describe({
+  'when `when` returns a promise': {
+    when: (resolve) => {
+      return new Promise((resolve, reject) => {
+        resolve(42)
+      }).then(resolve)
+    },
+    'it should wait for that promise before continuing': (t) => (err, actual) => {
+      t.ifError(err)
+      t.equal(actual, 42)
+    }
+  }
 })
 
 // test.cb('Async Division by Zero, when dividing a number by zero, we get Infinity', t => {

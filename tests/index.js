@@ -1,5 +1,6 @@
 require('./suite-specs')
 require('./test-assertionStyles-specs')
+require('./test-async-assertions-specs.js')
 require('./test-ava-tape-specs')
 require('./test-bdd-specs')
 require('./test-chainability-specs')

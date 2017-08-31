@@ -128,5 +128,37 @@ describe('errors', {
       t.equal(actual.totals.broken, 1)
       t.equal(actual.results[0].error.message, 'Timeout: the test exceeded 10 ms')
     }
+  },
+  'when async assertions never return': {
+    when: (resolve) => {
+      sut({
+        'when `when` is never resolved': {
+          'it should throw a timeout exception': async t => {
+            await new Promise((resolve, reject) => { })
+          }
+        }
+      }).then(resolve)
+    },
+    'the test should be reported as BROKEN': (t, err, actual) => {
+      t.ifError(err)
+      t.equal(actual.totals.broken, 1)
+      t.equal(actual.results[0].error.message, 'Timeout: the test exceeded 10 ms')
+    }
+  },
+  'when promised assertions never return': {
+    when: (resolve) => {
+      sut({
+        'when `when` is never resolved': {
+          'it should throw a timeout exception': t => {
+            return new Promise((resolve, reject) => { })
+          }
+        }
+      }).then(resolve)
+    },
+    'the test should be reported as BROKEN': (t, err, actual) => {
+      t.ifError(err)
+      t.equal(actual.totals.broken, 1)
+      t.equal(actual.results[0].error.message, 'Timeout: the test exceeded 10 ms')
+    }
   }
 })
