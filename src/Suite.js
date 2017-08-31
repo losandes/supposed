@@ -1,11 +1,11 @@
 module.exports = function (
-  TestEvent,
+  DefaultRunner,
   TestBatch,
   AsyncTest,
+  TestEvent,
   configFactory,
   configDefaults,
-  reporters,
-  promises
+  reporters
 ) {
   'use strict'
 
@@ -17,8 +17,9 @@ module.exports = function (
   */
   function Suite (suiteConfig) {
     const config = configFactory.makeSuiteConfig(configDefaults, suiteConfig, reporters)
+    const runner = new DefaultRunner(config)
 
-    const normalizeBatch = (behaviorOrBatch, sut) => {
+    function normalizeBatch (behaviorOrBatch, sut) {
       if (typeof behaviorOrBatch === 'object') {
         return Promise.resolve(behaviorOrBatch)
       } else if (typeof behaviorOrBatch === 'string') {
@@ -28,9 +29,9 @@ module.exports = function (
       } else {
         return Promise.reject(new Error('An invalid test was found: a test or batch of tests is required'))
       }
-    }
+    } // /normalizebatch
 
-    const mapToTests = (batch) => {
+    function mapToTests (batch) {
       const processed = new TestBatch(batch)
       return {
         batch: processed,
@@ -38,77 +39,7 @@ module.exports = function (
           return new AsyncTest(theory, config.makeTheoryConfig(theory))
         })
       }
-    }
-
-    const makePlan = (context) => {
-      var count = 0
-
-      context.batch.forEach(item => {
-        count += item.assertions.length
-      })
-
-      context.plan = {
-        count: count
-      }
-      return context
-    }
-
-    const run = (context) => {
-      config.reporter.report(TestEvent.start)
-
-      return promises.allSettled(context.tests)
-        .then(results => {
-          context.results = results
-          return context
-        })
-    }
-
-    const report = (context) => {
-      // TODO: reporting all at once was necessary to format the TAP output.
-      // For other reporters, we may want to report earlier - so there's a better feed
-      // It could be similar to the onError function that gets passed to allSettled
-      config.reporter.report(new TestEvent({
-        type: TestEvent.types.START_TEST,
-        plan: context.plan
-      }))
-      config.reporter.report(context.results)
-      return Promise.resolve(context.results)
-    }
-
-    const prepareOutput = (results) => {
-      var reporterTotals = Object.assign({}, config.reporter.getTotals())
-      var totals = {
-        total: results.length,
-        passed: 0,
-        skipped: 0,
-        failed: 0,
-        broken: 0,
-        startTime: reporterTotals.startTime,
-        endTime: reporterTotals.endTime
-      }
-
-      results.forEach(result => {
-        switch (result.type) {
-          case TestEvent.types.PASSED:
-            totals.passed += 1
-            break
-          case TestEvent.types.SKIPPED:
-            totals.skipped += 1
-            break
-          case TestEvent.types.FAILED:
-            totals.failed += 1
-            break
-          case TestEvent.types.BROKEN:
-            totals.broken += 1
-            break
-        }
-      })
-
-      return Promise.resolve({
-        results: results,
-        totals: totals
-      })
-    }
+    } // /mapToTests
 
     // examples:
     // test('when dividing a number by zero', {
@@ -131,10 +62,10 @@ module.exports = function (
     function test (behaviorOrBatch, sut) {
       return normalizeBatch(behaviorOrBatch, sut)
         .then(mapToTests)
-        .then(makePlan)
-        .then(run)
-        .then(report)
-        .then(prepareOutput)
+        .then(runner.makePlan)
+        .then(runner.run)
+        .then(runner.report)
+        .then(runner.prepareOutput)
         .catch(err => {
           console.log()
           console.log(err)

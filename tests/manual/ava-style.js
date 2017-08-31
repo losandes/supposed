@@ -1,15 +1,29 @@
 const describe = require('../../index.js')
 // const sut = describe.Suite({ reporter: 'QUIET', timeout: 10 })
 
-describe('when assertion returns a promise', t => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve(42)
-    }, 0)
-  }).then(actual => {
-    console.log(actual)
-    t.equal(actual, 42)
-  })
+
+
+describe('Division by Zero, when dividing a number by zero, we get Infinity', t => {
+  // given
+  const input = 42
+
+  // when
+  const actual = divideByZero(input)
+
+  // then
+  t.equal(actual, Infinity)
+})
+
+describe('Division by Zero, when dividing a zero by zero, we get NaN', t => {
+  // given
+  const input = 0
+
+  // when
+  const actual = divideByZero(input)
+
+  // then
+  t.equal(isNaN(actual), true)
+  t.eaual(actual === actual, false)
 })
 
 // test.cb('Async Division by Zero, when dividing a number by zero, we get Infinity', t => {
@@ -26,20 +40,20 @@ describe('when assertion returns a promise', t => {
 //   }, 0)
 // })
 
-// describe('Async Division by Zero with Promises, when dividing a number by zero, we get Infinity', t => {
-//   // given
-//   const input = 42
+describe('Async Division by Zero with Promises, when dividing a number by zero, we get Infinity', t => {
+  // given
+  const input = 42
 
-//   // when
-//   return new Promise((resolve, reject) => {
-//     setTimeout(() => {
-//       resolve(divideByZero(input))
-//     }, 0)
-//   }).then(actual => {
-//     // then
-//     t.equal(actual, Infinity)
-//   })
-// })
+  // when
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve(divideByZero(input))
+    }, 0)
+  }).then(actual => {
+    // then
+    t.equal(actual, Infinity)
+  })
+})
 
 // describe('Async Division by Zero with async, when dividing a number by zero, we get Infinity',
 //   async t => {

@@ -67,16 +67,27 @@ function getWhen (node) {
 }
 
 function getAssertions (behavior, node, skipped) {
+  if (isAssertion(node, behavior)) {
+    return [{
+      behavior: behavior,
+      test: node,
+      skipped: skipped
+    }]
+  }
+
   return Object.keys(node)
-    .filter(key => {
-      return typeof node[key] === 'function' && actions.indexOf(key) === -1
-    }).map(key => {
+    .filter(key => isAssertion(node[key], key))
+    .map(key => {
       return {
         behavior: concatBehavior(behavior, key),
         test: node[key],
         skipped: skipped || isSkipped(key)
       }
     })
+}
+
+function isAssertion (node, key) {
+  return typeof node === 'function' && actions.indexOf(key) === -1
 }
 
 function isSkipped (behavior) {

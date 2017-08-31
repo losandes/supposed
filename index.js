@@ -7,7 +7,7 @@ const assert = require('assert')
 const ArgumentProcessor = require('./src/ArgumentProcessor.js')
 const AsyncTestFactory = require('./src/AsyncTest.js')
 const configFactory = require('./src/configFactory.js')
-const promises = require('./src/promiseUtils.js')
+const promiseUtils = require('./src/promiseUtils.js')
 const TestBatch = require('./src/TestBatch.js')
 const TestEvent = require('./src/TestEvent.js')
 const SuiteFactory = require('./src/Suite.js')
@@ -25,8 +25,12 @@ const DefaultReporter = require('./src/reporters/DefaultReporter.js')(
 )
 const consoleStyles = require('./src/reporters/console-styles.js')
 
+// runners
+const DefaultRunnerFactory = require('./src/runners/DefaultRunner.js')
+
 // resolve the dependency graph
 const AsyncTest = new AsyncTestFactory(TestEvent)
+const DefaultRunner = new DefaultRunnerFactory(TestEvent, promiseUtils)
 const reporters = new ReporterFactory(
   TestEvent,
   DefaultPrinter,
@@ -45,13 +49,13 @@ const configDefaults = {
   reporter: args.reporter
 }
 const Suite = new SuiteFactory(
-  TestEvent,
+  DefaultRunner,
   TestBatch,
   AsyncTest,
+  TestEvent,
   configFactory,
   configDefaults,
-  reporters,
-  promises
+  reporters
 )
 const assay = Suite()
 

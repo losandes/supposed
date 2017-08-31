@@ -180,11 +180,12 @@ module.exports = function (TestEvent) {
    * @param {Object} context
    */
   function checkAssertions (context) {
+    const promises = []
     clearTimeout(context.givenTimer)
     clearTimeout(context.whenTimer)
 
     context.test.assertions.forEach(assertion => {
-      context.outcomes.push(assertOne(assertion, () => {
+      promises.push(assertOne(assertion, () => {
         if (assertion.test.length > 1) {
           // the assertion accepts all arguments to a single function
           return assertion.test(
@@ -198,12 +199,21 @@ module.exports = function (TestEvent) {
 
         if (typeof maybeFunc === 'function') {
           // the assertion curries: (t) => (err, actual) => { ... }
-          maybeFunc(context.err, context.resultOfWhen)
+          return maybeFunc(context.err, context.resultOfWhen)
         }
+
+        return maybeFunc
       }))
     })
 
-    return context
+    return Promise.all(promises)
+      .then(events => {
+        events.forEach(event => {
+          context.outcomes.push(event)
+        })
+
+        return context
+      })
   } // /checkAssertions
 
   /**
@@ -213,23 +223,39 @@ module.exports = function (TestEvent) {
   function assertOne (assertion, test) {
     try {
       if (assertion.skipped) {
-        return new TestEvent({
+        return Promise.resolve(new TestEvent({
           type: TestEvent.types.SKIPPED,
           behavior: assertion.behavior
+        }))
+      }
+
+      var maybePromise = test()
+
+      if (maybePromise && typeof maybePromise.then === 'function') {
+        return maybePromise.then(() => {
+          return new TestEvent({
+            type: TestEvent.types.PASSED,
+            behavior: assertion.behavior
+          })
+        }).catch(err => {
+          return new TestEvent({
+            type: TestEvent.types.FAILED,
+            behavior: assertion.behavior,
+            error: err
+          })
         })
       }
 
-      test()
-      return new TestEvent({
+      return Promise.resolve(new TestEvent({
         type: TestEvent.types.PASSED,
         behavior: assertion.behavior
-      })
+      }))
     } catch (e) {
-      return new TestEvent({
+      return Promise.resolve(new TestEvent({
         type: TestEvent.types.FAILED,
         behavior: assertion.behavior,
         error: e
-      })
+      }))
     }
   } // /assertOne
 
