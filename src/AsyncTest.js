@@ -207,7 +207,7 @@ module.exports = function (TestEvent) {
     return Promise.all(promises)
       .then(events => {
         events.forEach(event => {
-          context.outcomes.push(event)
+          context.outcomes.push(Object.assign({ behavior: 'anonymous' }, event))
         })
 
         return context

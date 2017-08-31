@@ -23,8 +23,11 @@ module.exports = function (
       if (typeof behaviorOrBatch === 'object') {
         return Promise.resolve(behaviorOrBatch)
       } else if (typeof behaviorOrBatch === 'string') {
-        var t = {}
+        let t = {}
         t[behaviorOrBatch] = typeof sut === 'function' ? { '': sut } : sut
+        return Promise.resolve(t)
+      } else if (typeof behaviorOrBatch === 'function') {
+        let t = { '': behaviorOrBatch }
         return Promise.resolve(t)
       } else {
         return Promise.reject(new Error('An invalid test was found: a test or batch of tests is required'))

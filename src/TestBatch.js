@@ -4,7 +4,6 @@ const givenSynonyms = ['given', 'arrange']
 const whenSynonyms = ['when', 'act', 'topic']
 const actions = givenSynonyms.concat(whenSynonyms)
 const tapSkipPattern = /^# SKIP /i
-const tapTodoPattern = /^# TODO /i
 const tapSkipOrTodoPattern = /(^# SKIP )|(^# TODO )/i
 
 module.exports = TestBatch
@@ -19,13 +18,13 @@ function TestBatch (tests) {
   return parsed
 }
 
-function parseOne (behavior, node, given, when, skipped, timeout, assertionLib, count = 0) {
+function parseOne (behavior, node, given, when, skipped, timeout, assertionLib) {
   var parent
   var passes = []
   timeout = timeout || node.timeout
   assertionLib = assertionLib || node.assertionLibrary
   skipped = skipped || node.skipped
-  parent = new Pass(behavior, node, given, when, skipped, timeout, assertionLib, count)
+  parent = new Pass(behavior, node, given, when, skipped, timeout, assertionLib)
 
   if (Array.isArray(parent.assertions) && parent.assertions.length) {
     passes.push(parent)
@@ -45,8 +44,7 @@ function parseOne (behavior, node, given, when, skipped, timeout, assertionLib, 
       parent.skipped || isSkipped(childKey),
       // timeout and assertion lib favor the child over the parent
       node[childKey].timeout || parent.timeout,
-      node[childKey].assertionLibrary || parent.assertionLibrary,
-      (count += 1)
+      node[childKey].assertionLibrary || parent.assertionLibrary
     )
   }).forEach(mappedPasses => {
     mappedPasses
@@ -94,7 +92,11 @@ function isAssertion (node, key) {
 }
 
 function isSkipped (behavior) {
-  return behavior && (isCommentedOut(behavior) || isTapSkipped(behavior))
+  if (behavior && (isCommentedOut(behavior) || isTapSkipped(behavior))) {
+    return true
+  }
+
+  return false
 }
 
 function isCommentedOut (behavior) {
@@ -121,7 +123,7 @@ function concatBehavior (behavior, key) {
   return `${trimBehavior(behavior)}, ${trimBehavior(key)}`
 }
 
-function Pass (behavior, node, given, when, skipped, timeout, assertionLib, count) {
+function Pass (behavior, node, given, when, skipped, timeout, assertionLib) {
   const skip = skipped || isSkipped(behavior)
   var arrange = getGiven(node) || given
   var act = getWhen(node) || when
@@ -132,7 +134,6 @@ function Pass (behavior, node, given, when, skipped, timeout, assertionLib, coun
   }
 
   return {
-    count: count,
     behavior: behavior,
     given: arrange,
     when: act,

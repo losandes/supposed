@@ -66,25 +66,5 @@ describe('test configuration', {
     'it should use the configured assertion library': (expect, err, actual) => {
       expect(actual).to.equal(42)
     }
-  },
-  '// (maybe?) when a test sets an after hook': {
-    when: (resolve) => {
-      sut('sut', {
-        'sut-description': {
-          after: () => {},
-          when: (resolve) => { resolve(42) },
-          'sut-assertion': (t, err, actual) => {
-            t.equal(actual, 42)
-          }
-        }
-      }).then(results => {
-        setTimeout(() => {
-          resolve('hello world!')
-        }, 2)
-      })
-    },
-    'it should execute the after hook': (t, err, actual) => {
-      t.equal(actual, 'hello world!')
-    }
   }
 })

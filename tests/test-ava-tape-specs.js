@@ -11,6 +11,17 @@ describe('ava and tape compatibility', {
     'it should run the tests': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.totals.passed, 1)
+    },
+    'and it does not have a description': {
+      when: (resolve) => {
+        sut(t => {
+          t.equal(1, 1)
+        }).then(resolve)
+      },
+      'it should run the tests': (t) => (err, actual) => {
+        t.ifError(err)
+        t.equal(actual.totals.passed, 1)
+      }
     }
   },
   'when multiple ava styles tests are added to an object': {

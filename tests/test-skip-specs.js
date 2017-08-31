@@ -2,43 +2,22 @@ const describe = require('../index.js')
 const sut = describe.Suite({ reporter: 'QUIET' })
 
 describe('skipping tests', {
-  '// (maybe?) support using a skip flag': {
-    'it should NOT run the behavior': (t, err, actual) => {
-      t.ifError(err)
-      t.equal(actual.behaviorRan, false)
-    },
-    'it should NOT run any assertions': (t, err, actual) => {
-      t.ifError(err)
-      t.equal(actual.assertion1Ran, false)
-      t.equal(actual.assertion2Ran, false)
-    },
-    'it should count the assertions that were skipped': (t, err, actual) => {
-      t.ifError(err)
-      t.equal(actual.results.totals.skipped, 2)
-    },
-    'it should produce outcomes with a type of SKIPPED': (t, err, actual) => {
-      t.ifError(err)
-      actual.results.results.forEach(result => {
-        t.equal(result.type, 'SKIPPED')
-      })
-    }
-  },
   'when a behavior is skipped': {
     when: behaviorIsSkipped,
-    'it should NOT run the behavior': (t, err, actual) => {
+    'it should NOT run the behavior': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.behaviorRan, false)
     },
-    'it should NOT run any assertions': (t, err, actual) => {
+    'it should NOT run any assertions': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.assertion1Ran, false)
       t.equal(actual.assertion2Ran, false)
     },
-    'it should count the assertions that were skipped': (t, err, actual) => {
+    'it should count the assertions that were skipped': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.results.totals.skipped, 2)
     },
-    'it should produce outcomes with a type of SKIPPED': (t, err, actual) => {
+    'it should produce outcomes with a type of SKIPPED': (t) => (err, actual) => {
       t.ifError(err)
       actual.results.results.forEach(result => {
         t.equal(result.type, 'SKIPPED')
@@ -47,20 +26,20 @@ describe('skipping tests', {
   },
   'when a named behavior is skipped': {
     when: namedBehaviorIsSkipped,
-    'it should NOT run the behavior': (t, err, actual) => {
+    'it should NOT run the behavior': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.behaviorRan, false)
     },
-    'it should NOT run any assertions': (t, err, actual) => {
+    'it should NOT run any assertions': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.assertion1Ran, false)
       t.equal(actual.assertion2Ran, false)
     },
-    'it should count the assertions that were skipped': (t, err, actual) => {
+    'it should count the assertions that were skipped': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.results.totals.skipped, 2)
     },
-    'it should produce outcomes with a type of SKIPPED': (t, err, actual) => {
+    'it should produce outcomes with a type of SKIPPED': (t) => (err, actual) => {
       t.ifError(err)
       actual.results.results.forEach(result => {
         t.equal(result.type, 'SKIPPED')
@@ -69,23 +48,23 @@ describe('skipping tests', {
   },
   'when an assertion is skipped': {
     when: assertionIsSkipped,
-    'it should run the behavior': (t, err, actual) => {
+    'it should run the behavior': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.behaviorRan, true)
     },
-    'it should run the other assertions': (t, err, actual) => {
+    'it should run the other assertions': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.assertion2Ran, true)
     },
-    'it should NOT run the skipped assertion': (t, err, actual) => {
+    'it should NOT run the skipped assertion': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.assertion1Ran, false)
     },
-    'it should count the assertions that were skipped': (t, err, actual) => {
+    'it should count the assertions that were skipped': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.results.totals.skipped, 1)
     },
-    'it should produce outcomes with a type of SKIPPED': (t, err, actual) => {
+    'it should produce outcomes with a type of SKIPPED': (t) => (err, actual) => {
       t.ifError(err)
       actual.results.results.forEach(result => {
         if (result.behavior === 'when behavior, assertion 1') {
@@ -98,23 +77,23 @@ describe('skipping tests', {
   },
   'when a test is skipped using TAP\'s SKIP directive': {
     when: behaviorIsSkippedWithTapSkipDirective,
-    'it should run the behavior': (t, err, actual) => {
+    'it should run the behavior': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.behaviorRan, true)
     },
-    'it should run the other assertions': (t, err, actual) => {
+    'it should run the other assertions': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.assertion2Ran, true)
     },
-    'it should NOT run the skipped assertion': (t, err, actual) => {
+    'it should NOT run the skipped assertion': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.assertion1Ran, false)
     },
-    'it should count the assertions that were skipped': (t, err, actual) => {
+    'it should count the assertions that were skipped': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.results.totals.skipped, 1)
     },
-    'it should produce outcomes with a type of SKIPPED': (t, err, actual) => {
+    'it should produce outcomes with a type of SKIPPED': (t) => (err, actual) => {
       t.ifError(err)
       actual.results.results.forEach(result => {
         if (result.behavior === 'when behavior, assertion 1') {
@@ -127,23 +106,23 @@ describe('skipping tests', {
   },
   'when a test is skipped using TAP\'s TODO directive': {
     when: behaviorIsSkippedWithTapTodoDirective,
-    'it should run the behavior': (t, err, actual) => {
+    'it should run the behavior': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.behaviorRan, true)
     },
-    'it should run the other assertions': (t, err, actual) => {
+    'it should run the other assertions': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.assertion2Ran, true)
     },
-    'it should NOT run the skipped assertion': (t, err, actual) => {
+    'it should NOT run the skipped assertion': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.assertion1Ran, false)
     },
-    'it should count the assertions that were skipped': (t, err, actual) => {
+    'it should count the assertions that were skipped': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.results.totals.skipped, 1)
     },
-    'it should produce outcomes with a type of SKIPPED': (t, err, actual) => {
+    'it should produce outcomes with a type of SKIPPED': (t) => (err, actual) => {
       t.ifError(err)
       actual.results.results.forEach(result => {
         if (result.behavior === 'when behavior, # TODO assertion 1') {
