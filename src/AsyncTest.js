@@ -11,25 +11,29 @@ module.exports = function (TestEvent) {
   // }
   return function AsyncTest (test, config) {
     return () => {
-      return Promise.resolve(new Context({
-        test: test,
-        config: config
-      })).then(maybeWrapGivenWithTimeout)
-        .then(wrapWhenWithTimeout)
-        .then(maybeRunGiven)
-        .then(maybeMakeGivenWhenPromise)
-        .then(maybeMakeWhenPromise)
-        .then(checkWhen)
-        .then(checkAssertions)
-        .then(context => {
-          return context.outcomes
-        }).catch(err => {
-          return new TestEvent({
-            type: TestEvent.types.BROKEN,
-            behavior: test.behavior,
-            error: err && err.error ? err.error : err
-          })
-        }) // /flow
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          return Promise.resolve(new Context({
+            test: test,
+            config: config
+          })).then(maybeWrapGivenWithTimeout)
+            .then(wrapWhenWithTimeout)
+            .then(maybeRunGiven)
+            .then(maybeMakeGivenWhenPromise)
+            .then(maybeMakeWhenPromise)
+            .then(checkWhen)
+            .then(checkAssertions)
+            .then(context => {
+              return resolve(context.outcomes)
+            }).catch(err => {
+              return reject(new TestEvent({
+                type: TestEvent.types.BROKEN,
+                behavior: test.behavior,
+                error: err && err.error ? err.error : err
+              }))
+            }) // /flow
+        }, 0)
+      })
     } // /wrapper
   } // /AsyncTest
 

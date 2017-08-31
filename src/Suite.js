@@ -147,6 +147,16 @@ module.exports = function (
     // Make a newly configured suite
     */
     test.Suite = Suite
+    test.printSummary = () => {
+      config.reporter.report(TestEvent.end)
+    }
+    // test.getPrinterOutput = () => {
+    //   return config.reporter.getPrinterOutput()
+    // }
+
+    // process.on('exit', () => {
+    //   test.printSummary()
+    // })
 
     return test
   }

@@ -39,10 +39,25 @@ describe('Suite', {
     }
   },
   '// when a new suite is created with a reporter name': {
-    'it should use the configured reporter': (t, err, actual) => {
-
+    when: (resolve) => {
+      const sut = describe.Suite({ reporter: 'QUIET' })
+      sut('sut', {
+        'sut-description': {
+          when: (resolve) => { resolve(42) },
+          'sut-assertion': (expect) => (err, actual) => {
+            expect(err).to.equal(undefined)
+            expect(actual).to.equal(42)
+          }
+        }
+      }).then(results => {
+        resolve(sut.getPrinterOutput())
+      })
     },
-    'and the reporter is unknown': {
+    'it should use the configured reporter': (t) => (err, actual) => {
+      t.ifError(err)
+      t.equal(actual, 'output')
+    },
+    '// and the reporter is unknown': {
       'it should use the default reporter': (t, err, actual) => {
 
       }
