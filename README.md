@@ -253,7 +253,7 @@ const setup = new Promise((resolve, reject) => {
   }, 0)
 })
 
-const teardown = new Promise((resolve, reject) => {
+const teardown = () => new Promise((resolve, reject) => {
   setTimeout(() => {
     // tear down your setup
     resolve()
@@ -270,7 +270,9 @@ setup.then(() => {
       t.equal(actual, Infinity)
     })
   })
-}).then(teardown)
+}).then(() => {
+  teardown()
+})
 ```
 
 ### Skipping Tests
