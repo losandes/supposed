@@ -127,11 +127,6 @@ function Pass (behavior, node, given, when, skipped, timeout, assertionLib) {
   var skip = skipped || isSkipped(behavior)
   var assertions = getAssertions(behavior, node, skip, timeout)
 
-  // if (!assertions.filter(i => { return !i.skipped }).length) {
-  //   // all assertions are skipped
-  //   skip = true
-  // }
-
   var arrange = getGiven(node) || given
   var act = getWhen(node) || when
 

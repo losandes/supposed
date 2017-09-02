@@ -57,7 +57,8 @@ module.exports = function (TestEvent) {
    * @param {Object} context
    */
   function useNoopsIfSkipped (context) {
-    if (context.test.skipped) {
+    if (testIsSkipped(context.test)) {
+      // there aren't any tests to run
       // set the when to the noop function
       context.given = noop
       context.when = noop
@@ -67,6 +68,15 @@ module.exports = function (TestEvent) {
     }
 
     return context
+  }
+
+  function testIsSkipped (test) {
+    return test.skipped ||
+      (
+        // the test isn't skipped, but all of it's assertions are
+        test.assertions.filter(a => a.skipped).length ===
+        test.assertions.length
+      )
   }
 
   /**
