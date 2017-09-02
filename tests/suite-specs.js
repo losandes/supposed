@@ -4,7 +4,7 @@ const chai = require('chai')
 describe('Suite', {
   'when a new suite is created with a timout': {
     when: () => {
-      const sut = describe.Suite({ reporter: 'QUIET', timeout: 5 })
+      const sut = describe.Suite({ reporter: 'QUIET', timeout: 5, match: null })
       return sut('sut', {
         'sut-description': {
           when: () => { return new Promise(() => { /* should timeout */ }) },
@@ -22,7 +22,7 @@ describe('Suite', {
   },
   'when a new suite is created with an assertion library': {
     when: () => {
-      const sut = describe.Suite({ reporter: 'QUIET', assertionLibrary: chai.expect })
+      const sut = describe.Suite({ reporter: 'QUIET', assertionLibrary: chai.expect, match: null })
       return sut('sut', {
         'sut-description': {
           when: () => { return 42 },
@@ -40,7 +40,7 @@ describe('Suite', {
   },
   '// when a new suite is created with a reporter name': {
     when: () => {
-      const sut = describe.Suite({ reporter: 'QUIET' })
+      const sut = describe.Suite({ reporter: 'QUIET', match: null })
       return sut('sut', {
         'sut-description': {
           when: () => { return 42 },
@@ -70,20 +70,23 @@ describe('Suite', {
       var startTime = new Date()
       var endTime
 
-      const sut = describe.Suite({ reporter: {
-        report: function (event) {
-          if (Array.isArray(event) && event[0].type === 'PASSED') {
-            event.push({
-              type: 'WOOHOO!',
-              behavior: event[0].behavior
-            })
+      const sut = describe.Suite({
+        match: null,
+        reporter: {
+          report: function (event) {
+            if (Array.isArray(event) && event[0].type === 'PASSED') {
+              event.push({
+                type: 'WOOHOO!',
+                behavior: event[0].behavior
+              })
 
-            event.shift()
-          }
-        },
-        getTotals: () => { return { startTime: startTime, endTime: endTime } },
-        getResults: () => { return results }
-      }})
+              event.shift()
+            }
+          },
+          getTotals: () => { return { startTime: startTime, endTime: endTime } },
+          getResults: () => { return results }
+        }
+      })
 
       return sut('sut', {
         'sut-description': {

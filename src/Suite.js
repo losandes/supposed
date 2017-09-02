@@ -18,6 +18,13 @@ module.exports = function (
   function Suite (suiteConfig) {
     const config = configFactory.makeSuiteConfig(configDefaults, suiteConfig, reporters)
     const runner = new DefaultRunner(config)
+    var match
+
+    if (suiteConfig && Object.keys(suiteConfig).indexOf('match') > -1) {
+      match = suiteConfig.match
+    } else {
+      match = configDefaults.match
+    }
 
     function normalizeBatch (behaviorOrBatch, sut) {
       if (typeof behaviorOrBatch === 'object') {
@@ -35,7 +42,9 @@ module.exports = function (
     } // /normalizebatch
 
     function mapToTests (batch) {
-      const processed = new TestBatch(batch)
+      var processed = new TestBatch(batch)
+        .filter(byMatcher)
+
       return {
         batch: processed,
         tests: processed.map(theory => {
@@ -43,6 +52,18 @@ module.exports = function (
         })
       }
     } // /mapToTests
+
+    function byMatcher (theory) {
+      if (!match) {
+        return true
+      }
+
+      for (let i = 0; i < theory.assertions.length; i += 1) {
+        if (match.test(theory.assertions[i].behavior)) {
+          return true
+        }
+      }
+    }
 
     // examples:
     // test('when dividing a number by zero', {

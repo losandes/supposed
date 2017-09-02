@@ -1,5 +1,5 @@
 const describe = require('../index.js')
-const sut = describe.Suite({ reporter: 'QUIET' })
+const sut = describe.Suite({ reporter: 'QUIET', match: null })
 
 describe('AAA', {
   'when arrange, act, and assert(s) exist': {
@@ -34,6 +34,7 @@ describe('vows', {
 })
 
 function itShouldPass (t, err, actual) {
+debugger
   t.ifError(err)
   t.equal(actual.totals.passed, 1)
 }

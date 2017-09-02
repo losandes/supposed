@@ -1,5 +1,5 @@
 const describe = require('../index.js')
-const sut = describe.Suite({ reporter: 'QUIET', timeout: 10 })
+const sut = describe.Suite({ reporter: 'QUIET', timeout: 10, match: null })
 
 describe('errors', {
   'when the `given` throws an error': {

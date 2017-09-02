@@ -115,11 +115,16 @@ $ node test/my-test.js
 
 The following switches are supported:
 
+* **-m**: run only tests that match the regular expression
 * **--tap**, **-t**: use the TAP reporter
 * **--brief**: use the brief reporter (errors and totals only)
 * **--quiet**, **-q**: use the quiet reporter (no output to the console)
 * **--quiet-tap**, **-qt**: use the quiet TAP reporter (no output to the console)
 * **-r**: choose a reporter by name (TAP|BRIEF|QUIET|QUITE_TAP)
+
+```Shell
+$ node test/my-test.js -m foo --tap | tap-nyan
+```
 
 ### TAP reporter
 Assay supports the TAP format and thus is compatible with [any TAP reporter](https://github.com/sindresorhus/awesome-tap#reporters). Use the `--tap` flag to enable TAP output.

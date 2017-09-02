@@ -1,5 +1,5 @@
 const describe = require('../index.js')
-const sut = describe.Suite({ reporter: 'QUIET' })
+const sut = describe.Suite({ reporter: 'QUIET', match: null })
 
 describe('chainability', {
   'when then is used as an `after` hook for tests (i.e. for cleanup)': {

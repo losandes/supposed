@@ -1,5 +1,5 @@
 const describe = require('../index.js')
-const sut = describe.Suite({ reporter: 'QUIET' })
+const sut = describe.Suite({ reporter: 'QUIET', match: null })
 
 describe('ava and tape compatibility', {
   'when a test is described, using the ava and tape syntax': {

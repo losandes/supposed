@@ -1,5 +1,5 @@
 const describe = require('../index.js')
-const sut = describe.Suite({ reporter: 'QUIET' })
+const sut = describe.Suite({ reporter: 'QUIET', match: null })
 
 describe('async tests', {
   'when an assertion returns a promise': {

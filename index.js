@@ -46,7 +46,8 @@ const argumentProcessor = new ArgumentProcessor(reporters)
 const args = argumentProcessor.get()
 const configDefaults = {
   assertionLibrary: assert,
-  reporter: args.reporter
+  reporter: args.reporter,
+  match: args.match
 }
 const Suite = new SuiteFactory(
   DefaultRunner,

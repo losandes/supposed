@@ -1,6 +1,6 @@
 const describe = require('../index.js')
 const chai = require('chai')
-const sut = describe.Suite({ reporter: 'QUIET' })
+const sut = describe.Suite({ reporter: 'QUIET', match: null })
 
 describe('test configuration', {
   'when a test sets a timeout': {
