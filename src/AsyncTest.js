@@ -1,8 +1,6 @@
 module.exports = function (TestEvent) {
   'use strict'
 
-  const noop = function () {}
-
   // {
   //   given: [Function: when],
   //   when: [Function: when],
@@ -221,4 +219,6 @@ module.exports = function (TestEvent) {
 
     return Object.seal(self)
   } // /Context
+
+  function noop () { }
 } // /module.exports
