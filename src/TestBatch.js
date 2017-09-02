@@ -124,7 +124,14 @@ function concatBehavior (behavior, key) {
 }
 
 function Pass (behavior, node, given, when, skipped, timeout, assertionLib) {
-  const skip = skipped || isSkipped(behavior)
+  var skip = skipped || isSkipped(behavior)
+  var assertions = getAssertions(behavior, node, skip, timeout)
+
+  // if (!assertions.filter(i => { return !i.skipped }).length) {
+  //   // all assertions are skipped
+  //   skip = true
+  // }
+
   var arrange = getGiven(node) || given
   var act = getWhen(node) || when
 
@@ -137,7 +144,7 @@ function Pass (behavior, node, given, when, skipped, timeout, assertionLib) {
     behavior: behavior,
     given: arrange,
     when: act,
-    assertions: getAssertions(behavior, node, skip, timeout),
+    assertions: assertions,
     skipped: skip,
     timeout: timeout,
     assertionLibrary: assertionLib

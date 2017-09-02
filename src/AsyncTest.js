@@ -1,6 +1,8 @@
 module.exports = function (TestEvent) {
   'use strict'
 
+  const noop = function () {}
+
   // {
   //   given: [Function: when],
   //   when: [Function: when],
@@ -11,8 +13,11 @@ module.exports = function (TestEvent) {
   // }
   return function AsyncTest (test, config) {
     return () => {
+      // we need a Promise wrapper, to timout the test if it never returns
       return new Promise((resolve, reject) => {
+        // run the tests concurrently
         setTimeout(() => {
+          // setup the intial context
           var context = new Context({
             test: test,
             config: config,
@@ -22,16 +27,15 @@ module.exports = function (TestEvent) {
                 behavior: test.behavior,
                 error: new Error(`Timeout: the test exceeded ${context.config.timeout} ms`)
               }))
-            }, config.timeout)
+            }, config.timeout),
+            err: null // null is the default
           })
 
+          // run the flow
           return Promise.resolve(context)
-            .then(maybeWrapGivenWithTimeout)
-            .then(wrapWhenWithTimeout)
-            .then(maybeRunGiven)
-            .then(maybeMakeGivenWhenPromise)
-            .then(maybeMakeWhenPromise)
-            .then(checkWhen)
+            .then(useNoopsIfSkipped)
+            .then(runGiven)
+            .then(runWhen)
             .then(checkAssertions)
             .then(context => {
               clearTimeout(context.timer)
@@ -44,136 +48,77 @@ module.exports = function (TestEvent) {
                 error: err && err.error ? err.error : err
               }))
             }) // /flow
-        }, 0)
-      })
+        }, 0) // /setTimeout
+      }) // /outer Promise
     } // /wrapper
   } // /AsyncTest
 
   /**
-   * If the test has a `given`, this wraps it with a timeout
+   * If the test is skipped, sets noops for given and when,
+   * otherwise sets given and when to associated test variables
    * @param {Object} context
    */
-  function maybeWrapGivenWithTimeout (context) {
-    if (context.test.skipped || !context.test.given) {
-      return context
-    }
-
-    context.given = (resolve, reject) => {
-      return context.test.given(resolve, reject)
-    }
-
-    return context
-  } // /maybeWrapGivenWithTimeout
-
-  /**
-   * Wraps the test's `when` with a timeout
-   * @param {Object} context
-   */
-  function wrapWhenWithTimeout (context) {
+  function useNoopsIfSkipped (context) {
     if (context.test.skipped) {
-      context.when = (resolve) => { resolve() }
-      return context
-    }
-
-    context.when = (resolve, reject) => {
-      return context.test.when(resolve, reject)
+      // set the when to the noop function
+      context.given = noop
+      context.when = noop
+    } else {
+      context.given = context.test.given || noop
+      context.when = context.test.when
     }
 
     return context
-  } // /wrapWhenWithTimeout
+  }
 
   /**
-   * If the test has a `given`, this executes that promise
+   * Runs `given` and passes any output forward
    * @param {Object} context
    */
-  function maybeRunGiven (context) {
-    if (!context.given) {
-      // there is no given - move on
-      return context
-    }
+  function runGiven (context) {
+    try {
+      let actual = context.given()
 
-    return new Promise(context.given)
-      .then(given => {
-        context.resultOfGiven = given
-        return context
-      })
-      .catch(err => {
-        // then `given` thew an error - bail out!
-        clearTimeout(context.givenTimer)
-        clearTimeout(context.whenTimer)
-        context.err = err
-        throw err
-      })
-  } // /maybeRunGiven
-
-  /**
-   * If the test has a `given`, this makes a promise that will figure out
-   * if the `when` curries to get the value from given, or not
-   * @param {Object} context
-   */
-  function maybeMakeGivenWhenPromise (context) {
-    if (!context.given) {
-      // there is no given - move on
-      return context
-    }
-
-    context.whenPromise = () => new Promise((resolve, reject) => {
-      const maybeFunc = context.when(resolve, reject)
-      if (typeof maybeFunc === 'function') {
-        // `when` wants the value that came from given
-        return maybeFunc(context.resultOfGiven)
-      } else {
-        // `when` is not intereted in `given` output
-        return maybeFunc
+      if (actual && typeof actual.then === 'function') {
+        return actual.then(actual => {
+          context.resultOfGiven = actual
+          return context
+        })
       }
-    })
 
-    return context
-  } // /maybeMakeGivenWhenPromise
+      context.resultOfGiven = actual
+      return context
+    } catch (e) {
+      context.err = e
+      throw e
+    }
+  }
 
   /**
-   * If the test does not have a `given`, this makes a promise that executes
-   * the when
+   * Runs `when` and passes any output forward
    * @param {Object} context
    */
-  function maybeMakeWhenPromise (context) {
-    if (context.whenPromise) {
-      // a `given` was present, so maybeRunGivenWhen ran the `when`
+  function runWhen (context) {
+    try {
+      let actual = context.when(context.resultOfGiven)
+
+      if (actual && typeof actual.then === 'function') {
+        return actual.then(actual => {
+          context.resultOfWhen = actual
+          return context
+        }).catch(err => {
+          context.err = err
+          return context
+        })
+      }
+
+      context.resultOfWhen = actual
+      return context
+    } catch (e) {
+      context.err = e
       return context
     }
-
-    context.whenPromise = () => new Promise(context.when)
-    return context
-  } // /maybeMakeWhenPromise
-
-  /**
-   * Executes the when promise
-   * @param {Object} context
-   */
-  function checkWhen (context) {
-    return context.whenPromise()
-      .then(outcome => {
-        // the `when` was resolved - move on to running assertions
-        context.resultOfWhen = outcome
-        return context
-      }).catch(err => {
-        if (
-          err &&
-          err.message &&
-          err.message.indexOf('Timeout: the test exceeded') > -1
-        ) {
-          // then `when` never resolved, or it thew an error,
-          // so a timeout exception was experienced
-          context.err = err
-          throw err
-        }
-
-        // the `when` was rejected - run the assertion to see if
-        // it produced the expected result
-        context.err = err
-        return context
-      })
-  } // /checkWhen
+  }
 
   /**
    * Executes the assertions
@@ -268,7 +213,6 @@ module.exports = function (TestEvent) {
       timer: context.timer,
       given: context.given,
       when: context.when,
-      whenPromise: context.whenPromise,
       resultOfGiven: context.resultOfGiven,
       resultOfWhen: context.resultOfWhen,
       outcomes: context.outcomes || [],

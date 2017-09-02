@@ -3,8 +3,8 @@ const sut = describe.Suite({ reporter: 'QUIET' })
 
 describe('missing when', {
   'when there is no when function': {
-    when: (resolve) => {
-      sut('assay', {
+    when: () => {
+      return sut('assay', {
         'when there is no when function': {
           'it should still execute the assertions': t => {
             t.equal(true, true)
@@ -20,7 +20,7 @@ describe('missing when', {
             }
           }
         }
-      }).then(resolve)
+      })
     },
     'it should still execute the assertions': (t, err, actual) => {
       t.ifError(err)

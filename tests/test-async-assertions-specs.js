@@ -3,10 +3,10 @@ const sut = describe.Suite({ reporter: 'QUIET' })
 
 describe('async tests', {
   'when an assertion returns a promise': {
-    when: (resolve) => {
+    when: () => {
       var promiseFinished = false
 
-      sut({
+      return sut({
         't1': t => {
           return new Promise((resolve, reject) => {
             setTimeout(() => {
@@ -18,10 +18,10 @@ describe('async tests', {
           })
         }
       }).then(results => {
-        resolve({
+        return {
           results: results,
           promiseFinished: promiseFinished
-        })
+        }
       })
     },
     'it should run the asserion asynchronously': (t) => (err, actual) => {
@@ -31,10 +31,10 @@ describe('async tests', {
     }
   },
   'when an assertion uses async await': {
-    when: (resolve) => {
+    when: () => {
       var promiseFinished = false
 
-      sut({
+      return sut({
         't1': async t => {
           const actual = await new Promise((resolve, reject) => {
             setTimeout(() => {
@@ -46,10 +46,10 @@ describe('async tests', {
           promiseFinished = true
         }
       }).then(results => {
-        resolve({
+        return {
           results: results,
           promiseFinished: promiseFinished
-        })
+        }
       })
     },
     'it should run the asserion asynchronously': (t) => (err, actual) => {

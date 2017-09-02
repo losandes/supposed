@@ -135,16 +135,15 @@ describe('skipping tests', {
   }
 })
 
-function behaviorIsSkipped (resolve, reject) {
+function behaviorIsSkipped () {
   var behaviorRan = false
   var assertion1Ran = false
   var assertion2Ran = false
 
-  sut({
+  return sut({
     '// when behavior': {
-      when: (resolve, reject) => {
+      when: () => {
         behaviorRan = true
-        resolve()
       },
       'assertion 1': t => {
         assertion1Ran = true
@@ -154,25 +153,24 @@ function behaviorIsSkipped (resolve, reject) {
       }
     }
   }).then(results => {
-    resolve({
+    return {
       behaviorRan: behaviorRan,
       assertion1Ran: assertion1Ran,
       assertion2Ran: assertion2Ran,
       results: results
-    })
+    }
   })
 }
 
-function namedBehaviorIsSkipped (resolve, reject) {
+function namedBehaviorIsSkipped () {
   var behaviorRan = false
   var assertion1Ran = false
   var assertion2Ran = false
 
-  sut('named', {
+  return sut('named', {
     '// when behavior': {
-      when: (resolve, reject) => {
+      when: () => {
         behaviorRan = true
-        resolve()
       },
       'assertion 1': t => {
         assertion1Ran = true
@@ -182,25 +180,24 @@ function namedBehaviorIsSkipped (resolve, reject) {
       }
     }
   }).then(results => {
-    resolve({
+    return {
       behaviorRan: behaviorRan,
       assertion1Ran: assertion1Ran,
       assertion2Ran: assertion2Ran,
       results: results
-    })
+    }
   })
 }
 
-function assertionIsSkipped (resolve, reject) {
+function assertionIsSkipped () {
   var behaviorRan = false
   var assertion1Ran = false
   var assertion2Ran = false
 
-  sut({
+  return sut({
     'when behavior': {
-      when: (resolve, reject) => {
+      when: () => {
         behaviorRan = true
-        resolve()
       },
       '// assertion 1': t => {
         assertion1Ran = true
@@ -210,25 +207,24 @@ function assertionIsSkipped (resolve, reject) {
       }
     }
   }).then(results => {
-    resolve({
+    return {
       behaviorRan: behaviorRan,
       assertion1Ran: assertion1Ran,
       assertion2Ran: assertion2Ran,
       results: results
-    })
+    }
   })
 }
 
-function behaviorIsSkippedWithTapSkipDirective (resolve, reject) {
+function behaviorIsSkippedWithTapSkipDirective () {
   var behaviorRan = false
   var assertion1Ran = false
   var assertion2Ran = false
 
-  sut({
+  return sut({
     'when behavior': {
-      when: (resolve, reject) => {
+      when: () => {
         behaviorRan = true
-        resolve()
       },
       '# SKIP assertion 1': t => {
         assertion1Ran = true
@@ -238,25 +234,24 @@ function behaviorIsSkippedWithTapSkipDirective (resolve, reject) {
       }
     }
   }).then(results => {
-    resolve({
+    return {
       behaviorRan: behaviorRan,
       assertion1Ran: assertion1Ran,
       assertion2Ran: assertion2Ran,
       results: results
-    })
+    }
   })
 }
 
-function behaviorIsSkippedWithTapTodoDirective (resolve, reject) {
+function behaviorIsSkippedWithTapTodoDirective () {
   var behaviorRan = false
   var assertion1Ran = false
   var assertion2Ran = false
 
-  sut({
+  return sut({
     'when behavior': {
-      when: (resolve, reject) => {
+      when: () => {
         behaviorRan = true
-        resolve()
       },
       '# TODO assertion 1': t => {
         assertion1Ran = true
@@ -266,11 +261,11 @@ function behaviorIsSkippedWithTapTodoDirective (resolve, reject) {
       }
     }
   }).then(results => {
-    resolve({
+    return {
       behaviorRan: behaviorRan,
       assertion1Ran: assertion1Ran,
       assertion2Ran: assertion2Ran,
       results: results
-    })
+    }
   })
 }

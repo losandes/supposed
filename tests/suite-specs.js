@@ -3,54 +3,54 @@ const chai = require('chai')
 
 describe('Suite', {
   'when a new suite is created with a timout': {
-    when: (resolve) => {
+    when: () => {
       const sut = describe.Suite({ reporter: 'QUIET', timeout: 5 })
-      sut('sut', {
+      return sut('sut', {
         'sut-description': {
-          when: () => {},
+          when: () => { return new Promise(() => { /* should timeout */ }) },
           'sut-assertion': t => {
             t.fail('it should not get here')
           }
         }
-      }).then(resolve)
+      })
     },
-    'it should use the configured timeout': (t, err, actual) => {
+    'it should use the configured timeout': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.totals.broken, 1)
       t.equal(actual.results[0].error.message, 'Timeout: the test exceeded 5 ms')
     }
   },
   'when a new suite is created with an assertion library': {
-    when: (resolve) => {
+    when: () => {
       const sut = describe.Suite({ reporter: 'QUIET', assertionLibrary: chai.expect })
-      sut('sut', {
+      return sut('sut', {
         'sut-description': {
-          when: (resolve) => { resolve(42) },
+          when: () => { return 42 },
           'sut-assertion': (expect) => (err, actual) => {
-            expect(err).to.equal(undefined)
+            expect(err).to.equal(null)
             expect(actual).to.equal(42)
           }
         }
-      }).then(resolve)
+      })
     },
-    'it should use the configured assertion library': (t, err, actual) => {
+    'it should use the configured assertion library': (t) => (err, actual) => {
       t.ifError(err)
       t.equal(actual.totals.passed, 1)
     }
   },
   '// when a new suite is created with a reporter name': {
-    when: (resolve) => {
+    when: () => {
       const sut = describe.Suite({ reporter: 'QUIET' })
-      sut('sut', {
+      return sut('sut', {
         'sut-description': {
-          when: (resolve) => { resolve(42) },
+          when: () => { return 42 },
           'sut-assertion': (expect) => (err, actual) => {
-            expect(err).to.equal(undefined)
+            expect(err).to.equal(null)
             expect(actual).to.equal(42)
           }
         }
       }).then(results => {
-        resolve(sut.getPrinterOutput())
+        return sut.getPrinterOutput()
       })
     },
     'it should use the configured reporter': (t) => (err, actual) => {
@@ -58,13 +58,14 @@ describe('Suite', {
       t.equal(actual, 'output')
     },
     '// and the reporter is unknown': {
-      'it should use the default reporter': (t, err, actual) => {
-
+      'it should use the default reporter': (t) => (err, actual) => {
+        t.ifError(err)
+        // TODO
       }
     }
   },
   'when a new suite is created with an instance of a reporter': {
-    when: (resolve) => {
+    when: () => {
       var results = []
       var startTime = new Date()
       var endTime
@@ -84,18 +85,18 @@ describe('Suite', {
         getResults: () => { return results }
       }})
 
-      sut('sut', {
+      return sut('sut', {
         'sut-description': {
-          when: (resolve) => {
-            resolve(42)
+          when: () => {
             endTime = new Date()
+            return 42
           },
           'sut-assertion': (t) => (err, actual) => {
             t.ifError(err)
             t.equal(actual, 42)
           }
         }
-      }).then(resolve)
+      })
     },
     'it should use the configured reporter': (t) => (err, actual) => {
       t.ifError(err)
