@@ -168,7 +168,20 @@ test('when dividing a number by zero', {
 })
 ```
 
-> NOTE that assertions that are made asynchronously cannot be caught, so you need to catch them and reject in order for the output to be consumed, or simply move the assertions into a then block, as in the example above.
+or:
+```JavaScript
+test('divide by zero equals infinity', t => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve(42 / 0)
+    }, 0)
+  }).then(actual => {
+    t.equal(actual, Infinity)
+  })
+})
+```
+
+> NOTE that assertions that are made asynchronously cannot be caught, so you need to catch them and reject in order for the output to be consumed, or simply move the assertions into a then block, as in the examples above.
 
 ### Async Support
 Each test function can run asyncronously by using `async/await`:
@@ -227,6 +240,37 @@ const updateSpec = () => test('when that user is updated', t => {
 
 insertSpec()
   .then(updateSpec())
+```
+
+### Setup and Teardown
+If you want/need to setup services before running your tests, and then tear them down afterwards, run the tests in a Promise chain, and make sure to return the `test`.
+
+```JavaScript
+const setup = new Promise((resolve, reject) => {
+  setTimeout(() => {
+    // prepare for running the tests
+    resolve()
+  }, 0)
+})
+
+const teardown = new Promise((resolve, reject) => {
+  setTimeout(() => {
+    // tear down your setup
+    resolve()
+  }, 0)
+})
+
+setup.then(() => {
+  return test('divide by zero equals infinity', t => {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve(42 / 0)
+      }, 0)
+    }).then(actual => {
+      t.equal(actual, Infinity)
+    })
+  })
+}).then(teardown)
 ```
 
 ### Skipping Tests
