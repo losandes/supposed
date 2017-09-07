@@ -1,26 +1,18 @@
 assay
 =====
-Assay is a simple, unopinionated, Promise friendly test runner for Node.js that runs tests concurrently, and provides BDD and TDD DSLs. It draws significant influence from vows, ava, and tape so it is partially compatible with each of their syntaxes.
+Assay is a simple, unopinionated, Promise friendly test runner for Node.js that runs tests concurrently, provides BDD, TDD, and xunit Domain Service Languages (DSLs), and has no other dependencies. It draws significant influence from vows, ava, and tape so it is partially compatible with some of their syntaxes.
 
 Assay has several test runner options, and does not require a client (there is not a client at this time).
 
-## This is an academic exploration, and is not maintained in any way that is fit for you to use on a project at this time.
+I built assay for teaching purposes. It may not be appropriate for you to use on a project. While I intend to maintain it, my decisions will be governed by the needs of students, over the needs of production applications.
 
 ## Adding assay to your project
-assay isn't published yet. To use it, add it to your devDependencies in your package.json:
 
-```
-"assay": "git+https://github.com/losandes/assay.git",
+```Shell
+npm install --save-dev assay
 ```
 
 ## Test Syntax and Domain Service Languages (DSLs)
-```JavaScript
-var test = require('assay')
-
-test('when dividing a number by zero, it should return Infinity', t => {
-  t.equal(42 / 0, Infinity)
-})
-```
 
 ### The BDD DSL (Given, When, Then)
 You can use BDD syntax to build your tests, separating the stages of a test into `given`, `when`, and as many assertions as you need:
@@ -78,31 +70,14 @@ test('when dividing a number by zero', {
 })
 ```
 
-### The Vows DSL (Topics)
-If you like vows, and prefer `topics`, you can do that too.
-
-> Note that while this DSL is similar to vows, vows tests are not fully compatible with assay.
+### The xunit DSL (atomic)
+If you prefer the atomic nature of xunit, it is not necessary to leverage the BDD and TDD features:
 
 ```JavaScript
 var test = require('assay')
 
-test('when dividing a number by zero', {
-  topic: () => { return 42 / 0 },
-  'it should return Infinity': (assert) => (err, actual) => {
-    assert.ifError(err)
-    assert.equal(actual, Infinity)
-  },
-  'if the number is zero': {
-    topic: (number) => { return 0 / 0 },
-    'it should return NaN': (assert) => (err, actual) => {
-      assert.ifError(err)
-      assert.equal(isNaN(actual), true)
-    },
-    'it should not be equal to itself': (assert) => (err, actual) => {
-      assert.ifError(err)
-      assert.notEqual(actual, actual)
-    }
-  }
+test('when dividing a number by zero, it should return Infinity', t => {
+  t.equal(42 / 0, Infinity)
 })
 ```
 
@@ -290,7 +265,7 @@ test('// when dividing a number by zero, it should return Infinity', t => {
 })
 ```
 
-If you nest your tests, you can skip any level. All children of a skipped level are also skipped. The following example will skip all tests:
+If you nest/branch your tests, you can skip any level. All children of a skipped level are also skipped. The following example will skip all tests:
 
 ```JavaScript
 test('// when dividing a number by zero', {
@@ -328,7 +303,7 @@ test('when dividing a number by zero', {
 
 > NOTE that when a test is skipped, or when all of a tests' assertions are skipped, the `given|arrange` and `when|act|topic` functions will not be executed
 
-### Nest Inheritance
+### Nest/Branch Inheritance
 Assay lets you nest your tests, to branch paths and assertions, in a similar way to how vows works. Nodes in a nest inherit the `given|arrange`, and `when|act|topic` from parent nodes, if they don't define these properties.
 
 In the following example, `given` returns a function that is used by all tests in the nest:
