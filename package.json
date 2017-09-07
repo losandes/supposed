@@ -23,7 +23,10 @@
     "bdd",
     "ddd",
     "testing",
-    "test-framework"
+    "test-framework",
+    "ava",
+    "vows",
+    "tape"
   ],
   "author": "Andy Wright <andes.collab@gmail.com> (https://github.com/losandes)",
   "license": "MIT",
