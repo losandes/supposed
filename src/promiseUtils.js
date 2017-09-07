@@ -23,7 +23,7 @@ function allSettled (tasks, onError) {
   }
   const addOneResult = (result) => {
     if (result.type === 'BROKEN') {
-      onError(result)
+      onError && onError(result)
     }
 
     results.push(result)

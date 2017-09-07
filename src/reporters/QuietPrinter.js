@@ -3,7 +3,11 @@
 module.exports = Printer
 
 function Printer (styles) {
-  var print = function () { /* suppressed */ }
+  var printerOutput = []
+  var print = function (line) {
+    printerOutput.push(line)
+    /* suppressed */
+  }
 
   print.start = print
   print.startTest = print
@@ -16,7 +20,9 @@ function Printer (styles) {
   print.end = print
 
   return Object.freeze({
+    name: 'QUIET',
     print: print,
-    newLine: styles.newLine()
+    newLine: styles.newLine(),
+    getOutput: () => { return printerOutput.join('\n') }
   })
 }

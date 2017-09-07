@@ -1,11 +1,11 @@
 module.exports = function (
-  TestEvent,
+  DefaultRunner,
   TestBatch,
   AsyncTest,
+  TestEvent,
   configFactory,
   configDefaults,
-  reporters,
-  promises
+  reporters
 ) {
   'use strict'
 
@@ -17,117 +17,52 @@ module.exports = function (
   */
   function Suite (suiteConfig) {
     const config = configFactory.makeSuiteConfig(configDefaults, suiteConfig, reporters)
-    const uncaught = []
+    const runner = new DefaultRunner(config)
+    var match
 
-    process.on('uncaughtException', err => {
-      // TODO: Maybe we can avoid this by running each test in a separate process?
-      uncaught.push({
-        behavior: 'a timeout was caused by the following error',
-        error: err
-      })
-      /* ignore (this is an anti-pattern - don't follow it outside of tests) */
-    })
+    if (suiteConfig && Object.keys(suiteConfig).indexOf('match') > -1) {
+      match = suiteConfig.match
+    } else {
+      match = configDefaults.match
+    }
 
-    process.on('exit', () => {
-      config.reporter.report(TestEvent.end)
-    })
-
-    const normalizeBatch = (behaviorOrBatch, sut) => {
+    function normalizeBatch (behaviorOrBatch, sut) {
       if (typeof behaviorOrBatch === 'object') {
         return Promise.resolve(behaviorOrBatch)
       } else if (typeof behaviorOrBatch === 'string') {
-        var t = {}
+        let t = {}
         t[behaviorOrBatch] = typeof sut === 'function' ? { '': sut } : sut
+        return Promise.resolve(t)
+      } else if (typeof behaviorOrBatch === 'function') {
+        let t = { '': behaviorOrBatch }
         return Promise.resolve(t)
       } else {
         return Promise.reject(new Error('An invalid test was found: a test or batch of tests is required'))
       }
-    }
+    } // /normalizebatch
 
-    const mapToTests = (batch) => {
-      const processed = new TestBatch(batch)
+    function mapToTests (batch) {
+      var processed = new TestBatch(batch)
+        .filter(byMatcher)
+
       return {
         batch: processed,
         tests: processed.map(theory => {
           return new AsyncTest(theory, config.makeTheoryConfig(theory))
         })
       }
-    }
+    } // /mapToTests
 
-    const makePlan = (context) => {
-      var count = 0
-
-      context.batch.forEach(item => {
-        count += item.assertions.length
-      })
-
-      context.plan = {
-        count: count
-      }
-      return context
-    }
-
-    const run = (context) => {
-      config.reporter.report(TestEvent.start)
-
-      return promises.allSettled(context.tests, err => {
-        while (uncaught.length) {
-          config.reporter.report({
-            type: TestEvent.types.BROKEN,
-            behavior: err.behavior,
-            error: uncaught.shift()
-          })
-        }
-      }).then(results => {
-        context.results = results
-        return context
-      })
-    }
-
-    const report = (context) => {
-      // TODO: reporting all at once was necessary to format the TAP output.
-      // For other reporters, we may want to report earlier - so there's a better feed
-      // It could be similar to the onError function that gets passed to allSettled
-      config.reporter.report(new TestEvent({
-        type: TestEvent.types.START_TEST,
-        plan: context.plan
-      }))
-      config.reporter.report(context.results)
-      return Promise.resolve(context.results)
-    }
-
-    const prepareOutput = (results) => {
-      var totals = {
-        total: results.length,
-        passed: 0,
-        skipped: 0,
-        failed: 0,
-        broken: 0
-        // startTime: null,
-        // endTime: null
+    function byMatcher (theory) {
+      if (!match) {
+        return true
       }
 
-      results.forEach(result => {
-        switch (result.type) {
-          case TestEvent.types.PASSED:
-            totals.passed += 1
-            break
-          case TestEvent.types.SKIPPED:
-            totals.skipped += 1
-            break
-          case TestEvent.types.FAILED:
-            totals.failed += 1
-            break
-          case TestEvent.types.BROKEN:
-            totals.broken += 1
-            break
+      for (let i = 0; i < theory.assertions.length; i += 1) {
+        if (match.test(theory.assertions[i].behavior)) {
+          return true
         }
-      })
-
-      return Promise.resolve({
-        results: results,
-        totals: totals
-      })
+      }
     }
 
     // examples:
@@ -151,10 +86,10 @@ module.exports = function (
     function test (behaviorOrBatch, sut) {
       return normalizeBatch(behaviorOrBatch, sut)
         .then(mapToTests)
-        .then(makePlan)
-        .then(run)
-        .then(report)
-        .then(prepareOutput)
+        .then(runner.makePlan)
+        .then(runner.run)
+        .then(runner.report)
+        .then(runner.prepareOutput)
         .catch(err => {
           console.log()
           console.log(err)
@@ -167,6 +102,16 @@ module.exports = function (
     // Make a newly configured suite
     */
     test.Suite = Suite
+    test.printSummary = () => {
+      config.reporter.report(TestEvent.end)
+    }
+    // test.getPrinterOutput = () => {
+    //   return config.reporter.getPrinterOutput()
+    // }
+
+    // process.on('exit', () => {
+    //   test.printSummary()
+    // })
 
     return test
   }

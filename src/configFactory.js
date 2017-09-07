@@ -11,7 +11,8 @@ function makeSuiteConfig (defaults, overrides, reporterFactory) {
   suiteConfig = {
     timeout: overrides.timeout || 2000,
     assertionLibrary: overrides.assertionLibrary || defaults.assertionLibrary,
-    reporter: overrides.reporter || defaults.reporter
+    reporter: (overrides.reporter && reporterFactory.make(overrides.reporter)) ||
+      defaults.reporter
   }
 
   if (typeof suiteConfig.reporter === 'string') {

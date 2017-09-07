@@ -10,7 +10,11 @@ function Printer (styles) {
     info: styles.cyan('→ ')
   }
   var specCount = 0
-  var print = console.log
+  var printerOutput = []
+  var print = (line) => {
+    printerOutput.push(line)
+    console.log(line)
+  }
 
   print.start = function (message) {
     specCount += 1
@@ -73,7 +77,9 @@ function Printer (styles) {
   }
 
   return Object.freeze({
+    name: 'DEFAULT',
     print: print,
-    newLine: styles.newLine()
+    newLine: styles.newLine(),
+    getOutput: () => { return printerOutput.join('\n') }
   })
 }
