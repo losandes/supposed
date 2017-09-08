@@ -1,15 +1,15 @@
-assay
-=====
-Assay is a simple, unopinionated, Promise friendly test runner for Node.js that runs tests concurrently, provides BDD, TDD, and xunit Domain Service Languages (DSLs), and has no other dependencies. It draws significant influence from vows, ava, and tape so it is partially compatible with some of their syntaxes.
+Supposed
+========
+_Supposed_ is a simple, unopinionated, Promise friendly test runner for Node.js that runs tests concurrently, provides BDD, TDD, and xunit Domain Service Languages (DSLs), and has no other dependencies. It draws significant influence from vows, ava, and tape so it is partially compatible with some of their syntaxes.
 
-Assay has several test runner options, and does not require a client (there is not a client at this time).
+_Supposed_ has several test runner options, and does not require a client (there is not a client at this time).
 
-I built assay for teaching purposes. It may not be appropriate for you to use on a project. While I intend to maintain it, my decisions will be governed by the needs of students, over the needs of production applications.
+I built _Supposed_ for teaching purposes. It may not be appropriate for you to use on a project. While I intend to maintain it, my decisions will be governed by the needs of students, over the needs of production applications.
 
-## Adding assay to your project
+## Adding Supposed to your project
 
 ```Shell
-npm install --save-dev assay
+npm install --save-dev supposed
 ```
 
 ## Test Syntax and Domain Service Languages (DSLs)
@@ -18,7 +18,7 @@ npm install --save-dev assay
 You can use BDD syntax to build your tests, separating the stages of a test into `given`, `when`, and as many assertions as you need:
 
 ```JavaScript
-var test = require('assay')
+var test = require('supposed')
 
 test('when dividing a number by zero', {
   given: () => 42,
@@ -46,7 +46,7 @@ test('when dividing a number by zero', {
 You can also use Arrange, Act, Assert TDD syntax:
 
 ```JavaScript
-var test = require('assay')
+var test = require('supposed')
 
 test('when dividing a number by zero', {
   arrange: () => 42,
@@ -74,7 +74,7 @@ test('when dividing a number by zero', {
 If you prefer the atomic nature of xunit, it is not necessary to leverage the BDD and TDD features:
 
 ```JavaScript
-var test = require('assay')
+var test = require('supposed')
 
 test('when dividing a number by zero, it should return Infinity', t => {
   t.equal(42 / 0, Infinity)
@@ -82,7 +82,7 @@ test('when dividing a number by zero, it should return Infinity', t => {
 ```
 
 ## Running Tests
-assay does not require a client, so you can run them with node:
+_Supposed_ does not require a client. You can run tests with node:
 
 ```Shell
 $ node test/my-test.js
@@ -102,7 +102,7 @@ $ node test/my-test.js -m foo --tap | tap-nyan
 ```
 
 ### TAP reporter
-Assay supports the TAP format and thus is compatible with [any TAP reporter](https://github.com/sindresorhus/awesome-tap#reporters). Use the `--tap` flag to enable TAP output.
+Supposed supports the TAP format and thus is compatible with [any TAP reporter](https://github.com/sindresorhus/awesome-tap#reporters). Use the `--tap` flag to enable TAP output.
 
 ```Shell
 $ node test/my-test --tap | tap-nyan
@@ -202,7 +202,7 @@ test('divide by zero equals infinity', async t => {
 ```
 
 ### Running Tests Serially
-Sometimes we need our tests to run in a specific order. Since assay returns a promise, we can chain tests together using Promise control flow:
+Sometimes we need our tests to run in a specific order. Since _Supposed_ returns a promise, we can chain tests together using Promise control flow:
 
 ```JavaScript
 const insertSpec = () => test('when a user is inserted into the database', t => {
@@ -304,7 +304,7 @@ test('when dividing a number by zero', {
 > NOTE that when a test is skipped, or when all of a tests' assertions are skipped, the `given|arrange` and `when|act|topic` functions will not be executed
 
 ### Nest/Branch Inheritance
-Assay lets you nest your tests, to branch paths and assertions, in a similar way to how vows works. Nodes in a nest inherit the `given|arrange`, and `when|act|topic` from parent nodes, if they don't define these properties.
+Supposed lets you nest your tests, to branch paths and assertions, in a similar way to how vows works. Nodes in a nest inherit the `given|arrange`, and `when|act|topic` from parent nodes, if they don't define these properties.
 
 In the following example, `given` returns a function that is used by all tests in the nest:
 
@@ -333,17 +333,17 @@ test('when dividing a number by zero', {
 ```
 
 ## Configuring Tests
-Assay allows configuration at two levels: suite level, and test level. The folliwng configurations are supported:
+Supposed allows configuration at two levels: suite level, and test level. The folliwng configurations are supported:
 
 ### Suite Configuration
 
-* **timeout** {number} (default is 2000ms) : The amount of time that assay waits, before it cancels a long-running test
+* **timeout** {number} (default is 2000ms) : The amount of time that _Supposed_ waits, before it cancels a long-running test
 * **assertionLibrary** {object} (default is `assert`) : The assertion library that will be passed to the tests
 * **reporter** {string or object} (default is "DEFAULT") : The reporter to use for test output (DEFAULT|TAP|BRIEF|QUIET|QUIET_TAP|or a custom reporter)
 
 ```JavaScript
 const events = []
-const test = require('assay').Suite({
+const test = require('supposed').Suite({
   timeout: 10000, // 10 seconds
   assertionLibrary: require('chai').expect,
   reporter: {
@@ -378,7 +378,7 @@ test('when dividing a number by zero, it should return Infinity', t => {
 
 ### Test Configuration
 
-* **timeout** {number} (default is 2000ms) : The amount of time that assay waits, before it cancels a long-running test
+* **timeout** {number} (default is 2000ms) : The amount of time that _Supposed_ waits, before it cancels a long-running test
 * **assertionLibrary** {object} (default is `assert`) : The assertion library that will be passed to the tests
 
 ```JavaScript

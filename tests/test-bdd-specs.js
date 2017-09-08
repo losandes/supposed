@@ -62,7 +62,7 @@ function whenGivenWhenAndThen (given, when) {
       })
     }
 
-    return sut('assay', test)
+    return sut('supposed', test)
   }
 }
 
@@ -88,6 +88,6 @@ function whenGivenThenAndNoWhen (given, when) {
       })
     }
 
-    return sut('assay', test)
+    return sut('supposed', test)
   }
 }

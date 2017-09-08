@@ -4,7 +4,7 @@ const sut = describe.Suite({ reporter: 'QUIET', match: null })
 describe('missing when', {
   'when there is no when function': {
     when: () => {
-      return sut('assay', {
+      return sut('supposed', {
         'when there is no when function': {
           'it should still execute the assertions': t => {
             t.equal(true, true)

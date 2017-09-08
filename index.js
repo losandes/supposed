@@ -58,13 +58,13 @@ const Suite = new SuiteFactory(
   configDefaults,
   reporters
 )
-const assay = Suite()
+const supposed = Suite()
 
 process.on('exit', () => {
-  assay.printSummary()
+  supposed.printSummary()
 })
 
 // export a default Suite, so consumers don't have to construct anything
 // to use this library. Suite has a `Suite` property on it, so consumers
 // can customize it if they choose to
-module.exports = assay
+module.exports = supposed

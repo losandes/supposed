@@ -1,7 +1,7 @@
 const describe = require('../index.js')
 const sut = describe.Suite({ reporter: 'QUIET', match: null })
 
-describe('assay', {
+describe('supposed', {
   'when descriptions are deeply nested': {
     when: descriptionsAreDeeplyNested,
     'it should run them all': (t) => (err, actual) => {
