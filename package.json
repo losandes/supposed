@@ -1,6 +1,6 @@
 {
   "name": "supposed",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "a test library for node.js",
   "main": "index.js",
   "scripts": {
