@@ -1,11 +1,11 @@
-require('./suite-specs')
-require('./test-assertionStyles-specs')
-require('./test-async-assertions-specs.js')
-require('./test-ava-tape-specs')
-require('./test-bdd-specs')
-require('./test-chainability-specs')
-require('./test-config-specs')
-require('./test-errors-specs')
-require('./test-nowhen-specs')
-require('./test-skip-specs')
-require('./test-specs')
+const fs = require('fs')
+const path = require('path')
+const walkSync = (d) => fs.statSync(d).isDirectory()
+  ? fs.readdirSync(d).map(f => walkSync(path.join(d, f)))
+  : d
+
+walkSync('./tests')
+  .filter(file => /specs\.js/.test(file))
+  .forEach(file => {
+    require(`../${file}`)
+  })

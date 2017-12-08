@@ -9,6 +9,12 @@ function Printer (styles) {
     skipped: styles.yellow('⸕ '),
     info: styles.cyan('→ ')
   }
+  // const SYMBOLS = {
+  //   passed: `${styles.bgGreen(styles.black(' PASS '))} `,
+  //   failed: `${styles.bgRed(styles.black(' FAIL '))} `,
+  //   skipped: `${styles.bgYellow(styles.black(' SKIP '))} `,
+  //   info: `${styles.bgCyan(styles.black(' INFO '))} `
+  // }
   var specCount = 0
   var printerOutput = []
   var print = (line) => {
