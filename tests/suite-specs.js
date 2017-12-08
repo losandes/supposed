@@ -2,7 +2,7 @@ const describe = require('../index.js')
 const chai = require('chai')
 
 describe('Suite', {
-  'when a new suite is created with a timout': {
+  'when a new suite is created with a timeout': {
     when: () => {
       const sut = describe.Suite({ reporter: 'QUIET', timeout: 5, match: null })
       return sut('sut', {

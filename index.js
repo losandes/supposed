@@ -12,6 +12,9 @@ const TestBatch = require('./src/TestBatch.js')
 const TestEvent = require('./src/TestEvent.js')
 const SuiteFactory = require('./src/Suite.js')
 
+// assertions
+const SupposeFactory = require('./src/assertions/Suppose.js')
+
 // reporters
 const ReporterFactory = require('./src/reporters/ReporterFactory.js')
 const DefaultPrinter = require('./src/reporters/DefaultPrinter.js')
@@ -45,7 +48,7 @@ const reporters = new ReporterFactory(
 const argumentProcessor = new ArgumentProcessor(reporters)
 const args = argumentProcessor.get()
 const configDefaults = {
-  assertionLibrary: assert,
+  assertionLibrary: SupposeFactory(assert),
   reporter: args.reporter,
   match: args.match
 }
