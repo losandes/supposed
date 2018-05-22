@@ -9,8 +9,6 @@ module.exports = function (
 ) {
   'use strict'
 
-  return Suite
-
   /**
    * The test library
    * @param {Object} suiteConfig : optional configuration
@@ -105,14 +103,16 @@ module.exports = function (
     test.printSummary = () => {
       config.reporter.report(TestEvent.end)
     }
-    // test.getPrinterOutput = () => {
-    //   return config.reporter.getPrinterOutput()
-    // }
+    test.getTotals = () => {
+      return config.reporter.getTotals()
+    }
+    test.suiteName = config.name
 
-    // process.on('exit', () => {
-    //   test.printSummary()
-    // })
+    Suite.suites.push(test)
 
     return test
   }
+
+  Suite.suites = []
+  return Suite
 }

@@ -64,7 +64,11 @@ const Suite = new SuiteFactory(
 const supposed = Suite()
 
 process.on('exit', () => {
-  supposed.printSummary()
+  Suite.suites.forEach((suite) => {
+    if (suite.getTotals().total > 0) {
+      suite.printSummary()
+    }
+  })
 })
 
 // export a default Suite, so consumers don't have to construct anything

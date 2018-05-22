@@ -2,7 +2,8 @@
 
 const givenSynonyms = ['given', 'arrange']
 const whenSynonyms = ['when', 'act', 'topic']
-const actions = givenSynonyms.concat(whenSynonyms)
+const config = ['timeout', 'assertionLibrary', 'reporter']
+const actions = givenSynonyms.concat(whenSynonyms, config)
 const tapSkipPattern = /^# SKIP /i
 const tapSkipOrTodoPattern = /(^# SKIP )|(^# TODO )/i
 
