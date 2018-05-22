@@ -2,7 +2,7 @@ Supposed
 ========
 _Supposed_ is a simple, unopinionated, Promise friendly test runner for Node.js that runs tests concurrently, provides BDD, TDD, and xunit Domain Service Languages (DSLs), and has no other dependencies. It draws significant influence from vows, ava, and tape so it is partially compatible with some of their syntaxes.
 
-_Supposed_ has several test runner options, and does not require a client (there is not a client at this time).
+_Supposed_ has several test runner, and reporter options, and does not require a client (there is not a client at this time).
 
 I built _Supposed_ for teaching purposes. It may not be appropriate for you to use on a project. While I intend to maintain it, my decisions will be governed by the needs of students, over the needs of production applications.
 
@@ -99,6 +99,132 @@ The following switches are supported:
 
 ```Shell
 $ node test/my-test.js -m foo --tap | tap-nyan
+```
+
+### Test Discovery & the Runner
+As you can see above, it's not necessary to write, or use a runner. Supposed has one you can use, though. In the following example, we see 2 test files, and a test runner file.
+
+```JavaScript
+// ./first-module/first-spec.js
+const test = require('supposed')
+test('spec 1!', t => {
+  t.equal(42 / 0, Infinity)
+})
+
+// ./second-module/second-spec.js
+const test = require('supposed')
+test('spec 2!', t => {
+  t.equal(42 / 0, Infinity)
+})
+
+// ./tests.js
+require('supposed')
+  .runner()
+  .run()
+```
+
+We can execute this, using node:
+
+```Shell
+$ node tests
+```
+
+#### Configuring the Runner
+The runner can be configured to look in specific directories, ignore others, and to match the naming conventions of your choice.
+
+```JavaScript
+const supposed = require('supposed')
+const path = require('path')
+const runner = supposed.runner({
+  // default cwd: process.cwd()
+  cwd: path.join(process.cwd(), 'tests'),
+  // default directories: ['.']
+  directories: ['./contracts', './repositories'],
+  // default matchesNamingConvention:
+  // /.([-.]test(s?)\.js)|([-.]spec(s?)\.js)$/i
+  matchesNamingConvention: /.(-custom\.js)$/i,
+  // default matchesIgnoredDirectory: /node_modules/i
+  matchesIgnoredDirectory: /node_modules/i
+})
+```
+
+> Note that with the default configuration, the runner will walk all of the folders from the root of your project, except for `node_modules`. It will match any file that ends in `-test.js`, `.test.js`, `-tests.js`, `.tests.js`, `-spec.js`, `.spec.js`, `-specs.js`, or `.specs.js`. It will _not_ match `test.js`, `tests.js`, `spec.js`, nor `specs.js`, so these names are safe for defining your runner(s).
+
+Both `matchesNamingConvention`, and `matchesIgnoredDirectory` can be regular expressions (above), or objects that return `test` functions:
+
+```JavaScript
+const supposed = require('supposed')
+const runner = supposed.runner({
+  matchesNamingConvention: {
+    test: function (input) {
+      return input.indexOf('test') > -1
+    }
+  }
+})
+```
+
+#### Injecting a Suite
+By default, the runner will inject the suite that it was created on to any test that exports a function. This is especially handy, if you want to use the same suite configuration across multiple tests.
+
+```JavaScript
+// ./first-module/first-spec.js
+module.exports = (test) => {
+  test('spec 1!', expect => {
+    expect(42 / 0).to.equal(Infinity)
+  })
+}
+
+// ./second-module/second-spec.js
+module.exports = (test) => {
+  test('spec 2!', expect => {
+    expect(42 / 0).to.equal(Infinity)
+  })
+}
+
+// ./tests.js
+const suite = require('supposed').Suite({
+  timeout: 10000, // 10 seconds
+  assertionLibrary: require('chai').expect
+})
+
+suite.runner()
+  .run()
+```
+
+You can turn this behavior off by passing `injectSuite: false` to the runner configuration:
+
+```JavaScript
+const supposed = require('supposed')
+const runner = supposed.runner({
+  injectSuite: false
+})
+```
+
+
+#### Writing Your Own Test Runner
+If you want to roll your own, perhaps to perform some custom test injection, here's a simple example:
+
+```JavaScript
+const fs = require('fs')
+const path = require('path')
+const fileNameExpression = /.([-.]test(s?)\.js)|([-.]spec(s?)\.js)$/i
+const ignoreExpression = /node_modules/i
+const walkSync = (dir) =>
+  fs.readdirSync(dir).reduce((files, file) => {
+    if (ignoreExpression.test(file)) {
+      return files
+    }
+
+    const name = path.join(dir, file)
+    const isDirectory = fs.statSync(name).isDirectory()
+    return isDirectory ? [...files, ...walkSync(name)] : [...files, name]
+  }, [])
+
+walkSync('.')
+  .filter(file => fileNameExpression.test(file))
+  .forEach(file => {
+    require(`../${file}`)
+  })
 ```
 
 ### TAP reporter

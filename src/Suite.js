@@ -1,5 +1,6 @@
 module.exports = function (
   DefaultRunner,
+  DefaultDiscoverer,
   TestBatch,
   AsyncTest,
   TestEvent,
@@ -107,6 +108,9 @@ module.exports = function (
       return config.reporter.getTotals()
     }
     test.suiteName = config.name
+    test.runner = (options) => {
+      return new DefaultDiscoverer(Object.assign({ suite: test }, options))
+    }
 
     Suite.suites.push(test)
 
