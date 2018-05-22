@@ -13,9 +13,6 @@ const walkSync = (dir) =>
     return isDirectory ? [...files, ...walkSync(name)] : [...files, name]
   }, [])
 
-console.log(walkSync('.')
-  .filter(file => fileNameExpression.test(file)))
-
 walkSync('./tests')
   .filter(file => fileNameExpression.test(file))
   .forEach(file => {
