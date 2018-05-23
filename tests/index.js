@@ -1,4 +1,8 @@
 const supposed = require('../index.js')
-const runner = supposed.runner()
 
-runner.run()
+supposed.runner({
+  matchesIgnoredConvention: /discoverer-meta-specs|node_modules/i
+}).run()
+// .then((context) => {
+//   console.log(context.files)
+// })

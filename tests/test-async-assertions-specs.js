@@ -13,7 +13,7 @@ describe('async tests', {
               resolve(42)
             }, 0)
           }).then(actual => {
-            t.equal(actual, 42)
+            t.strictEqual(actual, 42)
             promiseFinished = true
           })
         }
@@ -26,8 +26,8 @@ describe('async tests', {
     },
     'it should run the asserion asynchronously': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.results.totals.passed, 1)
-      t.equal(actual.promiseFinished, true)
+      t.strictEqual(actual.results.totals.passed, 1)
+      t.strictEqual(actual.promiseFinished, true)
     }
   },
   'when an assertion uses async await': {
@@ -42,7 +42,7 @@ describe('async tests', {
             }, 0)
           })
 
-          t.equal(actual, 42)
+          t.strictEqual(actual, 42)
           promiseFinished = true
         }
       }).then(results => {
@@ -54,8 +54,8 @@ describe('async tests', {
     },
     'it should run the asserion asynchronously': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.results.totals.passed, 1)
-      t.equal(actual.promiseFinished, true)
+      t.strictEqual(actual.results.totals.passed, 1)
+      t.strictEqual(actual.promiseFinished, true)
     }
   }
 })

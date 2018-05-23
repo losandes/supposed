@@ -17,8 +17,8 @@ describe('test configuration', {
     },
     'the test should be reported as BROKEN': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.totals.broken, 1)
-      t.equal(actual.results[0].error.message, 'Timeout: the test exceeded 5 ms')
+      t.strictEqual(actual.totals.broken, 1)
+      t.strictEqual(actual.results[0].error.message, 'Timeout: the test exceeded 5 ms')
     },
     'and another node overrides it': {
       when: () => {
@@ -38,8 +38,8 @@ describe('test configuration', {
       },
       'it should use the configured timeout': (t) => (err, actual) => {
         t.ifError(err)
-        t.equal(actual.totals.broken, 1)
-        t.equal(actual.results[0].error.message, 'Timeout: the test exceeded 7 ms')
+        t.strictEqual(actual.totals.broken, 1)
+        t.strictEqual(actual.results[0].error.message, 'Timeout: the test exceeded 7 ms')
       }
     }
   },
@@ -57,8 +57,8 @@ describe('test configuration', {
     },
     'the test should be reported as BROKEN': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.totals.broken, 1)
-      t.equal(actual.results[0].error.message, 'Timeout: the test exceeded 5 ms')
+      t.strictEqual(actual.totals.broken, 1)
+      t.strictEqual(actual.results[0].error.message, 'Timeout: the test exceeded 5 ms')
     }
   },
   'when a test sets the assertion library': {

@@ -9,7 +9,7 @@ describe('chainability', {
           when: () => { return 42 },
           'sut-assertion': (t) => (err, actual) => {
             t.ifError(err)
-            t.equal(actual, 42)
+            t.strictEqual(actual, 42)
           }
         }
       }).then(results => {
@@ -22,7 +22,7 @@ describe('chainability', {
     },
     'it should run the after hook': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual, 'hello world!')
+      t.strictEqual(actual, 'hello world!')
     }
   },
   'when then is used to run tests in a series': {
@@ -32,7 +32,7 @@ describe('chainability', {
           when: () => { return 42 },
           'sut-assertion': (t) => (err, actual) => {
             t.ifError(err)
-            t.equal(actual, 42)
+            t.strictEqual(actual, 42)
           }
         }
       }).then(results => {
@@ -41,7 +41,7 @@ describe('chainability', {
             when: () => { return 42 },
             'sut-assertion': (t) => (err, actual) => {
               t.ifError(err)
-              t.equal(actual, 42)
+              t.strictEqual(actual, 42)
             }
           }
         }).then(results2 => {
@@ -54,8 +54,8 @@ describe('chainability', {
     },
     'they should run in order': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.results1.totals.passed, 1)
-      t.equal(actual.results2.totals.passed, 1)
+      t.strictEqual(actual.results1.totals.passed, 1)
+      t.strictEqual(actual.results2.totals.passed, 1)
     }
   }
 })

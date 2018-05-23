@@ -6,7 +6,7 @@ module.exports = function (fs, path) {
       cwd: process.cwd(),
       directories: ['.'],
       matchesNamingConvention: /.([-.]test(s?)\.js)|([-.]spec(s?)\.js)$/i,
-      matchesIgnoredDirectory: /node_modules/i
+      matchesIgnoredConvention: /node_modules/i
     }
 
     if (typeof config.cwd === 'string') {
@@ -29,10 +29,10 @@ module.exports = function (fs, path) {
     }
 
     if (
-      config.matchesIgnoredDirectory &&
-      typeof config.matchesIgnoredDirectory.test === 'function'
+      config.matchesIgnoredConvention &&
+      typeof config.matchesIgnoredConvention.test === 'function'
     ) {
-      self.matchesIgnoredDirectory = config.matchesIgnoredDirectory
+      self.matchesIgnoredConvention = config.matchesIgnoredConvention
     }
 
     if (config.suite && config.injectSuite !== false) {
@@ -45,7 +45,7 @@ module.exports = function (fs, path) {
   function Walker (config) {
     function walkSync (dir) {
       return fs.readdirSync(dir).reduce((files, file) => {
-        if (config.matchesIgnoredDirectory.test(file)) {
+        if (config.matchesIgnoredConvention.test(file)) {
           return files
         }
 
@@ -56,6 +56,10 @@ module.exports = function (fs, path) {
     }
 
     return { walkSync: walkSync }
+  }
+
+  const hasThen = (obj) => {
+    return obj && typeof obj.then === 'function'
   }
 
   return function (options) {
@@ -82,13 +86,26 @@ module.exports = function (fs, path) {
         return find().then(run)
       }
 
-      return paths.forEach(file => {
+      const tests = paths.map(file => {
         var test = require(file)
 
         if (config.suite && typeof test === 'function') {
-          test(config.suite)
+          const promise = test(config.suite)
+          return hasThen(promise) ? promise : Promise.resolve(promise)
         }
+
+        return Promise.resolve()
       })
+
+      return Promise.all(tests)
+        .then((results) => {
+          return Object.freeze({
+            results,
+            config,
+            files: paths,
+            suite: config.suite
+          })
+        })
     }
 
     return { find, run }

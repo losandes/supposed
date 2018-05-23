@@ -7,15 +7,15 @@ describe('missing when', {
       return sut('supposed', {
         'when there is no when function': {
           'it should still execute the assertions': t => {
-            t.equal(true, true)
+            t.strictEqual(true, true)
           },
           'and assertions are deeply nested': {
             'it should still execute the assertions': t => {
-              t.equal(true, true)
+              t.strictEqual(true, true)
             },
             'inside of other deep nests': {
               'it should still execute the assertions': t => {
-                t.equal(true, true)
+                t.strictEqual(true, true)
               }
             }
           }
@@ -24,7 +24,7 @@ describe('missing when', {
     },
     'it should still execute the assertions': (t, err, actual) => {
       t.ifError(err)
-      t.equal(actual.totals.passed, 3)
+      t.strictEqual(actual.totals.passed, 3)
     }
   }
 })

@@ -28,7 +28,7 @@ describe('vows', {
     topic: () => { return 42 },
     'it should execute the topic': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual, 42)
+      t.strictEqual(actual, 42)
     }
   }
 })
@@ -36,7 +36,7 @@ describe('vows', {
 function itShouldPass (t, err, actual) {
 debugger
   t.ifError(err)
-  t.equal(actual.totals.passed, 1)
+  t.strictEqual(actual.totals.passed, 1)
 }
 
 function whenGivenWhenAndThen (given, when) {
@@ -45,7 +45,7 @@ function whenGivenWhenAndThen (given, when) {
       'sut-description': {
         'sut-assertion': (t) => (err, actual) => {
           t.ifError(err)
-          t.equal(actual, 42)
+          t.strictEqual(actual, 42)
         }
       }
     }
@@ -73,8 +73,8 @@ function whenGivenThenAndNoWhen (given, when) {
       'sut-description': {
         'sut-assertion': (t) => (err, actual) => {
           t.ifError(err)
-          t.equal(actual, 42)
-          t.equal(givenRan, true)
+          t.strictEqual(actual, 42)
+          t.strictEqual(givenRan, true)
         }
       }
     }

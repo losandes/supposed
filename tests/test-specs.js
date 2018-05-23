@@ -6,7 +6,7 @@ describe('supposed', {
     when: descriptionsAreDeeplyNested,
     'it should run them all': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.totals.passed, 3)
+      t.strictEqual(actual.totals.passed, 3)
     }
   },
   'when nested assertions have no when': {
@@ -14,7 +14,7 @@ describe('supposed', {
       when: nestsInheritWhens,
       'it should use the parent when': (t) => (err, actual) => {
         t.ifError(err)
-        t.equal(actual.totals.passed, 2)
+        t.strictEqual(actual.totals.passed, 2)
       }
     }
   },
@@ -22,7 +22,7 @@ describe('supposed', {
     when: whenIsAsync,
     'it should not execute the assertions until the when is resolved': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.totals.passed, 1)
+      t.strictEqual(actual.totals.passed, 1)
     }
   }
 }) // /describe
@@ -34,21 +34,21 @@ function descriptionsAreDeeplyNested () {
         when: () => { return 42 / 0 },
         'it should support branching the rabbit hole': (t) => (err, actual) => {
           t.ifError(err)
-          t.equal(actual, Infinity)
+          t.strictEqual(actual, Infinity)
         },
         'and nesting (3)': {
           'and nesting (4)': {
             when: () => { return 42 / 0 },
             'it should follow the rabbit hole': (t) => (err, actual) => {
               t.ifError(err)
-              t.equal(actual, Infinity)
+              t.strictEqual(actual, Infinity)
             },
             'and nesting (5)': {
               'and nesting (6)': {
                 when: () => { return 42 / 0 },
                 'it should follow the rabbit hole': (t) => (err, actual) => {
                   t.ifError(err)
-                  t.equal(actual, Infinity)
+                  t.strictEqual(actual, Infinity)
                 }
               }
             }
@@ -66,13 +66,13 @@ function nestsInheritWhens () {
         when: () => { return 42 / 0 },
         'it should support branching the rabbit hole': (t) => (err, actual) => {
           t.ifError(err)
-          t.equal(actual, Infinity)
+          t.strictEqual(actual, Infinity)
         },
         'and nesting (3)': {
           'and nesting (4)': {
             'it should follow the rabbit hole': (t) => (err, actual) => {
               t.ifError(err)
-              t.equal(actual, Infinity)
+              t.strictEqual(actual, Infinity)
             }
           }
         }
@@ -91,7 +91,7 @@ function whenIsAsync () {
       },
       'it should not execute the assertions until the when is resolved': (t) => (err, actual) => {
         t.ifError(err)
-        t.equal(actual, 42)
+        t.strictEqual(actual, 42)
       }
     }
   })
