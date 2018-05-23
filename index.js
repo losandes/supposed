@@ -2,6 +2,8 @@
 
 // dependencies
 const assert = require('assert')
+const fs = require('fs')
+const path = require('path')
 
 // src
 const ArgumentProcessor = require('./src/ArgumentProcessor.js')
@@ -30,10 +32,12 @@ const consoleStyles = require('./src/reporters/console-styles.js')
 
 // runners
 const DefaultRunnerFactory = require('./src/runners/DefaultRunner.js')
+const DefaultDiscovererFactory = require('./src/runners/DefaultDiscoverer.js')
 
 // resolve the dependency graph
 const AsyncTest = new AsyncTestFactory(TestEvent)
 const DefaultRunner = new DefaultRunnerFactory(TestEvent, promiseUtils)
+const DefaultDiscoverer = new DefaultDiscovererFactory(fs, path)
 const reporters = new ReporterFactory(
   TestEvent,
   DefaultPrinter,
@@ -54,6 +58,7 @@ const configDefaults = {
 }
 const Suite = new SuiteFactory(
   DefaultRunner,
+  DefaultDiscoverer,
   TestBatch,
   AsyncTest,
   TestEvent,
@@ -64,7 +69,11 @@ const Suite = new SuiteFactory(
 const supposed = Suite()
 
 process.on('exit', () => {
-  supposed.printSummary()
+  Suite.suites.forEach((suite) => {
+    if (suite.getTotals().total > 0) {
+      suite.printSummary()
+    }
+  })
 })
 
 // export a default Suite, so consumers don't have to construct anything

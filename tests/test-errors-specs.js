@@ -16,8 +16,8 @@ describe('errors', {
     },
     'it should bail out': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.totals.broken, 1)
-      t.equal(actual.results[0].error.message, 'GIVEN!')
+      t.strictEqual(actual.totals.broken, 1)
+      t.strictEqual(actual.results[0].error.message, 'GIVEN!')
     }
   },
   'when the `when` throws an error': {
@@ -26,15 +26,15 @@ describe('errors', {
         'when the `when` throws an error': {
           when: () => { throw new Error('BOOM!') },
           'it should pass the error to the assertions': (t, err) => {
-            t.equal(typeof err, 'object')
-            t.equal(err.message, 'BOOM!')
+            t.strictEqual(typeof err, 'object')
+            t.strictEqual(err.message, 'BOOM!')
           }
         }
       })
     },
     'it should pass the error to the assertions': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.totals.passed, 1)
+      t.strictEqual(actual.totals.passed, 1)
     }
   },
   'when the `given` rejects': {
@@ -55,8 +55,8 @@ describe('errors', {
     },
     'it should bail out': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.totals.broken, 1)
-      t.equal(actual.results[0].error.message, 'GIVEN!')
+      t.strictEqual(actual.totals.broken, 1)
+      t.strictEqual(actual.results[0].error.message, 'GIVEN!')
     }
   },
   'when the `when` rejects': {
@@ -67,15 +67,15 @@ describe('errors', {
             return Promise.reject(new Error('Boom!'))
           },
           'it should pass the rejection to the `err` argument': (t, err) => {
-            t.equal(typeof err, 'object')
-            t.equal(err.message, 'Boom!')
+            t.strictEqual(typeof err, 'object')
+            t.strictEqual(err.message, 'Boom!')
           }
         }
       })
     },
     'it should pass the error to the assertions': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.totals.passed, 1)
+      t.strictEqual(actual.totals.passed, 1)
     }
   },
   'when the assertion throws an error': {
@@ -90,8 +90,8 @@ describe('errors', {
     },
     'the test should fail': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.totals.failed, 1)
-      t.equal(actual.results[0].error.message, 'assertion ERROR!')
+      t.strictEqual(actual.totals.failed, 1)
+      t.strictEqual(actual.results[0].error.message, 'assertion ERROR!')
     }
   },
   'when `given` is never resolved': {
@@ -108,8 +108,8 @@ describe('errors', {
     },
     'the test should be reported as BROKEN': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.totals.broken, 1)
-      t.equal(actual.results[0].error.message, 'Timeout: the test exceeded 10 ms')
+      t.strictEqual(actual.totals.broken, 1)
+      t.strictEqual(actual.results[0].error.message, 'Timeout: the test exceeded 10 ms')
     }
   },
   'when `when` is never resolved': {
@@ -125,8 +125,8 @@ describe('errors', {
     },
     'the test should be reported as BROKEN': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.totals.broken, 1)
-      t.equal(actual.results[0].error.message, 'Timeout: the test exceeded 10 ms')
+      t.strictEqual(actual.totals.broken, 1)
+      t.strictEqual(actual.results[0].error.message, 'Timeout: the test exceeded 10 ms')
     }
   },
   'when async assertions never return': {
@@ -141,8 +141,8 @@ describe('errors', {
     },
     'the test should be reported as BROKEN': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.totals.broken, 1)
-      t.equal(actual.results[0].error.message, 'Timeout: the test exceeded 10 ms')
+      t.strictEqual(actual.totals.broken, 1)
+      t.strictEqual(actual.results[0].error.message, 'Timeout: the test exceeded 10 ms')
     }
   },
   'when promised assertions never return': {
@@ -157,8 +157,8 @@ describe('errors', {
     },
     'the test should be reported as BROKEN': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.totals.broken, 1)
-      t.equal(actual.results[0].error.message, 'Timeout: the test exceeded 10 ms')
+      t.strictEqual(actual.totals.broken, 1)
+      t.strictEqual(actual.results[0].error.message, 'Timeout: the test exceeded 10 ms')
     }
   }
 })

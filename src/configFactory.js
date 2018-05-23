@@ -4,16 +4,11 @@ module.exports = {
 }
 
 function makeSuiteConfig (defaults, overrides, reporterFactory) {
-  var suiteConfig
-
-  overrides = Object.assign({}, overrides)
-
-  suiteConfig = {
-    timeout: overrides.timeout || 2000,
-    assertionLibrary: overrides.assertionLibrary || defaults.assertionLibrary,
-    reporter: (overrides.reporter && reporterFactory.make(overrides.reporter)) ||
-      defaults.reporter
-  }
+  var suiteConfig = Object.assign({
+    timeout: 2000,
+    assertionLibrary: defaults.assertionLibrary,
+    reporter: defaults.reporter
+  }, overrides)
 
   if (typeof suiteConfig.reporter === 'string') {
     // allow overrides to add their own reporter

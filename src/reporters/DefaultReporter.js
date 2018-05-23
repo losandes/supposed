@@ -61,7 +61,11 @@ module.exports = function ReporterFactory (Reporter) {
 
     return new Reporter({
       report: report,
-      getTotals: () => { return Object.assign({}, totals) },
+      getTotals: () => {
+        var output = Object.assign({}, totals)
+        output.total = output.passed + output.skipped + output.failed + output.broken
+        return output
+      },
       getResults: () => { return results },
       getPrinterOutput: () => {
         return typeof printer.getOutput === 'function' ? printer.getOutput() : ''

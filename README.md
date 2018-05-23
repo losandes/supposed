@@ -2,9 +2,7 @@ Supposed
 ========
 _Supposed_ is a simple, unopinionated, Promise friendly test runner for Node.js that runs tests concurrently, provides BDD, TDD, and xunit Domain Service Languages (DSLs), and has no other dependencies. It draws significant influence from vows, ava, and tape so it is partially compatible with some of their syntaxes.
 
-_Supposed_ has several test runner options, and does not require a client (there is not a client at this time).
-
-I built _Supposed_ for teaching purposes. It may not be appropriate for you to use on a project. While I intend to maintain it, my decisions will be governed by the needs of students, over the needs of production applications.
+_Supposed_ has several test runner, and reporter options, and does not require a client. All you need is node.js. It uses node.js `assert` by default. You can use whatever assertion library you want.
 
 ## Adding Supposed to your project
 
@@ -25,14 +23,14 @@ test('when dividing a number by zero', {
   when: (number) => { return number / 0 },
   'it should return Infinity': (then) => (err, actual) => {
     then.ifError(err)
-    then.equal(actual, Infinity)
+    then.strictEqual(actual, Infinity)
   },
   'if the number is zero': {
     given: () => 0,
     when: (number) => { return number / 0 },
     'it should return NaN': (then) => (err, actual) => {
       then.ifError(err)
-      then.equal(isNaN(actual), true)
+      then.strictEqual(isNaN(actual), true)
     },
     'it should not be equal to itself': (then) => (err, actual) => {
       then.ifError(err)
@@ -53,14 +51,14 @@ test('when dividing a number by zero', {
   act: (number) => { return number / 0 },
   'it should return Infinity': (assert) => (err, actual) => {
     assert.ifError(err)
-    assert.equal(actual, Infinity)
+    assert.strictEqual(actual, Infinity)
   },
   'if the number is zero': {
     arrange: () => 0,
     act: (number) => { return number / 0 },
     'it should return NaN': (assert) => (err, actual) => {
       assert.ifError(err)
-      assert.equal(isNaN(actual), true)
+      assert.strictEqual(isNaN(actual), true)
     },
     'it should not be equal to itself': (assert) => (err, actual) => {
       assert.ifError(err)
@@ -77,7 +75,7 @@ If you prefer the atomic nature of xunit, it is not necessary to leverage the BD
 var test = require('supposed')
 
 test('when dividing a number by zero, it should return Infinity', t => {
-  t.equal(42 / 0, Infinity)
+  t.strictEqual(42 / 0, Infinity)
 })
 ```
 
@@ -99,6 +97,167 @@ The following switches are supported:
 
 ```Shell
 $ node test/my-test.js -m foo --tap | tap-nyan
+```
+
+### Test Discovery & the Runner
+As you can see above, it's not necessary to write, or use a runner. Supposed has one you can use, though. In the following example, we see 2 test files, and a test runner file.
+
+```JavaScript
+// ./first-module/first-spec.js
+const test = require('supposed')
+test('when... it...', t => {
+  t.strictEqual(42 / 0, Infinity)
+})
+
+// ./second-module/second-spec.js
+const test = require('supposed')
+test('when... it...', t => {
+  t.strictEqual(42 / 0, Infinity)
+})
+
+// ./tests.js
+require('supposed')
+  .runner()
+  .run()
+```
+
+We can execute this, using node:
+
+```Shell
+$ node tests
+```
+
+#### Configuring the Runner
+The runner can be configured to look in specific directories, ignore others, and to match the naming conventions of your choice.
+
+* **cwd** (String) (default: `process.cwd()`): The current working directory that the file-tree walker should start from
+* **directories** (Array) (default: `['.']`): You can specify an array of directories to include if you want. By default, it will recurse through every folder in the current working directory (cwd).
+* **matchesNamingConvention** (RegExp|Object) (default: `/.([-.]test(s?)\.js)|([-.]spec(s?)\.js)$/i`): The naming convention for your test files. When you define this as an object, the object must have a `test` function that returns a boolean. By default it will match any file that ends in `-test.js`, `.test.js`, `-tests.js`, `.tests.js`, `-spec.js`, `.spec.js`, `-specs.js`, or `.specs.js`. It will _not_ match `test.js`, `tests.js`, `spec.js`, nor `specs.js`, so these names are safe for defining your runner(s).
+* **matchesIgnoredConvention** (RegExp|Object) (default: `/node_modules/i`): A convention used to ignore directories, or files. When you define this as an object, the object must have a `test` function that returns a boolean. By default, the `node_modules` directory will be ignored. If you override this, you have to ignore that directory as well, unless you want it to run tests in your node_modules directory.
+
+```JavaScript
+const supposed = require('supposed')
+const path = require('path')
+const runner = supposed.runner({
+  cwd: path.join(process.cwd(), 'tests'),
+  directories: ['./contracts', './repositories'],
+  matchesNamingConvention: /.(-custom\.js)$/i,
+  matchesIgnoredConvention: /node_modules/i
+})
+```
+
+> Note that with the default configuration, the runner will walk all of the folders from the root of your project, except for `node_modules`.
+
+Both `matchesNamingConvention`, and `matchesIgnoredConvention` can be regular expressions (above), or objects that return `test` functions:
+
+```JavaScript
+const supposed = require('supposed')
+const runner = supposed.runner({
+  matchesNamingConvention: {
+    test: function (input) {
+      return input.indexOf('test') > -1
+    }
+  }
+})
+```
+
+#### Injecting a Suite
+By default, the runner will inject the suite that it was created on to any test that exports a function. This is especially handy, if you want to use the same suite configuration across multiple tests.
+
+```JavaScript
+// ./first-module/first-spec.js
+module.exports = (test) => {
+  return test('first-module', { 'when... it...': expect => {
+    expect(42 / 0).to.equal(Infinity)
+  })})
+}
+
+// ./second-module/second-spec.js
+module.exports = (test) => {
+  return test('second-module', { 'when... it...': expect => {
+    expect(42 / 0).to.equal(Infinity)
+  })})
+}
+
+// ./tests.js
+const test = require('supposed').Suite({
+  timeout: 10000, // 10 seconds
+  assertionLibrary: require('chai').expect
+})
+
+suite.runner()
+  .run()
+```
+
+You can turn this behavior off by passing `injectSuite: false` to the runner configuration:
+
+```JavaScript
+const supposed = require('supposed')
+const runner = supposed.runner({
+  injectSuite: false
+})
+```
+
+##### Global Setup and Teardown
+The runner returns a Promise, which returns the context: the results of each test file, the test file paths, the configuration that was used to execute the tests, and the suite. If you want to run an operation (i.e. teardown) after all tests pass, your tests have to both accept suite injection, and return a promise that resolves after all assertions in that file are complete. This can be accomplished by nesting all of your tests under one grouping, and returning that (e.g. like _describe_ in mocha, jasmine, etc.).
+
+> Also see [Setup and Teardown](#setup-and-teardown)
+
+```JavaScript
+// ./first-module/first-spec.js
+module.exports = (describe) => {
+  return describe('first-module', {
+    'when... it...': expect => {
+      expect(42 / 0).to.equal(Infinity)
+    })
+  })
+}
+
+// ./second-module/second-spec.js
+module.exports = (describe) => {
+  return describe('second-module', {
+    'when... it...': expect => {
+      expect(42 / 0).to.equal(Infinity)
+    })
+  })
+}
+
+// ./tests.js
+const test = require('supposed')
+
+test.runner()
+  .run()
+  .then((context) => {
+    console.log(`The following files were executed: ${context.files.join(',')}`)
+  })
+```
+
+> NOTE if any of your test files don't return a promise, or resolve a promise before they are complete, `then` will execute before your tests finish running. It will still have the
+
+#### Writing Your Own Test Runner
+If you want to roll your own, perhaps to perform some custom test injection, here's a simple example:
+
+```JavaScript
+const fs = require('fs')
+const path = require('path')
+const fileNameExpression = /.([-.]test(s?)\.js)|([-.]spec(s?)\.js)$/i
+const ignoreExpression = /node_modules/i
+const walkSync = (dir) =>
+  fs.readdirSync(dir).reduce((files, file) => {
+    if (ignoreExpression.test(file)) {
+      return files
+    }
+
+    const name = path.join(dir, file)
+    const isDirectory = fs.statSync(name).isDirectory()
+    return isDirectory ? [...files, ...walkSync(name)] : [...files, name]
+  }, [])
+
+walkSync('.')
+  .filter(file => fileNameExpression.test(file))
+  .forEach(file => {
+    require(`../${file}`)
+  })
 ```
 
 ### TAP reporter
@@ -137,7 +296,7 @@ test('when dividing a number by zero', {
       }, 0)
     }).then(result => {
       then.ifError(err)
-      then.equal(actual, Infinity)
+      then.strictEqual(actual, Infinity)
     })
   }
 })
@@ -151,7 +310,7 @@ test('divide by zero equals infinity', t => {
       resolve(42 / 0)
     }, 0)
   }).then(actual => {
-    t.equal(actual, Infinity)
+    t.strictEqual(actual, Infinity)
   })
 })
 ```
@@ -183,7 +342,7 @@ test('when dividing a number by zero', {
   },
   'it should return Infinity': (then) => async (err, actual) => {
     then.ifError(err)
-    then.equal(actual, Infinity)
+    then.strictEqual(actual, Infinity)
   }
 })
 ```
@@ -197,7 +356,7 @@ test('divide by zero equals infinity', async t => {
     }, 0)
   })
 
-  t.equal(actual, Infinity)
+  t.strictEqual(actual, Infinity)
 })
 ```
 
@@ -219,6 +378,8 @@ insertSpec()
 
 ### Setup and Teardown
 If you want/need to setup services before running your tests, and then tear them down afterwards, run the tests in a Promise chain, and make sure to return the `test`.
+
+> Also see [Global Setup and Teardown](#global-setup-and-teardown)
 
 ```JavaScript
 const setup = new Promise((resolve, reject) => {
@@ -242,7 +403,7 @@ setup.then(() => {
         resolve(42 / 0)
       }, 0)
     }).then(actual => {
-      t.equal(actual, Infinity)
+      t.strictEqual(actual, Infinity)
     })
   })
 }).then(() => {
@@ -261,7 +422,7 @@ There are three ways to skip a tests:
 
 ```JavaScript
 test('// when dividing a number by zero, it should return Infinity', t => {
-  t.equal(42 / 0, Infinity)
+  t.strictEqual(42 / 0, Infinity)
 })
 ```
 
@@ -270,11 +431,11 @@ If you nest/branch your tests, you can skip any level. All children of a skipped
 ```JavaScript
 test('// when dividing a number by zero', {
   'it should return Infinity': (t) => {
-    t.equal(42 / 0, Infinity)
+    t.strictEqual(42 / 0, Infinity)
   },
   'if the number is zero': {
     'it should return NaN': (t) => {
-      t.equal(isNaN(0 / 0), true)
+      t.strictEqual(isNaN(0 / 0), true)
     },
     'it should not be equal to itself': (t) => {
       t.notEqual(0 / 0, 0 / 0)
@@ -288,11 +449,11 @@ And this one will just skip two of the tests:
 ```JavaScript
 test('when dividing a number by zero', {
   'it should return Infinity': (t) => {
-    t.equal(42 / 0, Infinity)
+    t.strictEqual(42 / 0, Infinity)
   },
   'if the number is zero': {
     '# SKIP it should return NaN': (t) => {
-      t.equal(isNaN(0 / 0), true)
+      t.strictEqual(isNaN(0 / 0), true)
     },
     '# TODO it should not be equal to itself': (t) => {
       t.notEqual(0 / 0, 0 / 0)
@@ -316,13 +477,13 @@ test('when dividing a number by zero', {
   when: (divideByZero) => { return divideByZero(42) },
   'it should return Infinity': (then) => (err, actual) => {
     then.ifError(err)
-    then.equal(actual, Infinity)
+    then.strictEqual(actual, Infinity)
   },
   'if the number is zero': {
     when: (divideByZero) => { return divideByZero(0) },
     'it should return NaN': (then) => (err, actual) => {
       then.ifError(err)
-      then.equal(isNaN(actual), true)
+      then.strictEqual(isNaN(actual), true)
     },
     'it should not be equal to itself': (then) => (err, actual) => {
       then.ifError(err)
@@ -372,7 +533,7 @@ const test = require('supposed').Suite({
 })
 
 test('when dividing a number by zero, it should return Infinity', t => {
-  t.equal(42 / 0, Infinity)
+  t.strictEqual(42 / 0, Infinity)
 })
 ```
 

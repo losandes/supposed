@@ -51,7 +51,7 @@ function Printer (styles) {
 
     if (e) {
       print(e)
-      print()
+      print('')
     }
   }
 

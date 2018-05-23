@@ -1,5 +1,6 @@
 module.exports = function (
   DefaultRunner,
+  DefaultDiscoverer,
   TestBatch,
   AsyncTest,
   TestEvent,
@@ -8,8 +9,6 @@ module.exports = function (
   reporters
 ) {
   'use strict'
-
-  return Suite
 
   /**
    * The test library
@@ -105,14 +104,19 @@ module.exports = function (
     test.printSummary = () => {
       config.reporter.report(TestEvent.end)
     }
-    // test.getPrinterOutput = () => {
-    //   return config.reporter.getPrinterOutput()
-    // }
+    test.getTotals = () => {
+      return config.reporter.getTotals()
+    }
+    test.suiteName = config.name
+    test.runner = (options) => {
+      return new DefaultDiscoverer(Object.assign({ suite: test }, options))
+    }
 
-    // process.on('exit', () => {
-    //   test.printSummary()
-    // })
+    Suite.suites.push(test)
 
     return test
   }
+
+  Suite.suites = []
+  return Suite
 }

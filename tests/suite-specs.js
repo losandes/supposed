@@ -16,8 +16,8 @@ describe('Suite', {
     },
     'it should use the configured timeout': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.totals.broken, 1)
-      t.equal(actual.results[0].error.message, 'Timeout: the test exceeded 5 ms')
+      t.strictEqual(actual.totals.broken, 1)
+      t.strictEqual(actual.results[0].error.message, 'Timeout: the test exceeded 5 ms')
     }
   },
   'when a new suite is created with an assertion library': {
@@ -35,7 +35,7 @@ describe('Suite', {
     },
     'it should use the configured assertion library': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.totals.passed, 1)
+      t.strictEqual(actual.totals.passed, 1)
     }
   },
   '// when a new suite is created with a reporter name': {
@@ -55,7 +55,7 @@ describe('Suite', {
     },
     'it should use the configured reporter': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual, 'output')
+      t.strictEqual(actual, 'output')
     },
     '// and the reporter is unknown': {
       'it should use the default reporter': (t) => (err, actual) => {
@@ -96,14 +96,14 @@ describe('Suite', {
           },
           'sut-assertion': (t) => (err, actual) => {
             t.ifError(err)
-            t.equal(actual, 42)
+            t.strictEqual(actual, 42)
           }
         }
       })
     },
     'it should use the configured reporter': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual.results[0].type, 'WOOHOO!')
+      t.strictEqual(actual.results[0].type, 'WOOHOO!')
     }
   }
 })

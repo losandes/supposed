@@ -5,19 +5,19 @@ describe('assertion styles', {
     when: () => 42,
     'it should support one big func': (t, err, actual) => {
       t.ifError(err)
-      t.equal(actual, 42)
+      t.strictEqual(actual, 42)
     }
   },
   'when the assertions curry': {
     when: () => 42,
     'it should support currying': (t) => (err, actual) => {
       t.ifError(err)
-      t.equal(actual, 42)
+      t.strictEqual(actual, 42)
     }
   },
   'when the assertions ignore the results of when': {
     'it should support just accepting the assertion library': (t) => {
-      t.equal(1, 1)
+      t.strictEqual(1, 1)
     }
   }
 }) // /describe
