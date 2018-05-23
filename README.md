@@ -130,23 +130,23 @@ $ node tests
 #### Configuring the Runner
 The runner can be configured to look in specific directories, ignore others, and to match the naming conventions of your choice.
 
+* **cwd** (String) (default: `process.cwd()`): The current working directory that the file-tree walker should start from
+* **directories** (Array) (default: `['.']`): You can specify an array of directories to include if you want. By default, it will recurse through every folder in the current working directory (cwd).
+* **matchesNamingConvention** (RegExp|Object) (default: `/.([-.]test(s?)\.js)|([-.]spec(s?)\.js)$/i`): The naming convention for your test files. When you define this as an object, the object must have a `test` function that returns a boolean. By default it will match any file that ends in `-test.js`, `.test.js`, `-tests.js`, `.tests.js`, `-spec.js`, `.spec.js`, `-specs.js`, or `.specs.js`. It will _not_ match `test.js`, `tests.js`, `spec.js`, nor `specs.js`, so these names are safe for defining your runner(s).
+* **matchesIgnoredConvention** (RegExp|Object) (default: `/node_modules/i`): A convention used to ignore directories, or files. When you define this as an object, the object must have a `test` function that returns a boolean. By default, the `node_modules` directory will be ignored. If you override this, you have to ignore that directory as well, unless you want it to run tests in your node_modules directory.
+
 ```JavaScript
 const supposed = require('supposed')
 const path = require('path')
 const runner = supposed.runner({
-  // default current working directory (cwd): process.cwd()
   cwd: path.join(process.cwd(), 'tests'),
-  // default directories: ['.']
   directories: ['./contracts', './repositories'],
-  // default matchesNamingConvention:
-  // /.([-.]test(s?)\.js)|([-.]spec(s?)\.js)$/i
   matchesNamingConvention: /.(-custom\.js)$/i,
-  // default matchesIgnoredConvention: /node_modules/i
   matchesIgnoredConvention: /node_modules/i
 })
 ```
 
-> Note that with the default configuration, the runner will walk all of the folders from the root of your project, except for `node_modules`. It will match any file that ends in `-test.js`, `.test.js`, `-tests.js`, `.tests.js`, `-spec.js`, `.spec.js`, `-specs.js`, or `.specs.js`. It will _not_ match `test.js`, `tests.js`, `spec.js`, nor `specs.js`, so these names are safe for defining your runner(s).
+> Note that with the default configuration, the runner will walk all of the folders from the root of your project, except for `node_modules`.
 
 Both `matchesNamingConvention`, and `matchesIgnoredConvention` can be regular expressions (above), or objects that return `test` functions:
 
