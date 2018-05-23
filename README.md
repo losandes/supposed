@@ -2,9 +2,7 @@ Supposed
 ========
 _Supposed_ is a simple, unopinionated, Promise friendly test runner for Node.js that runs tests concurrently, provides BDD, TDD, and xunit Domain Service Languages (DSLs), and has no other dependencies. It draws significant influence from vows, ava, and tape so it is partially compatible with some of their syntaxes.
 
-_Supposed_ has several test runner, and reporter options, and does not require a client (there is not a client at this time).
-
-I built _Supposed_ for teaching purposes. It may not be appropriate for you to use on a project. While I intend to maintain it, my decisions will be governed by the needs of students, over the needs of production applications.
+_Supposed_ has several test runner, and reporter options, and does not require a client. All you need is node.js. It uses node.js `assert` by default. You can use whatever assertion library you want.
 
 ## Adding Supposed to your project
 
