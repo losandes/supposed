@@ -180,13 +180,38 @@ module.exports = (test) => {
 }
 
 // ./tests.js
-const test = require('supposed').Suite({
+const suite = require('supposed').Suite({
   timeout: 10000, // 10 seconds
   assertionLibrary: require('chai').expect
 })
 
 suite.runner()
   .run()
+```
+
+You can use this to inject other libraries, envvars, or compositions you make in your test index.
+
+```JavaScript
+// ./test.js
+const suite = require('supposed').Suite()
+
+suite.sut = require('./index.js')
+suite.env = { ...{
+  SOME_DEFAULT: 'hello world!'
+}, ...process.env }
+
+suite.runner().run()
+
+// ./first-module/first-spec.js
+module.exports = (test) => {
+  return test('first-module', { 'when... it...': expect => {
+    if (test.env.SOME_DEFAULT) {
+      // expect(...)
+    } else {
+      // expect(...)
+    }
+  })})
+}
 ```
 
 You can turn this behavior off by passing `injectSuite: false` to the runner configuration:
@@ -258,6 +283,18 @@ walkSync('.')
   .forEach(file => {
     require(`../${file}`)
   })
+```
+
+#### Programmatic Report Consumption
+If you're using this as part of continuous integration, and you don't want the output to be written to `stdout`, you can use the `-q` switch and programmatically handle the results:
+
+```JavaScript
+const suite = require('supposed').Suite()
+
+suite.runner().run().then((context) => {
+  // do something with the results here
+  console.log(context.results)
+})
 ```
 
 ### TAP reporter
@@ -463,6 +500,30 @@ test('when dividing a number by zero', {
 ```
 
 > NOTE that when a test is skipped, or when all of a tests' assertions are skipped, the `given|arrange` and `when|act|topic` functions will not be executed
+
+### Running Specific Tests (only)
+Some test libraries like mocha have `describe.only`. Supposed doesn't have that because the `-m` flag can be used to achieve the same outcome. The idea is that if matching is an option we pass to the runner, we're less likely to commit functions that limit the tests being run. We might commit some text that doesn't need to be there, but that's less harmless.
+
+> If you're test doesn't have an easy to match description, throw something in there to help.
+
+```JavaScript
+// test.js
+const test = require('supposed')
+
+// notice we threw `only!` in this description
+// it can be whatever you want, though, as long as it's unique
+test('only! when dividing a number by zero', {
+  'it should return Infinity': (t) => {
+    t.strictEqual(42 / 0, Infinity)
+  }
+})
+```
+
+```Shell
+$ node test -m 'only!'
+```
+
+> The argument you pass to `-m` is used to create an instance of `RegExp`, which is then used to test the test assertions/descriptions.
 
 ### Nest/Branch Inheritance
 Supposed lets you nest your tests, to branch paths and assertions, in a similar way to how vows works. Nodes in a nest inherit the `given|arrange`, and `when|act|topic` from parent nodes, if they don't define these properties.
