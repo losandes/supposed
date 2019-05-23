@@ -4,8 +4,13 @@
   "description": "a test library for node.js",
   "main": "index.js",
   "scripts": {
-    "test": "node tests/index.js"
+    "test": "node tests/index.js",
+    "pre-push": "npm test",
+    "watch": "nodemon -e js --exec 'node tests/index.js --tap | tap-nyan'"
   },
+  "pre-push": [
+    "pre-push"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/losandes/supposed.git"
@@ -41,6 +46,7 @@
     "eslint-plugin-import": "^2.7.0",
     "eslint-plugin-node": "^5.1.1",
     "eslint-plugin-promise": "^3.5.0",
-    "eslint-plugin-standard": "^3.0.1"
+    "eslint-plugin-standard": "^3.0.1",
+    "pre-push": "~0.1.1"
   }
 }
