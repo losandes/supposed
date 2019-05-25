@@ -24,6 +24,7 @@ const StreamPrinter = require('./src/reporters/StreamPrinter')
 const TapPrinter = require('./src/reporters/TapPrinter.js')
 const BriefPrinter = require('./src/reporters/BrevityPrinter.js')
 const QuietPrinter = require('./src/reporters/QuietPrinter.js')
+const NyanPrinter = require('./src/reporters/NyanPrinter.js')
 const Reporter = require('./src/reporters/Reporter.js')
 const DefaultReporter = require('./src/reporters/DefaultReporter.js')(
   Reporter
@@ -45,6 +46,7 @@ const reporters = new ReporterFactory(
   BriefPrinter,
   QuietPrinter,
   StreamPrinter,
+  NyanPrinter,
   DefaultReporter,
   Reporter,
   consoleStyles

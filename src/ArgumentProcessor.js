@@ -20,7 +20,9 @@ function ArgumentProcessor (reporters) {
         output.reporter = reporters.types.QUIET
       } else if (argvMatches(['--quiet-tap', '-qt', { switch: '-r', value: reporters.types.QUIET_TAP }], value, idx, args)) {
         output.reporter = reporters.types.QUIET_TAP
-      } else if (argvMatches(['-m'], value, idx, args)) {
+      } else if (argvMatches(['-r'], value, idx, args) && args.length >= (idx + 2)) {
+        output.reporter = args[idx + 1].toUpperCase()
+      } else if (argvMatches(['-m'], value, idx, args) && args.length >= (idx + 2)) {
         // TODO: also support '--match=foo'
         output.match = new RegExp(args[idx + 1])
       }
