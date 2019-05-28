@@ -24,7 +24,7 @@ module.exports = function Factory (
     get: (name) => {
       switch (name) {
         case reporters.NYAN:
-          return new DefaultReporter(new NyanPrinter(new StreamPrinter(), consoleStyles), TestEvent)
+          return new DefaultReporter(new NyanPrinter(new StreamPrinter({ tail: '' }), consoleStyles), TestEvent)
         case reporters.TAP:
           return new DefaultReporter(new TapPrinter(new StreamPrinter()), TestEvent)
         case reporters.QUIET_TAP:

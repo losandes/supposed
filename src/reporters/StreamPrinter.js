@@ -7,7 +7,7 @@ function Printer (options) {
 
   options = Object.assign({}, options)
   const stream = options.stream || process.stdout
-  const tail = options.tail || '\n'
+  const tail = typeof options.tail === 'string' ? options.tail : '\n'
 
   const isError = (arg) => {
     return typeof arg === 'object' &&

@@ -27,8 +27,7 @@ function Printer (streamPrinter, styles) {
   const printerOutput = []
 
   const print = (line) => {
-    printerOutput.push(line)
-    process.stdout.write(line)
+    streamPrinter.print(line)
   }
 
   const drawScoreboard = () => {
@@ -129,12 +128,14 @@ function Printer (streamPrinter, styles) {
     stats.success += 1
     stats.total += 1
     draw()
+    printerOutput.push({ behavior, status: 'SUCCESS' })
   }
 
   print.skipped = function (behavior) {
     stats.skipped += 1
     stats.total += 1
     draw()
+    printerOutput.push({ behavior, status: 'SKIPPED' })
   }
 
   print.failed = function (behavior, e) {
@@ -152,12 +153,13 @@ function Printer (streamPrinter, styles) {
     }
 
     stats.errors.push(err)
+    printerOutput.push({ behavior, err, status: 'FAILED' })
   }
 
   print.broken = print.failed
 
   print.info = function (behavior, e) {
-    //
+    printerOutput.push({ behavior, e, status: 'INFO' })
   }
 
   print.totals = function (totals) {
