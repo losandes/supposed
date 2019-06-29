@@ -68,10 +68,10 @@ function Printer (streamPrinter, styles) {
 
   print.totals = function (totals) {
     var output = styles.newLine() + '  total: ' + styles.cyan(totals.total)
-    output += '  passed: ' + styles.green(totals.passed)
-    output += '  failed: ' + styles.red(totals.failed + totals.broken)
-    output += '  skipped: ' + styles.yellow(totals.skipped)
-    output += '  duration: ' + ((totals.endTime - totals.startTime) / 1000) + 's' + styles.newLine()
+    output += `  passed: ${styles.green(totals.passed)}`
+    output += `  failed: ${styles.red(totals.failed + totals.broken)}`
+    output += `  skipped: ${styles.yellow(totals.skipped)}`
+    output += `  duration: ${((totals.endTime - totals.startTime) / 1000)}s${styles.newLine()}`
 
     print(output)
     stats.errors.forEach(print)
