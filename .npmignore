@@ -1,0 +1,6 @@
+.DS_Store
+.gitignore
+.eslintrc
+.vscode
+npm-debug.log
+tests
