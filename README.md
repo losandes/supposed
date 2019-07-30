@@ -93,7 +93,7 @@ The following switches are supported:
 * **--brief**: use the brief reporter (errors and totals only)
 * **--quiet**, **-q**: use the quiet reporter (no output to the console)
 * **--quiet-tap**, **-qt**: use the quiet TAP reporter (no output to the console)
-* **-r**: choose a reporter by name (TAP|BRIEF|QUIET|QUITE_TAP)
+* **-r**: choose a reporter by name (`tap|nyan|brief|quiet|quiet_tap|block`)
 
 ```Shell
 $ node test/my-test.js -m foo --tap | tap-nyan
