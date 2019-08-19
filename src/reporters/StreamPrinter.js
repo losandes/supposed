@@ -1,8 +1,11 @@
 'use strict'
 
-module.exports = Printer
+module.exports = {
+  name: 'StreamPrinter',
+  factory: StreamPrinter
+}
 
-function Printer (options) {
+function StreamPrinter (options) {
   'use strict'
 
   options = Object.assign({}, options)
@@ -18,7 +21,7 @@ function Printer (options) {
     return isError(arg) && typeof arg.stack === 'string'
   }
 
-  let print = function () {
+  const print = function () {
     const args = Array.prototype.slice.call(arguments)
 
     return stream.write(args.map((arg) => {

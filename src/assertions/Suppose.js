@@ -1,6 +1,10 @@
-module.exports = (assert) => {
-  const suppose = (actual) => {
+module.exports = {
+  name: 'Suppose',
+  factory: Suppose
+}
 
+function Suppose (assert) {
+  const suppose = (actual) => {
     /**
      * Strict equality check (===)
      * i.e.
@@ -100,7 +104,6 @@ module.exports = (assert) => {
     }
   }
 
-  suppose.fail = assert.fail
   suppose.noError = assert.ifError
 
   // map assert to suppose for backwards compatibility
@@ -108,6 +111,7 @@ module.exports = (assert) => {
   suppose.deepStrictEqual = assert.deepStrictEqual
   suppose.doesNotThrow = assert.doesNotThrow
   suppose.equal = assert.equal
+  suppose.fail = assert.fail
   suppose.ifError = assert.ifError
   suppose.notDeepEqual = assert.notDeepEqual
   suppose.notDeepStrictEqual = assert.notDeepStrictEqual

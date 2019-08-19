@@ -1,6 +1,9 @@
 'use strict'
 
-module.exports = Reporter
+module.exports = {
+  name: 'Reporter',
+  factory: Reporter
+}
 
 function Reporter (reporter) {
   return Object.assign({

@@ -1,4 +1,9 @@
-module.exports = function (
+module.exports = {
+  name: 'Suite',
+  factory: Suite
+}
+
+function Suite (
   DefaultRunner,
   DefaultDiscoverer,
   TestBatch,
@@ -6,6 +11,7 @@ module.exports = function (
   TestEvent,
   configFactory,
   configDefaults,
+  reporterFactory,
   reporters
 ) {
   'use strict'
@@ -15,25 +21,18 @@ module.exports = function (
    * @param {Object} suiteConfig : optional configuration
   */
   function Suite (suiteConfig) {
-    const config = configFactory.makeSuiteConfig(configDefaults, suiteConfig, reporters)
+    const config = configFactory.makeSuiteConfig(configDefaults, suiteConfig, reporterFactory)
     const runner = new DefaultRunner(config)
-    var match
-
-    if (suiteConfig && Object.keys(suiteConfig).indexOf('match') > -1) {
-      match = suiteConfig.match
-    } else {
-      match = configDefaults.match
-    }
 
     function normalizeBatch (behaviorOrBatch, sut) {
       if (typeof behaviorOrBatch === 'object') {
         return Promise.resolve(behaviorOrBatch)
       } else if (typeof behaviorOrBatch === 'string') {
-        let t = {}
+        const t = {}
         t[behaviorOrBatch] = typeof sut === 'function' ? { '': sut } : sut
         return Promise.resolve(t)
       } else if (typeof behaviorOrBatch === 'function') {
-        let t = { '': behaviorOrBatch }
+        const t = { '': behaviorOrBatch }
         return Promise.resolve(t)
       } else {
         return Promise.reject(new Error('An invalid test was found: a test or batch of tests is required'))
@@ -53,12 +52,12 @@ module.exports = function (
     } // /mapToTests
 
     function byMatcher (theory) {
-      if (!match) {
+      if (!config.match) {
         return true
       }
 
       for (let i = 0; i < theory.assertions.length; i += 1) {
-        if (match.test(theory.assertions[i].behavior)) {
+        if (config.match.test(theory.assertions[i].behavior)) {
           return true
         }
       }
@@ -111,6 +110,8 @@ module.exports = function (
     test.runner = (options) => {
       return new DefaultDiscoverer(Object.assign({ suite: test }, options))
     }
+    test.reporters = reporters
+    test.config = config
 
     Suite.suites.push(test)
 

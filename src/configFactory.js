@@ -1,23 +1,44 @@
 'use strict'
 module.exports = {
-  makeSuiteConfig: makeSuiteConfig
+  name: 'configFactory',
+  factory: {
+    makeSuiteConfig: makeSuiteConfig
+  }
 }
 
 function makeSuiteConfig (defaults, overrides, reporterFactory) {
-  var suiteConfig = Object.assign({
+  var suiteConfig = {
     timeout: 2000,
     assertionLibrary: defaults.assertionLibrary,
-    reporter: defaults.reporter
-  }, overrides)
+    reporterName: defaults.reporter,
+    reporter: defaults.reporter,
+    match: defaults.match
+  }
+  overrides = { ...overrides }
+
+  ;[
+    'reporter',
+    'match',
+    'timeout',
+    'assertionLibrary'
+  ].forEach((key) => {
+    if (overrides[key]) {
+      suiteConfig[key] = overrides[key]
+    }
+  })
 
   if (typeof suiteConfig.reporter === 'string') {
     // allow overrides to add their own reporter
     // if the reporter is a string, get it from the reporterFactory
+    suiteConfig.reporterName = suiteConfig.reporter
     suiteConfig.reporter = reporterFactory.get(suiteConfig.reporter)
+  } else if (overrides.reporter) {
+    // the reporter must be a function that was passed in
+    suiteConfig.reporterName = suiteConfig.reporter.name || 'CUSTOM'
   }
 
-  function makeTheoryConfig (theory) {
-    theory = Object.assign({}, theory)
+  suiteConfig.makeTheoryConfig = (theory) => {
+    theory = { ...theory }
 
     return {
       timeout: theory.timeout || suiteConfig.timeout,
@@ -26,8 +47,5 @@ function makeSuiteConfig (defaults, overrides, reporterFactory) {
     }
   }
 
-  return {
-    reporter: suiteConfig.reporter,
-    makeTheoryConfig: makeTheoryConfig
-  }
+  return suiteConfig
 }

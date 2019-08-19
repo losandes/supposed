@@ -1,8 +1,11 @@
 'use strict'
 
-module.exports = Printer
+module.exports = {
+  name: 'BrowserConsolePrinter',
+  factory: BrowserConsolePrinter
+}
 
-function Printer (styles, SYMBOLS) {
+function BrowserConsolePrinter (styles, SYMBOLS) {
   var specCount = 0
   var printerOutput = []
   var print = (line) => {
@@ -31,10 +34,10 @@ function Printer (styles, SYMBOLS) {
   }
 
   print.failed = function (behavior, e) {
-    print(SYMBOLS.failed + behavior + styles.newLine())
+    print(SYMBOLS.failed + behavior)
 
     if (e && e.expected && e.actual) {
-      print(`    expected: ${styles.green(e.expected)}    actual: ${styles.red(e.actual)}${styles.newLine()}`)
+      print(`    expected: ${e.expected}    actual: ${e.actual}`)
     }
 
     if (e) {
@@ -46,24 +49,22 @@ function Printer (styles, SYMBOLS) {
   print.broken = print.failed
 
   print.info = function (behavior, e) {
-    print(SYMBOLS.info + behavior + styles.newLine())
+    print(SYMBOLS.info + behavior)
 
     if (e && e.expected && e.actual) {
-      print('  expected: ' + styles.green(e.expected) + '  actual: ' + styles.red(e.actual) + styles.newLine())
+      print(`    expected: ${e.expected}    actual: ${e.actual}`)
     }
 
     print(e)
-    print()
+    print('')
   }
 
   print.totals = function (totals) {
-    var output = styles.newLine() + '  total: ' + styles.cyan(totals.total)
-    output += '  passed: ' + styles.green(totals.passed)
-    output += '  failed: ' + styles.red(totals.failed + totals.broken)
-    output += '  skipped: ' + styles.yellow(totals.skipped)
-    output += '  duration: ' + ((totals.endTime - totals.startTime) / 1000) + 's' + styles.newLine()
-
-    print(output)
+    print('  total: ' + totals.total)
+    print('  passed: ' + totals.passed)
+    print('  failed: ' + totals.failed + totals.broken)
+    print('  skipped: ' + totals.skipped)
+    print('  duration: ' + ((totals.endTime - totals.startTime) / 1000) + 's')
   }
 
   print.end = function (message) {
@@ -71,9 +72,9 @@ function Printer (styles, SYMBOLS) {
   }
 
   return Object.freeze({
-    name: 'DEFAULT',
+    name: 'BROWSER_CONSOLE',
     print: print,
-    newLine: styles.newLine(),
+    newLine: styles && typeof styles.newLine === 'function' ? styles.newLine() : '\n',
     getOutput: () => { return printerOutput.join('\n') }
   })
 }

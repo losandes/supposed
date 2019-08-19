@@ -1,4 +1,7 @@
-module.exports = new Styles()
+module.exports = {
+  name: 'consoleStyles',
+  factory: Styles
+}
 
 function Styles (options) {
   'use strict'

@@ -45,4 +45,7 @@ function getType (type) {
   return TestEvent.types.UNKNOWN
 }
 
-module.exports = TestEvent
+module.exports = {
+  name: 'TestEvent',
+  factory: TestEvent
+}

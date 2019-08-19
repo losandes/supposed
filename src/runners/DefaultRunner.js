@@ -1,4 +1,9 @@
-module.exports = function (TestEvent, promiseUtils) {
+module.exports = {
+  name: 'DefaultRunner',
+  factory: DefaultRunner
+}
+
+function DefaultRunner (TestEvent, promiseUtils) {
   return function (config) {
     return {
       makePlan: makePlan,

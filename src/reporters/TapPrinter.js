@@ -1,12 +1,15 @@
 'use strict'
-module.exports = Printer
+
+module.exports = {
+  name: 'TapPrinter',
+  factory: TapPrinter
+}
 
 // http://testanything.org/tap-version-13-specification.html
-function Printer (streamPrinter) {
-  var printedVersion = false
-  var specCount = 0
-  var testCount = 0
-  var print = streamPrinter.print
+function TapPrinter (streamPrinter) {
+  let printedVersion = false
+  let testCount = 0
+  const print = streamPrinter.print
 
   print.start = function () {
     if (!printedVersion) {
@@ -16,9 +19,7 @@ function Printer (streamPrinter) {
   }
 
   print.startTest = function (plan) {
-    specCount += 1
-    testCount = 0
-    print(`${specCount}..${(plan && plan.count) || 1}`)
+    // do nothing
   }
 
   print.success = function (behavior) {
@@ -64,7 +65,7 @@ function Printer (streamPrinter) {
       }
 
       if (e.stack) {
-        let stack = e.stack.replace(/\s{4}at/g, '      at')
+        const stack = e.stack.replace(/\s{4}at/g, '      at')
         print(`    stack: ${stack}`)
       }
 
@@ -72,7 +73,9 @@ function Printer (streamPrinter) {
     }
   }
 
-  print.totals = function (totals) { /* suppressed */ }
+  print.totals = function (totals) {
+    print(`1..${totals.total}`)
+  }
   print.end = function () {
     print(streamPrinter.newLine)
   }

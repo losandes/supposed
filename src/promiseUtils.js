@@ -1,7 +1,10 @@
 'use strict'
 
 module.exports = {
-  allSettled: allSettled
+  name: 'promiseUtils',
+  factory: {
+    allSettled: allSettled
+  }
 }
 
 function allSettled (tasks, onError) {

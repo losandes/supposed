@@ -7,7 +7,10 @@ const actions = givenSynonyms.concat(whenSynonyms, config)
 const tapSkipPattern = /^# SKIP /i
 const tapSkipOrTodoPattern = /(^# SKIP )|(^# TODO )/i
 
-module.exports = TestBatch
+module.exports = {
+  name: 'TestBatch',
+  factory: TestBatch
+}
 
 function TestBatch (tests) {
   var parsed = []
@@ -34,7 +37,7 @@ function parseOne (behavior, node, given, when, skipped, timeout, assertionLib) 
   Object.keys(node).filter(childKey => {
     return typeof node[childKey] === 'object'
   }).map(childKey => {
-    let childBehavior = concatBehavior(behavior, childKey)
+    const childBehavior = concatBehavior(behavior, childKey)
 
     return parseOne(
       childBehavior,

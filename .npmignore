@@ -4,3 +4,7 @@
 .vscode
 npm-debug.log
 tests
+tests.browser
+build.browser.js
+index.browser.js
+pre-push.js

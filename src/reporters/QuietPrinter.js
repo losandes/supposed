@@ -1,8 +1,11 @@
 'use strict'
 
-module.exports = Printer
+module.exports = {
+  name: 'QuietPrinter',
+  factory: QuietPrinter
+}
 
-function Printer (styles) {
+function QuietPrinter (styles) {
   var printerOutput = []
   var print = function (line) {
     printerOutput.push(line)
@@ -22,7 +25,7 @@ function Printer (styles) {
   return Object.freeze({
     name: 'QUIET',
     print: print,
-    newLine: styles.newLine(),
+    newLine: styles && typeof styles.newLine === 'function' ? styles.newLine() : '\n',
     getOutput: () => { return printerOutput.join('\n') }
   })
 }

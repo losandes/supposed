@@ -1,9 +1,12 @@
 // inspired by [karma-nyan-reporter](https://github.com/dgarlitt/karma-nyan-reporter)
 'use strict'
 
-module.exports = Printer
+module.exports = {
+  name: 'NyanPrinter',
+  factory: NyanPrinterFactory
+}
 
-function Printer (streamPrinter, styles) {
+function NyanPrinterFactory (streamPrinter, styles) {
   'use strict'
 
   const stats = { total: 0, success: 0, failed: 0, skipped: 0, errors: [] }

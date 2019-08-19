@@ -1,4 +1,9 @@
-module.exports = function (fs, path) {
+module.exports = {
+  name: 'DefaultDiscoverer',
+  factory: DefaultDiscoverer
+}
+
+function DefaultDiscoverer (fs, path) {
   function Config (config) {
     config = Object.assign({}, config)
 

@@ -1,4 +1,7 @@
-module.exports = ArgumentProcessor
+module.exports = {
+  name: 'ArgumentProcessor',
+  factory: ArgumentProcessor
+}
 
 function ArgumentProcessor (reporters) {
   return {
@@ -7,8 +10,8 @@ function ArgumentProcessor (reporters) {
 
   function processArgv () {
     var output = {
-      reporter: reporters.types.DEFAULT,
-      match: null
+      reporter: undefined,
+      match: undefined
     }
 
     process.argv.forEach((value, idx, args) => {
@@ -33,7 +36,7 @@ function ArgumentProcessor (reporters) {
 
   function argvMatches (targets, value, idx, args) {
     for (let i = 0; i < targets.length; i += 1) {
-      let target = targets[i]
+      const target = targets[i]
 
       if (typeof target === 'string' && value === target) {
         return true

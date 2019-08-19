@@ -1,8 +1,11 @@
 'use strict'
 
-module.exports = Printer
+module.exports = {
+  name: 'BrevityPrinter',
+  factory: BrevityPrinter
+}
 
-function Printer (defaultPrinter) {
+function BrevityPrinter (defaultPrinter) {
   var self = Object.assign({}, defaultPrinter)
   self.print.success = function () { /* suppressed */ }
   self.print.skipped = function () { /* suppressed */ }

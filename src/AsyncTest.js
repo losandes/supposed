@@ -1,4 +1,9 @@
-module.exports = function (TestEvent) {
+module.exports = {
+  name: 'AsyncTest',
+  factory: AsyncTestFactory
+}
+
+function AsyncTestFactory (TestEvent) {
   'use strict'
 
   // {
