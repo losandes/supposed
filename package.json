@@ -41,17 +41,17 @@
   },
   "homepage": "https://github.com/losandes/supposed#readme",
   "devDependencies": {
-    "@babel/core": "~7.5.5",
-    "@babel/preset-env": "~7.5.5",
-    "browserify": "~16.3.0",
-    "chai": "~4.2.0",
-    "eslint": "~6.1.0",
-    "eslint-config-standard": "~13.0.1",
-    "eslint-plugin-import": "~2.18.2",
-    "eslint-plugin-node": "~9.1.0",
-    "eslint-plugin-promise": "~4.2.1",
-    "eslint-plugin-standard": "~4.0.0",
-    "pre-push": "~0.1.1",
-    "tap-parser": "~9.3.2"
+    "@babel/core": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "browserify": "^16.5.0",
+    "chai": "^4.2.0",
+    "eslint": "^6.2.2",
+    "eslint-config-standard": "^14.0.1",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-node": "^9.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
+    "pre-push": "^0.1.1",
+    "tap-parser": "^9.3.3"
   }
 }

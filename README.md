@@ -193,12 +193,16 @@ You can use this to inject other libraries, envvars, or compositions you make in
 
 ```JavaScript
 // ./test.js
-const suite = require('supposed').Suite()
-
-suite.sut = require('./index.js')
-suite.env = { ...{
-  SOME_DEFAULT: 'hello world!'
-}, ...process.env }
+const sut = require('./index.js')
+const suite = require('supposed').Suite({
+  env: {
+    ...process.env,
+    ...{
+      sut,
+      SOME_DEFAULT: 'hello world!'
+    }
+  }
+})
 
 suite.runner().run()
 

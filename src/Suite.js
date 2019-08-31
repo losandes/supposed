@@ -112,6 +112,7 @@ function Suite (
     }
     test.reporters = reporters
     test.config = config
+    test.env = suiteConfig && suiteConfig.env
 
     Suite.suites.push(test)
 

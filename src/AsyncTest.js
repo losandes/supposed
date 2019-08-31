@@ -90,7 +90,7 @@ function AsyncTestFactory (TestEvent) {
    */
   function runGiven (context) {
     try {
-      let actual = context.given()
+      const actual = context.given()
 
       if (actual && typeof actual.then === 'function') {
         return actual.then(actual => {
@@ -113,7 +113,7 @@ function AsyncTestFactory (TestEvent) {
    */
   function runWhen (context) {
     try {
-      let actual = context.when(context.resultOfGiven)
+      const actual = context.when(context.resultOfGiven)
 
       if (actual && typeof actual.then === 'function') {
         return actual.then(actual => {

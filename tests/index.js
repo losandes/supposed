@@ -1,13 +1,13 @@
 const chai = require('chai')
 const path = require('path')
 const supposed = require('../index.js')
-const suite = supposed.Suite()
-
-suite.env = {
-  describe: supposed,
-  chai,
-  path
-}
+const suite = supposed.Suite({
+  env: {
+    describe: supposed,
+    chai,
+    path
+  }
+})
 
 suite.runner({
   cwd: __dirname, // this will ignore the tests.browser directory, etc.
