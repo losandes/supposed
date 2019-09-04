@@ -1,5 +1,5 @@
 module.exports = function (suite) {
-  const { describe } = suite.env
+  const { describe } = suite.dependencies
   const sut = describe.Suite({ reporter: 'QUIET', match: null })
 
   return describe('given different styles', {
@@ -9,7 +9,7 @@ module.exports = function (suite) {
         'given should produce to when, which should produce to the assertions': itShouldPass
       },
       'when arrange, and assert(s) exist without act': {
-        act: whenGivenThenAndNoWhen('arrange', 'act'),
+        act: whenGivenThenAndNoWhen('arrange'),
         '`arrange` should be swapped out for `act`': itShouldPass
       }
     },
@@ -19,7 +19,7 @@ module.exports = function (suite) {
         'given should produce to when, which should produce to the assertions': itShouldPass
       },
       'when given, and then(s) exist without when': {
-        when: whenGivenThenAndNoWhen('given', 'when'),
+        when: whenGivenThenAndNoWhen('given'),
         '`given` should be swapped out for `when`': itShouldPass
       }
     },
@@ -62,11 +62,11 @@ module.exports = function (suite) {
         })
       }
 
-      return sut('supposed', test)
+      return sut('test-bdd-specs.whenGivenWhenAndThen', test)
     }
   }
 
-  function whenGivenThenAndNoWhen (given, when) {
+  function whenGivenThenAndNoWhen (given) {
     return () => {
       var givenRan = false
       var test = {
@@ -88,7 +88,7 @@ module.exports = function (suite) {
         })
       }
 
-      return sut('supposed', test)
+      return sut('test-bdd-specs.whenGivenThenAndNoWhen', test)
     }
   }
 }

@@ -1,30 +1,25 @@
 module.exports = {
   name: 'Suite',
-  factory: Suite
-}
+  factory: (dependencies) => {
+    'use strict'
 
-function Suite (
-  DefaultRunner,
-  DefaultDiscoverer,
-  TestBatch,
-  AsyncTest,
-  TestEvent,
-  configFactory,
-  configDefaults,
-  reporterFactory,
-  reporters
-) {
-  'use strict'
+    const {
+      allSettled,
+      AsyncTest,
+      findFiles,
+      makeBatch,
+      makeSuiteConfig,
+      publish,
+      subscribe,
+      runTests,
+      Tally,
+      TestEvent
+    } = dependencies
 
-  /**
-   * The test library
-   * @param {Object} suiteConfig : optional configuration
-  */
-  function Suite (suiteConfig) {
-    const config = configFactory.makeSuiteConfig(configDefaults, suiteConfig, reporterFactory)
-    const runner = new DefaultRunner(config)
+    const makeId = () => `B${(Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase()}`
+    let publishStartAndEnd = true
 
-    function normalizeBatch (behaviorOrBatch, sut) {
+    const normalizeBatch = async (behaviorOrBatch, sut) => {
       if (typeof behaviorOrBatch === 'object') {
         return Promise.resolve(behaviorOrBatch)
       } else if (typeof behaviorOrBatch === 'string') {
@@ -39,19 +34,7 @@ function Suite (
       }
     } // /normalizebatch
 
-    function mapToTests (batch) {
-      var processed = new TestBatch(batch)
-        .filter(byMatcher)
-
-      return {
-        batch: processed,
-        tests: processed.map(theory => {
-          return new AsyncTest(theory, config.makeTheoryConfig(theory))
-        })
-      }
-    } // /mapToTests
-
-    function byMatcher (theory) {
+    const matcher = (config) => (theory) => {
       if (!config.match) {
         return true
       }
@@ -63,62 +46,154 @@ function Suite (
       }
     }
 
-    // examples:
-    // test('when dividing a number by zero', {
-    //   when: resolve => { resolve(42 / 0) },
-    //   'we get Infinity': (t, outcome) => {
-    //     t.equal(outcome, Infinity)
-    //   }
-    // })
-    //
-    // OR
-    //
-    // test({
-    //   'when dividing a number by zero': {
-    //     when: resolve => { resolve(42 / 0) },
-    //     'we get Infinity': (t, outcome) => {
-    //       t.equal(outcome, Infinity)
-    //     }
-    //   }
-    // })
-    function test (behaviorOrBatch, sut) {
-      return normalizeBatch(behaviorOrBatch, sut)
-        .then(mapToTests)
-        .then(runner.makePlan)
-        .then(runner.run)
-        .then(runner.report)
-        .then(runner.prepareOutput)
-        .catch(err => {
-          console.log()
-          console.log(err)
-          console.log()
-          return Promise.reject(err)
+    const mapper = (config, byMatcher) => (batch) => {
+      const batchId = makeId()
+      const processed = makeBatch(batch)
+        .filter(byMatcher)
+
+      return {
+        batchId,
+        batch: processed,
+        tests: processed.map(theory => new AsyncTest(theory, config.makeTheoryConfig(theory), batchId))
+      }
+    }
+
+    const tester = (mapToTests) => async (behaviorOrBatch, sut) => {
+      try {
+        const batch = await normalizeBatch(behaviorOrBatch, sut)
+        const context = mapToTests(batch)
+        const plan = {
+          count: context.batch.reduce((count, item) => count + item.assertions.length, 0),
+          completed: 0
+        }
+
+        if (publishStartAndEnd) {
+          await publish({ type: TestEvent.types.START, time: Date.now() })
+        }
+
+        await publish({
+          type: TestEvent.types.START_BATCH,
+          batchId: context.batchId,
+          time: Date.now(),
+          plan
         })
+
+        const results = await allSettled(context.tests.map((test) => test()))
+        const batchTotals = Tally.getTally().batches[context.batchId]
+
+        await publish({
+          type: TestEvent.types.END_BATCH,
+          batchId: context.batchId,
+          time: Date.now(),
+          plan: {
+            count: plan.count,
+            completed: batchTotals.total
+          },
+          totals: batchTotals
+        })
+
+        if (publishStartAndEnd) {
+          await publish(new TestEvent({ type: TestEvent.types.END_TALLY }))
+          const tally = Tally.getSimpleTally()
+          await publish(new TestEvent({
+            type: TestEvent.types.END,
+            time: Date.now(),
+            totals: tally
+          }))
+
+          return {
+            batchId: context.batchId,
+            results: results.map((result) => result.value),
+            totals: tally
+          }
+        }
+
+        return {
+          batchId: context.batchId,
+          results: results.map((result) => result.value),
+          totals: batchTotals
+        }
+      } catch (e) {
+        console.log()
+        console.log(e)
+        console.log()
+        throw e
+      }
+    }
+
+    const nodeRunner = (test) => (options) => async () => {
+      publishStartAndEnd = false
+      await publish({ type: TestEvent.types.START, time: Date.now() })
+      const runConfig = { ...{ suite: test }, ...options }
+      const output = await findFiles(runConfig).then(runTests(runConfig))
+
+      if (output.broken.length) {
+        // these tests failed before being executed
+
+        const brokenPromises = output.broken
+          .map((result) => publish({
+            type: TestEvent.types.TEST,
+            status: TestEvent.status.BROKEN,
+            behavior: `Failed to load test: ${result.reason && result.reason.filePath}`,
+            error: result.reason
+          }))
+
+        await allSettled(brokenPromises)
+      }
+
+      await publish(new TestEvent({ type: TestEvent.types.END_TALLY }))
+      const tally = Tally.getSimpleTally()
+      await publish(new TestEvent({
+        type: TestEvent.types.END,
+        time: Date.now(),
+        totals: tally
+      }))
+
+      return { ...output, ...{ totals: tally } }
     }
 
     /**
-    // Make a newly configured suite
+     * The test library
+     * @param {Object} suiteConfig : optional configuration
     */
-    test.Suite = Suite
-    test.printSummary = () => {
-      config.reporter.report(TestEvent.end)
-    }
-    test.getTotals = () => {
-      return config.reporter.getTotals()
-    }
-    test.suiteName = config.name
-    test.runner = (options) => {
-      return new DefaultDiscoverer(Object.assign({ suite: test }, options))
-    }
-    test.reporters = reporters
-    test.config = config
-    test.env = suiteConfig && suiteConfig.env
+    function Suite (suiteConfig) {
+      const config = makeSuiteConfig(suiteConfig)
+      const byMatcher = matcher(config)
+      const mapToTests = mapper(config, byMatcher)
+      const test = tester(mapToTests)
+      const findAndRun = nodeRunner(test)
 
-    Suite.suites.push(test)
+      /**
+      // Make a newly configured suite
+      */
+      test.Suite = Suite
+      test.printSummary = async () => {
+        await publish(new TestEvent({
+          type: TestEvent.types.END,
+          time: Date.now(),
+          totals: Tally.getSimpleTally()
+        }))
+      }
+      test.getTotals = () => {
+        return Tally.getSimpleTally()
+      }
+      test.suiteName = config.name
+      test.runner = (options) => {
+        return {
+          run: findAndRun(options)
+        }
+      }
+      test.reporters = config.reporters
+      test.config = config
+      test.subscribe = subscribe
+      test.dependencies = suiteConfig && suiteConfig.inject
 
-    return test
-  }
+      Suite.suites.push(test)
 
-  Suite.suites = []
-  return Suite
-}
+      return test
+    }
+
+    Suite.suites = []
+    return { Suite }
+  } // /factory
+} // /module

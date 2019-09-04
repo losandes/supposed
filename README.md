@@ -195,21 +195,21 @@ You can use this to inject other libraries, envvars, or compositions you make in
 // ./test.js
 const sut = require('./index.js')
 const suite = require('supposed').Suite({
-  env: {
-    ...process.env,
-    ...{
-      sut,
-      SOME_DEFAULT: 'hello world!'
-    }
+  inject: {
+    env: process.env,
+    sut,
+    SOME_DEFAULT: true
   }
 })
 
 suite.runner().run()
 
 // ./first-module/first-spec.js
-module.exports = (test) => {
+module.exports = (test, dependencies) => {
+  const { env, sut, SOME_DEFAULT} = dependencies
+
   return test('first-module', { 'when... it...': expect => {
-    if (test.env.SOME_DEFAULT) {
+    if (SOME_DEFAULT) {
       // expect(...)
     } else {
       // expect(...)

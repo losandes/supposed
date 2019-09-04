@@ -95,7 +95,7 @@ function DefaultDiscoverer (fs, path) {
         var test = require(file)
 
         if (config.suite && typeof test === 'function') {
-          const promise = test(config.suite)
+          const promise = test(config.suite, config.suite.dependencies)
           return hasThen(promise) ? promise : Promise.resolve(promise)
         }
 

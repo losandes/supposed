@@ -1,5 +1,5 @@
 module.exports = function (suite) {
-  const { describe } = suite.env
+  const { describe } = suite.dependencies
   const sut = describe.Suite({ reporter: 'QUIET', timeout: 10, match: null })
 
   return describe('errors', {
@@ -127,6 +127,7 @@ module.exports = function (suite) {
       'the test should be reported as BROKEN': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual.totals.broken, 1)
+        console.log(actual)
         t.strictEqual(actual.results[0].error.message, 'Timeout: the test exceeded 10 ms')
       }
     },
