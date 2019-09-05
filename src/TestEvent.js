@@ -49,6 +49,10 @@ module.exports = {
         self.batchId = event.batchId
       }
 
+      if (event.suiteId) {
+        self.suiteId = event.suiteId
+      }
+
       if (event.plan) {
         self.plan = event.plan
       }

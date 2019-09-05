@@ -111,7 +111,11 @@ module.exports = {
     }
 
     function concatBehavior (behavior, key) {
-      return `${trimBehavior(behavior)}, ${trimBehavior(key)}`
+      if (typeof key === 'string' && key.trim().length) {
+        return `${trimBehavior(behavior)}, ${trimBehavior(key)}`
+      }
+
+      return trimBehavior(behavior)
     }
 
     function Pass (behavior, node, given, when, skipped, timeout, assertionLib) {

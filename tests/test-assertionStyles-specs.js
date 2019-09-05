@@ -1,7 +1,5 @@
-module.exports = function (suite) {
-  const { describe } = suite.dependencies
-
-  return describe('assertion styles', {
+module.exports = function (test) {
+  return test('assertion styles', {
     'when the assertions don\'t curry': {
       when: () => 42,
       'it should support one big func': (t, err, actual) => {

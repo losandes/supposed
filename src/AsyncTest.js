@@ -79,7 +79,7 @@ module.exports = {
      * Executes the assertions
      * @param {Object} context
      */
-    function checkAssertions (context) {
+    async function checkAssertions (context) {
       const promises = context.test.assertions.map((assertion) => {
         return assertOne(context.batchId, assertion, () => {
           if (assertion.test.length > 1) {
@@ -145,7 +145,7 @@ module.exports = {
           })
         }
 
-        const maybePromise = test()
+        const maybePromise = await test()
 
         return publish({
           type: TestEvent.types.TEST,

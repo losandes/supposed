@@ -1,5 +1,4 @@
-module.exports = function (suite) {
-  const { describe } = suite.dependencies
+module.exports = function (describe) {
   const sut = describe.Suite({ reporter: 'QUIET', match: null })
 
   return describe('supposed', {

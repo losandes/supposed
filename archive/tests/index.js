@@ -13,9 +13,9 @@ suite.runner({
   cwd: path.join(__dirname),
   matchesIgnoredConvention: /discoverer-meta-specs|node_modules/i
 }).run()
-// .then((context) => {
-//   console.log(context.files)
-// })
+  .then((context) => {
+    console.log(context)
+  })
 
 // suite.find({
 //   cwd: path.join(__dirname, 'tests'),

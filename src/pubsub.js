@@ -23,10 +23,11 @@ module.exports = {
       }
 
       const subscribe = (subscription) => {
+        const name = subscription.name || makeId()
         if (typeof subscription === 'function') {
-          subscriptions.push({ name: makeId(), write: subscription })
+          subscriptions.push({ name, write: subscription })
         } else if (subscriptions && typeof subscription.write === 'function') {
-          subscription.name = subscription.name || makeId()
+          subscription.name = subscription.name || name
           subscriptions.push(subscription)
         } else {
           throw new Error('Invalid subscription: expected either a function, or { name: string, write: function }')
@@ -41,7 +42,11 @@ module.exports = {
         return false
       }
 
-      return { publish, subscribe, subscriptionExists }
+      const allSubscriptions = () => {
+        return subscriptions.map((subscription) => subscription.name)
+      }
+
+      return { publish, subscribe, subscriptionExists, allSubscriptions }
     }
 
     return { Pubsub }

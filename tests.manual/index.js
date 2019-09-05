@@ -1,7 +1,9 @@
 const chai = require('chai')
 const path = require('path')
-const supposed = require('./index.js')
+const supposed = require('../index.js')
+
 const suite = supposed.Suite({
+  name: 'supposed-tests.manual',
   inject: {
     describe: supposed,
     chai,
@@ -10,11 +12,11 @@ const suite = supposed.Suite({
 })
 
 suite.runner({
-  cwd: path.join(__dirname, 'tests.manual'),
+  cwd: __dirname,
   matchesIgnoredConvention: /discoverer-meta-specs|node_modules/i
 }).run()
 // .then((context) => {
-//   console.log(context.files)
+//   console.log(context)
 // })
 
 // suite.find({

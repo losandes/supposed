@@ -10,12 +10,12 @@ module.exports = {
       return obj && typeof obj.then === 'function'
     }
 
-    const toPromise = (options) => (file) => {
+    const toPromise = (config, suite) => (file) => {
       try {
         const test = require(file)
 
-        if (options.suite && options.injectSuite !== false && typeof test === 'function') {
-          const maybePromise = test(options.suite, options.suite.dependencies)
+        if (suite && config.injectSuite !== false && typeof test === 'function') {
+          const maybePromise = test(suite, suite.dependencies)
           return hasThen(maybePromise) ? maybePromise : Promise.resolve(maybePromise)
         }
 
@@ -26,24 +26,30 @@ module.exports = {
       }
     }
 
-    const mapToResults = (options, paths) => (results) => {
+    const mapToResults = (config, paths) => (results) => {
       return Object.freeze({
-        results: results.filter((result) => result.status === 'fullfilled'),
-        broken: results.filter((result) => result.status !== 'fullfilled'),
+        results: results
+          .filter((result) => result.status === 'fullfilled')
+          .map((result) => result.value),
+        broken: results
+          .filter((result) => result.status !== 'fullfilled')
+          .map((result) => result.reason),
         files: paths,
-        suite: options.suite
+        config
       })
     }
 
-    const runTests = (options) => (paths) => {
+    const runTests = (suite) => (context) => {
+      const { config, paths } = context
+
       if (!paths) {
         throw new Error('run-tests expects paths to the tests to be provided')
       }
 
-      return Promise.resolve(paths.map(toPromise(options)))
+      return Promise.resolve(paths.map(toPromise(config, suite)))
         .then(allSettled)
         .then(debug)
-        .then(mapToResults(options, paths))
+        .then(mapToResults(config, paths))
     }
 
     return { runTests }

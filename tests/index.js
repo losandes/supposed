@@ -2,6 +2,7 @@ const chai = require('chai')
 const path = require('path')
 const supposed = require('../index.js')
 const suite = supposed.Suite({
+  name: 'supposed-tests',
   inject: {
     describe: supposed,
     chai,
@@ -14,7 +15,7 @@ suite.runner({
   matchesIgnoredConvention: /discoverer-meta-specs|node_modules/i
 }).run()
 // .then((context) => {
-//   console.log(context.files)
+//   console.log(context)
 // })
 
 // suite.find({

@@ -15,7 +15,8 @@ module.exports = {
         cwd: process.cwd(),
         directories: ['.'],
         matchesNamingConvention: /.([-.]test(s?)\.js)|([-.]spec(s?)\.js)$/i,
-        matchesIgnoredConvention: /node_modules/i
+        matchesIgnoredConvention: /node_modules/i,
+        injectSuite: true
       }
 
       if (isString(config.cwd)) {
@@ -43,6 +44,10 @@ module.exports = {
         typeof config.matchesIgnoredConvention.test === 'function'
       ) {
         self.matchesIgnoredConvention = config.matchesIgnoredConvention
+      }
+
+      if (typeof config.injectSuite === 'boolean') {
+        self.injectSuite = config.injectSuite
       }
 
       return Object.freeze(self)
@@ -75,7 +80,7 @@ module.exports = {
       }, [])
 
       // return a promise in case we decide to make the walker async
-      return Promise.resolve(debug(paths))
+      return Promise.resolve(debug({ config, paths }))
     }
 
     return { findFiles }

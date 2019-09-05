@@ -1,5 +1,4 @@
-module.exports = function (suite) {
-  const { describe } = suite.dependencies
+module.exports = function (describe) {
   const sut = describe.Suite({ reporter: 'QUIET', match: null })
 
   return describe('skipping tests', {
@@ -18,10 +17,10 @@ module.exports = function (suite) {
         t.ifError(err)
         t.strictEqual(actual.results.totals.skipped, 2)
       },
-      'it should produce outcomes with a type of SKIPPED': (t) => (err, actual) => {
+      'it should produce outcomes with a status of SKIPPED': (t) => (err, actual) => {
         t.ifError(err)
         actual.results.results.forEach(result => {
-          t.strictEqual(result.type, 'SKIPPED')
+          t.strictEqual(result.status, 'SKIPPED')
         })
       }
     },
@@ -40,10 +39,10 @@ module.exports = function (suite) {
         t.ifError(err)
         t.strictEqual(actual.results.totals.skipped, 2)
       },
-      'it should produce outcomes with a type of SKIPPED': (t) => (err, actual) => {
+      'it should produce outcomes with a status of SKIPPED': (t) => (err, actual) => {
         t.ifError(err)
         actual.results.results.forEach(result => {
-          t.strictEqual(result.type, 'SKIPPED')
+          t.strictEqual(result.status, 'SKIPPED')
         })
       }
     },
@@ -65,13 +64,13 @@ module.exports = function (suite) {
         t.ifError(err)
         t.strictEqual(actual.results.totals.skipped, 1)
       },
-      'it should produce outcomes with a type of SKIPPED': (t) => (err, actual) => {
+      'it should produce outcomes with a status of SKIPPED': (t) => (err, actual) => {
         t.ifError(err)
         actual.results.results.forEach(result => {
           if (result.behavior === 'when behavior, assertion 1') {
-            t.strictEqual(result.type, 'SKIPPED')
+            t.strictEqual(result.status, 'SKIPPED')
           } else {
-            t.strictEqual(result.type, 'PASSED')
+            t.strictEqual(result.status, 'PASSED')
           }
         })
       }
@@ -94,13 +93,13 @@ module.exports = function (suite) {
         t.ifError(err)
         t.strictEqual(actual.results.totals.skipped, 1)
       },
-      'it should produce outcomes with a type of SKIPPED': (t) => (err, actual) => {
+      'it should produce outcomes with a status of SKIPPED': (t) => (err, actual) => {
         t.ifError(err)
         actual.results.results.forEach(result => {
           if (result.behavior === 'when behavior, assertion 1') {
-            t.strictEqual(result.type, 'SKIPPED')
+            t.strictEqual(result.status, 'SKIPPED')
           } else {
-            t.strictEqual(result.type, 'PASSED')
+            t.strictEqual(result.status, 'PASSED')
           }
         })
       }
@@ -123,13 +122,13 @@ module.exports = function (suite) {
         t.ifError(err)
         t.strictEqual(actual.results.totals.skipped, 1)
       },
-      'it should produce outcomes with a type of SKIPPED': (t) => (err, actual) => {
+      'it should produce outcomes with a status of SKIPPED': (t) => (err, actual) => {
         t.ifError(err)
         actual.results.results.forEach(result => {
           if (result.behavior === 'when behavior, # TODO assertion 1') {
-            t.strictEqual(result.type, 'SKIPPED')
+            t.strictEqual(result.status, 'SKIPPED')
           } else {
-            t.strictEqual(result.type, 'PASSED')
+            t.strictEqual(result.status, 'PASSED')
           }
         })
       }

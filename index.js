@@ -27,15 +27,18 @@ const DefaultFormatterFactory = require('./src/formatters/DefaultFormatter.js').
 const TapFormatterFactory = require('./src/formatters/TapFormatter.js').factory
 
 // reporters
+const ArrayReporterFactory = require('./src/reporters/ArrayReporter.js').factory
 const BlockReporterFactory = require('./src/reporters/BlockReporter.js').factory
 const BriefReporterFactory = require('./src/reporters/BriefReporter.js').factory
 const ConsoleReporterFactory = require('./src/reporters/ConsoleReporter.js').factory
 const DefaultReporterFactory = require('./src/reporters/DefaultReporter.js').factory
 const JsonReporterFactory = require('./src/reporters/JsonReporter.js').factory
+const NoopReporterFactory = require('./src/reporters/NoopReporter.js').factory
 const NyanReporterFactory = require('./src/reporters/NyanReporter.js').factory
-const QuietReporterFactory = require('./src/reporters/QuietReporter.js').factory
 const ReporterFactoryFactory = require('./src/reporters/reporter-factory.js').factory
-const TallyFactory = require('./src/reporters/Tally.js').factory
+const TallyFactoryFactory = require('./src/reporters/Tally.js').factory
+
+let supposed = null
 
 // resolve the dependency graph
 function Supposed (options) {
@@ -48,7 +51,7 @@ function Supposed (options) {
     makeDebugger,
     TestEvent
   })
-  const { publish, subscribe, subscriptionExists } = new Pubsub()
+  const { publish, subscribe, subscriptionExists, allSubscriptions } = new Pubsub()
 
   const envvars = {
     ...{
@@ -76,11 +79,17 @@ function Supposed (options) {
   const consoleStyles = consoleStylesFactory({ envvars, makeDebugger }).consoleStyles
   const consoleUtils = consoleUtilsFactory({ makeDebugger }).consoleUtils
 
-  const { Tally } = TallyFactory({ publish, TestEvent, makeDebugger })
+  const { TallyFactory } = TallyFactoryFactory({ publish, TestEvent, makeDebugger })
+  const { Tally } = TallyFactory()
   const { ReporterFactory } = ReporterFactoryFactory({ makeDebugger })
   const reporterFactory = new ReporterFactory()
+  const ArrayReporter = ArrayReporterFactory({ makeDebugger }).ArrayReporter
+  reporterFactory.add(ArrayReporter)
+  reporterFactory.add(function QuietReporter () { // legacy
+    return { write: new ArrayReporter().write }
+  })
   reporterFactory.add(JsonReporterFactory({ makeDebugger, TestEvent }).JsonReporter)
-  reporterFactory.add(QuietReporterFactory({ makeDebugger }).QuietReporter)
+  reporterFactory.add(NoopReporterFactory({ makeDebugger }).NoopReporter)
   reporterFactory.add(Tally)
   subscribe(reporterFactory.get(Tally.name))
 
@@ -105,25 +114,21 @@ function Supposed (options) {
     consoleStyles,
     ConsoleReporter,
     DefaultFormatter
-  }).DefaultReporter)
-  reporterFactory.add(BlockReporterFactory({
+  }).DefaultReporter).add(BlockReporterFactory({
     consoleStyles,
     ConsoleReporter,
     DefaultFormatter
-  }).BlockReporter)
-  reporterFactory.add(BriefReporterFactory({
+  }).BlockReporter).add(BriefReporterFactory({
     consoleStyles,
     ConsoleReporter,
     DefaultFormatter,
     TestEvent
-  }).BriefReporter)
-  reporterFactory.add(NyanReporterFactory({
+  }).BriefReporter).add(NyanReporterFactory({
     consoleStyles,
     consoleUtils,
     DefaultFormatter,
     TestEvent
-  }).NyanReporter)
-  reporterFactory.add(function TapReporter () {
+  }).NyanReporter).add(function TapReporter () {
     const write = ConsoleReporter({
       formatter: TapFormatterFactory({ consoleStyles, makeDebugger, TestEvent }).TapFormatter()
     }).write
@@ -138,6 +143,7 @@ function Supposed (options) {
     defaults: envvars,
     subscriptionExists,
     subscribe,
+    allSubscriptions,
     reporterFactory,
     makeDebugger
   })
@@ -150,15 +156,22 @@ function Supposed (options) {
     makeSuiteConfig,
     publish,
     subscribe,
+    reporterFactory,
     runTests,
     Tally,
     TestEvent
   })
 
   const suite = new Suite(options)
-  // suite.Suite = Supposed
+  suite.Suite = Supposed
 
+  if (supposed && supposed.suites) {
+    supposed.suites.push(suite)
+  }
   return suite
 }
 
-module.exports = Supposed()
+supposed = Supposed()
+supposed.suites = []
+
+module.exports = supposed

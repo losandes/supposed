@@ -3,36 +3,23 @@ module.exports = {
   factory: (dependencies) => {
     'use strict'
 
-    const { defaults, makeDebugger, subscribe, subscriptionExists, reporterFactory } = dependencies
-    const debug = makeDebugger().withSource('make-suite-config')
+    const { defaults, subscribe, subscriptionExists, allSubscriptions, reporterFactory } = dependencies
+    const makeSuiteId = () => `S${(Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase()}`
 
     const makeSuiteConfig = (options) => {
       const suiteConfig = {
         assertionLibrary: defaults.assertionLibrary,
         match: defaults.match,
+        name: makeSuiteId(),
         timeout: 2000,
         reporters: []
       }
       options = { ...options }
-      debug({
-        suiteConfig: {
-          assertionLibrary: typeof suiteConfig.assertionLibrary,
-          match: suiteConfig.match,
-          timeout: suiteConfig.timeout,
-          reporters: suiteConfig.reporters
-        },
-        options: {
-          assertionLibrary: typeof options.assertionLibrary,
-          match: options.match,
-          timeout: options.timeout,
-          reporter: typeof options.reporter,
-          reporters: options.reporters
-        }
-      })
 
       ;[
         'assertionLibrary',
         'match',
+        'name',
         'timeout'
       ].forEach((item) => {
         if (typeof options[item] !== 'undefined') {
@@ -51,6 +38,7 @@ module.exports = {
           if (!subscriptionExists(reporter.name)) {
             subscribe(reporter)
           }
+          suiteConfig.reporters.push(reporter)
         } else {
           reporterFactory.add(nameOrFunc)
           addReporter(nameOrFunc.name)
@@ -65,12 +53,24 @@ module.exports = {
       } else if (Array.isArray(options.reporters)) {
         options.reporters.forEach(addReporter)
       } else if (typeof options.reporter === 'function') {
-        addReporter(options.reporter)
+        addReporter(function CustomReporter () {
+          return { write: options.reporter }
+        })
+      } else if (options.reporter && typeof options.reporter.report === 'function') {
+        addReporter(function CustomReporter () {
+          return { write: options.reporter.report }
+        })
+      } else if (options.reporter && typeof options.reporter.write === 'function') {
+        addReporter(function CustomReporter () {
+          return { write: options.reporter.write }
+        })
       }
 
       if (!suiteConfig.reporters.length) {
         defaults.reporters.forEach(addReporter)
       }
+
+      suiteConfig.subscriptions = allSubscriptions()
 
       suiteConfig.makeTheoryConfig = (theory) => {
         theory = { ...theory }

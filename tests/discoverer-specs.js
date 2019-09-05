@@ -1,5 +1,5 @@
-module.exports = function (suite) {
-  const { describe, chai, path } = suite.dependencies
+module.exports = function (describe, dependencies) {
+  const { chai, path } = dependencies
 
   return describe('DefaultDiscoverer', {
     'when a runner is configured to match a different working directory': {

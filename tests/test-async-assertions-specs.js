@@ -1,5 +1,4 @@
-module.exports = function (suite) {
-  const { describe } = suite.dependencies
+module.exports = function (describe) {
   const sut = describe.Suite({ reporter: 'QUIET', match: null })
 
   return describe('async tests', {
@@ -8,7 +7,7 @@ module.exports = function (suite) {
         var promiseFinished = false
 
         return sut({
-          t1: t => {
+          t1: (t) => {
             return new Promise((resolve, reject) => {
               setTimeout(() => {
                 resolve(42)
@@ -27,8 +26,8 @@ module.exports = function (suite) {
       },
       'it should run the asserion asynchronously': (t) => (err, actual) => {
         t.ifError(err)
-        t.strictEqual(actual.results.totals.passed, 1)
         t.strictEqual(actual.promiseFinished, true)
+        t.strictEqual(actual.results.totals.passed, 1)
       }
     },
     'when an assertion uses async await': {

@@ -1,60 +1,22 @@
-// const describe = require('../index.js')
-// const DELAY = 100
+module.exports = (describe) => {
+  const SKIP_SLOW_TESTS = process.env.SUPPOSED_INCLUDE_SLOW_TESTS === 'false'
+  const COUNT = process.env.SUPPOSED_SLOW_TEST_COUNT
+    ? parseInt(process.env.SUPPOSED_SLOW_TEST_COUNT)
+    : 5
+  const DELAY = process.env.SUPPOSED_SLOW_TEST_DELAY
+    ? parseInt(process.env.SUPPOSED_SLOW_TEST_DELAY)
+    : 10
 
-// const slowTest = async () => new Promise((resolve) => {
-//   setTimeout(() => { resolve() }, DELAY)
-// })
+  const slowTest = async () => new Promise((resolve) => {
+    setTimeout(() => { resolve() }, DELAY)
+  })
 
-// describe('slow test 1', slowTest)
-//   .then(() => describe('slow test 1', slowTest))
-//   .then(() => describe('slow test 2', slowTest))
-//   .then(() => describe('slow test 3', slowTest))
-//   .then(() => describe('slow test 4', slowTest))
-//   .then(() => describe('slow test 5', slowTest))
-//   .then(() => describe('slow test 6', slowTest))
-//   .then(() => describe('slow test 7', slowTest))
-//   .then(() => describe('slow test 1', slowTest))
-//   .then(() => describe('slow test 2', slowTest))
-//   .then(() => describe('slow test 3', slowTest))
-//   .then(() => describe('slow test 4', slowTest))
-//   .then(() => describe('slow test 5', slowTest))
-//   .then(() => describe('slow test 6', slowTest))
-//   .then(() => describe('slow test 7', slowTest))
-//   .then(() => describe('slow test 1', slowTest))
-//   .then(() => describe('slow test 2', slowTest))
-//   .then(() => describe('slow test 3', slowTest))
-//   .then(() => describe('slow test 4', slowTest))
-//   .then(() => describe('slow test 5', slowTest))
-//   .then(() => describe('slow test 6', slowTest))
-//   .then(() => describe('slow test 7', slowTest))
-//   .then(() => describe('slow test 1', slowTest))
-//   .then(() => describe('slow test 2', slowTest))
-//   .then(() => describe('slow test 3', slowTest))
-//   .then(() => describe('slow test 4', slowTest))
-//   .then(() => describe('slow test 5', slowTest))
-//   .then(() => describe('slow test 6', slowTest))
-//   .then(() => describe('slow test 7', slowTest))
-//   .then(() => describe('slow test 1', slowTest))
-//   .then(() => describe('slow test 2', slowTest))
-//   .then(() => describe('slow test 3', slowTest))
-//   .then(() => describe('slow test 4', slowTest))
-//   .then(() => describe('slow test 5', slowTest))
-//   .then(() => describe('slow test 6', slowTest))
-//   .then(() => describe('slow test 7', slowTest))
-//   .then(() => describe('slow test 1', slowTest))
-//   .then(() => describe('slow test 2', slowTest))
-//   .then(() => describe('slow test 3', slowTest))
-//   .then(() => describe('slow test 4', slowTest))
-//   .then(() => describe('slow test 5', slowTest))
-//   .then(() => describe('slow test 6', slowTest))
-//   .then(() => describe('slow test 7', slowTest))
-//   .then(() => {
-//     return describe('broken test', async (assert) => {
-//       assert.strictEqual(1, 2)
-//     })
-//   })
-//   .then(() => {
-//     return describe('broken test', async (assert) => {
-//       assert.strictEqual(1, 2)
-//     })
-//   })
+  return (async () => {
+    for (let i = 0; i < COUNT; i += 1) {
+      const description = SKIP_SLOW_TESTS
+        ? '// slow tests (export SUPPOSED_INCLUDE_SLOW_TESTS=true to turn these on)'
+        : `slow test ${i}`
+      await describe(description, slowTest)
+    }
+  })()
+}
