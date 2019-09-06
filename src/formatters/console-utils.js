@@ -1,5 +1,5 @@
 module.exports = {
-  name: 'console-utils',
+  name: 'consoleUtils',
   factory: () => {
     'use strict'
 

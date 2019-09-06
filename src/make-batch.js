@@ -1,5 +1,5 @@
 module.exports = {
-  name: 'make-batch',
+  name: 'makeBatch',
   factory: () => {
     'use strict'
 

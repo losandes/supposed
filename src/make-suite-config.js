@@ -1,5 +1,5 @@
 module.exports = {
-  name: 'make-suite-config',
+  name: 'makeSuiteConfig',
   factory: (dependencies) => {
     'use strict'
 

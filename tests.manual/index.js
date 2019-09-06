@@ -15,16 +15,6 @@ suite.runner({
   cwd: __dirname,
   matchesIgnoredConvention: /discoverer-meta-specs|node_modules/i
 }).run()
-// .then((context) => {
-//   console.log(context)
-// })
-
-// suite.find({
-//   cwd: path.join(__dirname, 'tests'),
-//   matchesIgnoredConvention: /discoverer-meta-specs|node_modules/i
-// }).run();
-
-// suite.find({
-//   cwd: path.join(__dirname, 'tests'),
-//   matchesIgnoredConvention: /discoverer-meta-specs|node_modules/i
-// }).server({ port: 3001 }).start();
+  .then((context) => {
+    console.log(context)
+  })

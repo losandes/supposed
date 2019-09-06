@@ -1,5 +1,5 @@
 module.exports = {
-  name: 'all-settled',
+  name: 'allSettled',
   factory: () => {
     'use strict'
 

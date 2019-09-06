@@ -12,6 +12,7 @@ module.exports = {
       publish,
       subscribe,
       reporterFactory,
+      runServer,
       runTests,
       Tally,
       TestEvent
@@ -188,6 +189,11 @@ module.exports = {
       }
     }
 
+    const browserRunner = (config, test) => (options) => async () => {
+      const output = await findFiles(options).then(runServer(test, options))
+      return output
+    }
+
     /**
      * The test library
      * @param {Object} suiteConfig : optional configuration
@@ -198,6 +204,7 @@ module.exports = {
       const mapToTests = mapper(config, byMatcher)
       const test = tester(config, mapToTests)
       const findAndRun = nodeRunner(config, test)
+      const findAndStart = browserRunner(config, test)
 
       /**
       // Make a newly configured suite
@@ -217,7 +224,8 @@ module.exports = {
       test.suiteName = config.name
       test.runner = (options) => {
         return {
-          run: findAndRun(options)
+          run: findAndRun(options),
+          startServer: findAndStart(options)
         }
       }
       test.reporters = config.reporters

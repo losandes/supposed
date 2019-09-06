@@ -1,10 +1,10 @@
 module.exports = {
-  name: 'make-debugger',
+  name: 'makeDebugger',
   factory: () => {
     'use strict'
 
     const makeDebugger = (include) => {
-      const INCLUDE = include || process.env.NODE_DEBUG
+      const INCLUDE = include || (typeof process !== 'undefined' && process.env && process.env.NODE_DEBUG)
 
       return {
         withSource: (source) => (...params) => {

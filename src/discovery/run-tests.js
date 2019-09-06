@@ -1,5 +1,5 @@
 module.exports = {
-  name: 'run-tests',
+  name: 'runTests',
   factory: (dependencies) => {
     'use strict'
 

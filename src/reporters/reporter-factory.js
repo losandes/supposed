@@ -1,5 +1,5 @@
 module.exports = {
-  name: 'reporter-factory',
+  name: 'reporterFactory',
   factory: (dependencies) => {
     'use strict'
 

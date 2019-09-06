@@ -1,5 +1,5 @@
 module.exports = {
-  name: 'read-envvars',
+  name: 'readEnvvars',
   factory: () => {
     'use strict'
 

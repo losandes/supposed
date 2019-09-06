@@ -1,5 +1,5 @@
 module.exports = {
-  name: 'find-files',
+  name: 'findFiles',
   factory: (dependencies) => {
     'use strict'
 

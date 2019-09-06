@@ -1,9 +1,7 @@
 module.exports = {
   name: 'consoleStyles',
-  factory: (dependencies) => {
+  factory: () => {
     'use strict'
-
-    const { envvars } = dependencies
 
     const consoleStyles = [
       { name: 'reset', value: [0, 0] },
@@ -36,9 +34,7 @@ module.exports = {
       { name: 'bgCyan', value: [46, 49] },
       { name: 'bgWhite', value: [47, 49] }
     ].reduce((styles, style) => {
-      styles[style.name] = envvars.useColors
-        ? (input) => `\u001b[${style.value[0]}m${input}\u001b[${style.value[1]}m`
-        : (input) => input
+      styles[style.name] = (input) => input
 
       return styles
     }, {})

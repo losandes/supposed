@@ -18,6 +18,7 @@ const TestEventFactory = require('./src/TestEvent.js').factory
 
 // discovery
 const findFilesFactory = require('./src/discovery/find-files.js').factory
+const runServerFactory = require('./src/discovery/run-server.js').factory
 const runTestsFactory = require('./src/discovery/run-tests.js').factory
 
 // formatters
@@ -74,6 +75,7 @@ function Supposed (options) {
   }
 
   const { findFiles } = findFilesFactory({ fs, path, makeDebugger })
+  const { runServer } = runServerFactory({ makeDebugger })
   const { runTests } = runTestsFactory({ allSettled, makeDebugger })
 
   const consoleStyles = consoleStylesFactory({ envvars, makeDebugger }).consoleStyles
@@ -157,6 +159,7 @@ function Supposed (options) {
     publish,
     subscribe,
     reporterFactory,
+    runServer,
     runTests,
     Tally,
     TestEvent
@@ -172,6 +175,6 @@ function Supposed (options) {
 }
 
 supposed = Supposed()
-supposed.suites = []
+supposed.suites = [supposed]
 
 module.exports = supposed

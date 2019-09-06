@@ -6,43 +6,53 @@ const beginning = template[0]
 const end = template[1]
 const modules = [beginning]
 
-// src
-modules.push(fs.readFileSync('./src/AsyncTest.js').toString())
-modules.push(fs.readFileSync('./src/configFactory.js').toString())
-modules.push(fs.readFileSync('./src/promiseUtils.js').toString())
-modules.push(fs.readFileSync('./src/TestBatch.js').toString())
-modules.push(fs.readFileSync('./src/TestEvent.js').toString())
-modules.push(fs.readFileSync('./src/Suite.js').toString())
+// modules.push('function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }')
+// modules.push('function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }')
 
-// assertions
-// const SupposeFactory = require('./src/assertions/Suppose.js').factory
+// src
+modules.push(fs.readFileSync('./src/all-settled.js'))
+modules.push(fs.readFileSync('./src/AsyncTest.js'))
+modules.push(fs.readFileSync('./src/make-batch.js'))
+modules.push(fs.readFileSync('./src/make-debugger.js'))
+modules.push(fs.readFileSync('./src/make-suite-config.js'))
+modules.push(fs.readFileSync('./src/pubsub.js'))
+modules.push(fs.readFileSync('./src/Suite.js'))
+modules.push(fs.readFileSync('./src/TestEvent.js'))
+
+// formatters
+modules.push(fs.readFileSync('./src/formatters/browser-console-styles.js'))
+modules.push(fs.readFileSync('./src/formatters/DefaultFormatter.js'))
+modules.push(fs.readFileSync('./src/formatters/TapFormatter.js'))
 
 // reporters
-modules.push(fs.readFileSync('./src/reporters/BrowserConsolePrinter.js').toString())
-modules.push(fs.readFileSync('./src/reporters/console-styles.js').toString())
-modules.push(fs.readFileSync('./src/reporters/DefaultReporter.js').toString())
-modules.push(fs.readFileSync('./src/reporters/DomPrinter.js').toString())
-modules.push(fs.readFileSync('./src/reporters/NyanPrinter.js').toString())
-modules.push(fs.readFileSync('./src/reporters/QuietPrinter.js').toString())
-modules.push(fs.readFileSync('./src/reporters/TapPrinter.js').toString())
-modules.push(fs.readFileSync('./src/reporters/Reporter.js').toString())
-modules.push(fs.readFileSync('./src/reporters/ReporterFactory.js').toString())
-
-// runners
-modules.push(fs.readFileSync('./src/runners/DefaultRunner.js').toString())
+modules.push(fs.readFileSync('./src/reporters/ArrayReporter.js'))
+modules.push(fs.readFileSync('./src/reporters/BlockReporter.js'))
+modules.push(fs.readFileSync('./src/reporters/BriefReporter.js'))
+modules.push(fs.readFileSync('./src/reporters/ConsoleReporter.js'))
+modules.push(fs.readFileSync('./src/reporters/DefaultReporter.js'))
+modules.push(fs.readFileSync('./src/reporters/JsonReporter.js'))
+modules.push(fs.readFileSync('./src/reporters/NoopReporter.js'))
+modules.push(fs.readFileSync('./src/reporters/reporter-factory.js'))
+modules.push(fs.readFileSync('./src/reporters/Tally.js'))
 
 modules.push(end)
 
+// const output = { code: modules.join('\n') }
+// const minOutput = { code: modules.join('\n') }
 const output = babel.transform(modules.join('\n'), {
   minified: false,
   presets: [
     [
       '@babel/preset-env',
       {
+        // useBuiltIns: 'usage',
+        // corejs: 3, // or 2,
         targets: '> 0.25%, not dead'
       }
     ]
   ]
+  // plugins: [['@babel/plugin-transform-async-to-generator']]
+  // plugins: [['@babel/transform-runtime', { corejs: 3, regenerator: true }]]
 })
 
 const minOutput = babel.transform(modules.join('\n'), {
@@ -51,10 +61,14 @@ const minOutput = babel.transform(modules.join('\n'), {
     [
       '@babel/preset-env',
       {
+        // useBuiltIns: 'usage',
+        // corejs: 3, // or 2,
         targets: '> 0.25%, not dead'
       }
     ]
   ]
+  // plugins: [['@babel/plugin-transform-async-to-generator']]
+  // plugins: [['@babel/transform-runtime', { regenerator: true }]]
 })
 
 // {

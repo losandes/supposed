@@ -1,12 +1,22 @@
-require('../dist/supposed.js')
-const supposed = window.supposed
-const suite = supposed.Suite({
-  reporter: supposed.reporters.tap,
-  assertionLibrary: require('chai').expect
-})
-require('./sample-specs.js')(suite)
+const chai = require('chai')
+const path = require('path')
+const supposed = require('../index.js')
 
-// const server = require('./server')
-// server.start([
-//   '/tests.browser/sample-specs.js'
-// ])
+const suite = supposed.Suite({
+  name: 'supposed-tests.manual',
+  inject: {
+    describe: supposed,
+    chai,
+    path
+  }
+})
+
+suite.runner({
+  cwd: __dirname,
+  title: 'supposed-browser-tests',
+  port: 42002
+  // dependencies: [],
+  // supposedPath: path.join(__dirname.split('/src/discovery'), 'dist/supposed.min.js'),
+  // template: undefined,
+  // stringifiedSuiteConfig: '{ noColor: true }'
+}).startServer()
