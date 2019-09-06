@@ -14,7 +14,11 @@ module.exports = {
           TestEvent.types.INFO,
           TestEvent.types.END
         ].indexOf(event.type) > -1) {
-          console.log(format(event))
+          const line = format(event)
+
+          if (line) {
+            console.log(line)
+          }
         }
       } // /write
 

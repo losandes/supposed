@@ -987,6 +987,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
       var TYPE_EXPRESSION = /(^START$)|(^START_BATCH$)|(^TEST$)|(^INFO$)|(^END_BATCH$)|(^END_TALLY$)|(^END$)/;
       var STATUS_EXPRESSION = /(^PASSED$)|(^SKIPPED$)|(^FAILED$)|(^BROKEN$)/;
+      var testCount = 0;
 
       var makeJSONStringifiableError = function makeJSONStringifiableError(err) {
         var error = {
@@ -1009,6 +1010,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         var self = {};
         event = Object.assign({}, event);
         self.type = getType(event.type);
+
+        if (self.type === TestEvent.types.TEST) {
+          testCount += 1;
+          self.count = testCount;
+        }
 
         if (typeof event.status === 'string' && STATUS_EXPRESSION.test(event.status)) {
           self.status = event.status;
@@ -1280,6 +1286,47 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }
   };
   module.exports = {
+    name: 'BriefFormatter',
+    factory: function factory(dependencies) {
+      'use strict';
+
+      var consoleStyles = dependencies.consoleStyles,
+          DefaultFormatter = dependencies.DefaultFormatter,
+          TestEvent = dependencies.TestEvent;
+
+      function BriefFormatter() {
+        var defaultFormat = DefaultFormatter({
+          SYMBOLS: {
+            PASSED: consoleStyles.green('✓ '),
+            // heavy-check: '✔',
+            FAILED: consoleStyles.red('✗ '),
+            // heavy-x '✘',
+            BROKEN: consoleStyles.red('!= '),
+            // heavy-x '✘',
+            SKIPPED: consoleStyles.yellow('⸕ '),
+            INFO: consoleStyles.cyan('→ ')
+          }
+        }).format;
+
+        var format = function format(event) {
+          if ([TestEvent.types.START, TestEvent.types.END].indexOf(event.type) > -1) {
+            return defaultFormat(event);
+          } else if (event.type === TestEvent.types.TEST && (event.status === TestEvent.status.FAILED || event.status === TestEvent.status.BROKEN)) {
+            return defaultFormat(event);
+          }
+        };
+
+        return {
+          format: format
+        };
+      }
+
+      return {
+        BriefFormatter: BriefFormatter
+      };
+    }
+  };
+  module.exports = {
     name: 'DefaultFormatter',
     factory: function factory(dependencies) {
       'use strict';
@@ -1361,6 +1408,40 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
       return {
         DefaultFormatter: DefaultFormatter
+      };
+    }
+  };
+  module.exports = {
+    name: 'JsonFormatter',
+    factory: function factory(dependencies) {
+      'use strict';
+
+      var TestEvent = dependencies.TestEvent;
+
+      function JsonFormatter() {
+        var format = function format(event) {
+          if (event.type === TestEvent.types.START) {
+            return "[".concat(JSON.stringify({
+              event: event
+            }, null, 2), ",");
+          } else if (event.type === TestEvent.types.END) {
+            return "".concat(JSON.stringify({
+              event: event
+            }, null, 2), "]");
+          } else if ([TestEvent.types.END_TALLY].indexOf(event.type) === -1) {
+            return "".concat(JSON.stringify({
+              event: event
+            }, null, 2), ",");
+          }
+        };
+
+        return {
+          format: format
+        };
+      }
+
+      return {
+        JsonFormatter: JsonFormatter
       };
     }
   };
@@ -1453,8 +1534,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       };
 
       function TapFormatter() {
-        var testCount = 0;
-
         var format = function format(event) {
           if (event.type === TestEvent.types.START) {
             return 'TAP version 13';
@@ -1465,20 +1544,18 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           } else if (event.type === TestEvent.types.INFO) {
             return "# ".concat(event.behavior).concat(formatInfo(event.behavior, event.log, 'comment'));
           } else if (event.type === TestEvent.types.TEST) {
-            testCount += 1;
-
             switch (event.status) {
               case TestEvent.status.PASSED:
-                return "ok ".concat(testCount, " - ").concat(event.behavior).concat(formatInfo(event.behavior, event.log, 'comment'));
+                return "ok ".concat(event.count, " - ").concat(event.behavior).concat(formatInfo(event.behavior, event.log, 'comment'));
 
               case TestEvent.status.SKIPPED:
-                return event.behavior.indexOf('# TODO') > -1 ? "ok ".concat(testCount, " # TODO ").concat(event.behavior.replace('# TODO ', '')) : "ok ".concat(testCount, " # SKIP ").concat(event.behavior);
+                return event.behavior.indexOf('# TODO') > -1 ? "ok ".concat(event.count, " # TODO ").concat(event.behavior.replace('# TODO ', '')) : "ok ".concat(event.count, " # SKIP ").concat(event.behavior);
 
               case TestEvent.status.FAILED:
-                return "not ok ".concat(testCount, " - ").concat(event.behavior).concat(formatError(event.error, 'fail'));
+                return "not ok ".concat(event.count, " - ").concat(event.behavior).concat(formatError(event.error, 'fail'));
 
               case TestEvent.status.BROKEN:
-                return "not ok ".concat(testCount, " - ").concat(event.behavior).concat(formatError(event.error, 'broken'));
+                return "not ok ".concat(event.count, " - ").concat(event.behavior).concat(formatError(event.error, 'broken'));
             }
           }
         }; // /format
@@ -1519,50 +1596,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }
   };
   module.exports = {
-    name: 'BriefReporter',
-    factory: function factory(dependencies) {
-      'use strict';
-
-      var consoleStyles = dependencies.consoleStyles,
-          ConsoleReporter = dependencies.ConsoleReporter,
-          DefaultFormatter = dependencies.DefaultFormatter,
-          TestEvent = dependencies.TestEvent;
-
-      function BriefReporter() {
-        var _write = ConsoleReporter({
-          formatter: DefaultFormatter({
-            SYMBOLS: {
-              PASSED: consoleStyles.green('✓ '),
-              // heavy-check: '✔',
-              FAILED: consoleStyles.red('✗ '),
-              // heavy-x '✘',
-              BROKEN: consoleStyles.red('!= '),
-              // heavy-x '✘',
-              SKIPPED: consoleStyles.yellow('⸕ '),
-              INFO: consoleStyles.cyan('→ ')
-            }
-          })
-        }).write;
-
-        var write = function write(event) {
-          if ([TestEvent.types.START, TestEvent.types.END].indexOf(event.type) > -1) {
-            _write(event);
-          } else if (event.type === TestEvent.types.TEST && (event.status === TestEvent.status.FAILED || event.status === TestEvent.status.BROKEN)) {
-            _write(event);
-          }
-        };
-
-        return {
-          write: write
-        };
-      }
-
-      return {
-        BriefReporter: BriefReporter
-      };
-    }
-  };
-  module.exports = {
     name: 'ConsoleReporter',
     factory: function factory(dependencies) {
       'use strict';
@@ -1574,7 +1607,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       function ConsoleReporter() {
         var write = function write(event) {
           if ([TestEvent.types.START, TestEvent.types.TEST, TestEvent.types.INFO, TestEvent.types.END].indexOf(event.type) > -1) {
-            console.log(format(event));
+            var line = format(event);
+
+            if (line) {
+              console.log(line);
+            }
           }
         }; // /write
 
@@ -1619,6 +1656,12 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         reportDiv.appendChild(reportPre);
       };
 
+      var scrollToBottom = function scrollToBottom() {
+        if (typeof window !== 'undefined' && typeof window.scrollTo === 'function' && typeof document !== 'undefined' && document.body) {
+          window.scrollTo(0, document.body.scrollHeight);
+        }
+      };
+
       function DomReporter() {
         initDom();
 
@@ -1626,12 +1669,14 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           // write to the console
           if ([TestEvent.types.START, TestEvent.types.TEST, TestEvent.types.INFO, TestEvent.types.END].indexOf(event.type) > -1) {
             var line = format(event);
+
+            if (!line) {
+              return;
+            }
+
             console.log(line);
             reportPre.append("".concat(line, "\n"));
-
-            if (typeof window !== 'undefined' && typeof window.scrollTo === 'function' && typeof document !== 'undefined' && document.body) {
-              window.scrollTo(0, document.body.scrollHeight);
-            }
+            scrollToBottom();
           }
         }; // /write
 
@@ -1643,41 +1688,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
       return {
         DomReporter: DomReporter
-      };
-    }
-  };
-  module.exports = {
-    name: 'JsonReporter',
-    factory: function factory(dependencies) {
-      'use strict';
-
-      var TestEvent = dependencies.TestEvent;
-
-      function JsonReporter() {
-        var write = function write(event) {
-          if (event.type === TestEvent.types.START) {
-            console.log("[".concat(JSON.stringify({
-              event: event
-            }, null, 2), ","));
-          } else if (event.type === TestEvent.types.END) {
-            console.log("".concat(JSON.stringify({
-              event: event
-            }, null, 2), "]"));
-          } else if ([TestEvent.types.END_TALLY].indexOf(event.type) === -1) {
-            console.log("".concat(JSON.stringify({
-              event: event
-            }, null, 2), ","));
-          }
-        }; // /write
-
-
-        return {
-          write: write
-        };
-      }
-
-      return {
-        JsonReporter: JsonReporter
       };
     }
   };
@@ -1717,7 +1727,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             throw new Error("A reporter by name, \"".concat(name, "\", is not registered"));
           }
 
-          var reporter = new map[_name]();
+          var reporter = map[_name];
           reporter.name = reporter.name || _name;
           return reporter;
         };
@@ -1733,8 +1743,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             errors.push("Invalid Reporter: expected reporter.name {".concat(_typeof(reporter.name), "} to be a non-empty {string}"));
           }
 
-          var _reporter = reporter(),
-              write = _reporter.write;
+          var _reporter = reporter();
+
+          var write = _reporter && _reporter.write;
 
           if (typeof write !== 'function') {
             errors.push("Invalid Reporter: expected reporter().write {".concat(_typeof(write), "} to be a {function}"));
@@ -1745,11 +1756,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           }
 
           var name = uppered(reporter.name);
-          map[name] = reporter;
+          map[name] = _reporter;
 
-          if (name.indexOf('REPORTER')) {
+          if (name.indexOf('REPORTER') > -1) {
             var shortName = name.substring(0, name.indexOf('REPORTER'));
-            map[shortName] = reporter;
+            map[shortName] = _reporter;
           }
 
           return self;
@@ -1960,9 +1971,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         write: new ArrayReporter().write
       };
     });
-    reporterFactory.add(module.factories.JsonReporterFactory({
-      TestEvent: TestEvent
-    }).JsonReporter);
     reporterFactory.add(module.factories.NoopReporterFactory({}).NoopReporter);
     reporterFactory.add(Tally);
     subscribe(reporterFactory.get(Tally.name));
@@ -1975,19 +1983,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       }).DefaultFormatter();
     }
 
-    var blockFormatter = module.factories.BlockFormatterFactory({
-      consoleStyles: consoleStyles,
-      DefaultFormatter: DefaultFormatter
-    }).BlockFormatter();
-    var symbolFormatter = module.factories.SymbolFormatterFactory({
-      consoleStyles: consoleStyles,
-      DefaultFormatter: DefaultFormatter
-    }).SymbolFormatter();
-    var tapFormatter = module.factories.TapFormatterFactory({
-      consoleStyles: consoleStyles,
-      TestEvent: TestEvent
-    }).TapFormatter();
-
     function ConsoleReporter(options) {
       return module.factories.DomReporterFactory({
         TestEvent: TestEvent,
@@ -1995,6 +1990,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       }).DomReporter();
     }
 
+    var symbolFormatter = module.factories.SymbolFormatterFactory({
+      consoleStyles: consoleStyles,
+      DefaultFormatter: DefaultFormatter
+    }).SymbolFormatter();
     reporterFactory.add(function DefaultReporter() {
       return {
         write: ConsoleReporter({
@@ -2004,7 +2003,28 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }).add(function BlockReporter() {
       return {
         write: ConsoleReporter({
-          formatter: blockFormatter
+          formatter: module.factories.BlockFormatterFactory({
+            consoleStyles: consoleStyles,
+            DefaultFormatter: DefaultFormatter
+          }).BlockFormatter()
+        }).write
+      };
+    }).add(function BriefReporter() {
+      return {
+        write: ConsoleReporter({
+          formatter: module.factories.BriefFormatterFactory({
+            consoleStyles: consoleStyles,
+            DefaultFormatter: DefaultFormatter,
+            TestEvent: TestEvent
+          }).BriefFormatter()
+        }).write
+      };
+    }).add(function JsonReporter() {
+      return {
+        write: ConsoleReporter({
+          formatter: module.factories.JsonFormatterFactory({
+            TestEvent: TestEvent
+          }).JsonFormatter()
         }).write
       };
     }).add(function JustTheDescriptionsReporter() {
@@ -2012,7 +2032,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         write: ConsoleReporter({
           formatter: {
             format: function format(event) {
-              return symbolFormatter.format(event).split('\n')[0];
+              if (event.type === TestEvent.types.TEST) {
+                return symbolFormatter.format(event).split('\n')[0];
+              } else {
+                return symbolFormatter.format(event);
+              }
             }
           }
         }).write
@@ -2020,15 +2044,13 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }).add(function TapReporter() {
       return {
         write: ConsoleReporter({
-          formatter: tapFormatter
+          formatter: module.factories.TapFormatterFactory({
+            consoleStyles: consoleStyles,
+            TestEvent: TestEvent
+          }).TapFormatter()
         }).write
       };
-    }).add(module.factories.BriefReporterFactory({
-      consoleStyles: consoleStyles,
-      ConsoleReporter: ConsoleReporter,
-      DefaultFormatter: DefaultFormatter,
-      TestEvent: TestEvent
-    }).BriefReporter);
+    });
 
     var _module$factories$Asy = module.factories.AsyncTestFactory({
       isPromise: isPromise,

@@ -18,7 +18,7 @@ module.exports = {
           throw new Error(`A reporter by name, "${name}", is not registered`)
         }
 
-        const reporter = new map[_name]()
+        const reporter = map[_name]
         reporter.name = reporter.name || _name
         return reporter
       }
@@ -33,7 +33,8 @@ module.exports = {
           errors.push(`Invalid Reporter: expected reporter.name {${typeof reporter.name}} to be a non-empty {string}`)
         }
 
-        const { write } = reporter()
+        const _reporter = reporter()
+        const write = _reporter && _reporter.write
 
         if (typeof write !== 'function') {
           errors.push(`Invalid Reporter: expected reporter().write {${typeof write}} to be a {function}`)
@@ -44,11 +45,11 @@ module.exports = {
         }
 
         const name = uppered(reporter.name)
-        map[name] = reporter
+        map[name] = _reporter
 
-        if (name.indexOf('REPORTER')) {
+        if (name.indexOf('REPORTER') > -1) {
           const shortName = name.substring(0, name.indexOf('REPORTER'))
-          map[shortName] = reporter
+          map[shortName] = _reporter
         }
 
         return self

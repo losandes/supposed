@@ -23,17 +23,17 @@ const runTestsFactory = require('./src/discovery/run-tests.js').factory
 
 // formatters
 const BlockFormatterFactory = require('./src/formatters/BlockFormatter.js').factory
+const BriefFormatterFactory = require('./src/formatters/BriefFormatter.js').factory
 const consoleStylesFactory = require('./src/formatters/console-styles.js').factory
 const consoleUtilsFactory = require('./src/formatters/console-utils.js').factory
 const DefaultFormatterFactory = require('./src/formatters/DefaultFormatter.js').factory
+const JsonFormatterFactory = require('./src/formatters/JsonFormatter.js').factory
 const SymbolFormatterFactory = require('./src/formatters/SymbolFormatter.js').factory
 const TapFormatterFactory = require('./src/formatters/TapFormatter.js').factory
 
 // reporters
 const ArrayReporterFactory = require('./src/reporters/ArrayReporter.js').factory
-const BriefReporterFactory = require('./src/reporters/BriefReporter.js').factory
 const ConsoleReporterFactory = require('./src/reporters/ConsoleReporter.js').factory
-const JsonReporterFactory = require('./src/reporters/JsonReporter.js').factory
 const NoopReporterFactory = require('./src/reporters/NoopReporter.js').factory
 const NyanReporterFactory = require('./src/reporters/NyanReporter.js').factory
 const ReporterFactoryFactory = require('./src/reporters/reporter-factory.js').factory
@@ -94,7 +94,6 @@ function Supposed (options) {
   reporterFactory.add(function QuietReporter () { // legacy
     return { write: new ArrayReporter().write }
   })
-  reporterFactory.add(JsonReporterFactory({ TestEvent }).JsonReporter)
   reporterFactory.add(NoopReporterFactory({}).NoopReporter)
   reporterFactory.add(Tally)
   subscribe(reporterFactory.get(Tally.name))
@@ -107,10 +106,6 @@ function Supposed (options) {
     }).DefaultFormatter()
   }
 
-  const blockFormatter = BlockFormatterFactory({ consoleStyles, DefaultFormatter }).BlockFormatter()
-  const symbolFormatter = SymbolFormatterFactory({ consoleStyles, DefaultFormatter }).SymbolFormatter()
-  const tapFormatter = TapFormatterFactory({ consoleStyles, TestEvent }).TapFormatter()
-
   function ConsoleReporter (options) {
     return ConsoleReporterFactory({
       TestEvent,
@@ -118,32 +113,51 @@ function Supposed (options) {
     }).ConsoleReporter()
   }
 
+  const symbolFormatter = SymbolFormatterFactory({ consoleStyles, DefaultFormatter }).SymbolFormatter()
+
   reporterFactory.add(function DefaultReporter () {
     return {
       write: ConsoleReporter({ formatter: symbolFormatter }).write
     }
   }).add(function BlockReporter () {
     return {
-      write: ConsoleReporter({ formatter: blockFormatter }).write
+      write: ConsoleReporter({
+        formatter: BlockFormatterFactory({ consoleStyles, DefaultFormatter }).BlockFormatter()
+      }).write
+    }
+  }).add(function BriefReporter () {
+    return {
+      write: ConsoleReporter({
+        formatter: BriefFormatterFactory({ consoleStyles, DefaultFormatter, TestEvent }).BriefFormatter()
+      }).write
+    }
+  }).add(function JsonReporter () {
+    return {
+      write: ConsoleReporter({
+        formatter: JsonFormatterFactory({ TestEvent }).JsonFormatter()
+      }).write
     }
   }).add(function JustTheDescriptionsReporter () {
     return {
       write: ConsoleReporter({
         formatter: {
-          format: (event) => symbolFormatter.format(event).split('\n')[0]
+          format: (event) => {
+            if (event.type === TestEvent.types.TEST) {
+              return symbolFormatter.format(event).split('\n')[0]
+            } else {
+              return symbolFormatter.format(event)
+            }
+          }
         }
       }).write
     }
   }).add(function TapReporter () {
     return {
-      write: ConsoleReporter({ formatter: tapFormatter }).write
+      write: ConsoleReporter({
+        formatter: TapFormatterFactory({ consoleStyles, TestEvent }).TapFormatter()
+      }).write
     }
-  }).add(BriefReporterFactory({
-    consoleStyles,
-    ConsoleReporter,
-    DefaultFormatter,
-    TestEvent
-  }).BriefReporter).add(NyanReporterFactory({
+  }).add(NyanReporterFactory({
     consoleStyles,
     consoleUtils,
     DefaultFormatter,

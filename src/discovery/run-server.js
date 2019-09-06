@@ -105,12 +105,7 @@ module.exports = {
     <title>${self.title}</title>
     <style>
       body { font-family: monospace, "Courier New", Courier; }
-      .supposed_summary { font-size: 1.2em; margin-bottom: 20px; }
-      .supposed_summary_item { margin-right: 20px; }
-      .supposed_summary_item.supposed_color_passed { color: #4c8000; }
-      .supposed_summary_item.supposed_color_failed { color: #c52b20; }
-      .supposed_summary_item.supposed_color_skipped { color: #804c00; }
-      .supposed_summary_item.supposed_color_info { color: #185c92; }
+      
       ${self.styles}
     </style>
     </head>
@@ -197,21 +192,25 @@ module.exports = {
         throw new Error('run-server expects paths to the tests to be provided')
       }
 
-      return start(() => {
-        const _serverConfig = new Config(serverConfig, paths, suite)
+      return {
+        paths: paths,
+        config: new Config(serverConfig, paths, suite),
+        server: start(() => {
+          const _serverConfig = new Config(serverConfig, paths, suite)
 
-        return {
-          title: _serverConfig.title,
-          dependencies: _serverConfig.dependencies,
-          scripts: _serverConfig.scripts,
-          styles: _serverConfig.styles,
-          testBundle: _serverConfig.testBundle,
-          port: _serverConfig.port,
-          page: _serverConfig.page,
-          cwd: _serverConfig.cwd,
-          supposed: _serverConfig.supposed
-        }
-      })
+          return {
+            title: _serverConfig.title,
+            dependencies: _serverConfig.dependencies,
+            scripts: _serverConfig.scripts,
+            styles: _serverConfig.styles,
+            testBundle: _serverConfig.testBundle,
+            port: _serverConfig.port,
+            page: _serverConfig.page,
+            cwd: _serverConfig.cwd,
+            supposed: _serverConfig.supposed
+          }
+        })
+      }
     }
 
     return { runServer }

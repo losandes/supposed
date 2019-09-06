@@ -71,8 +71,6 @@ module.exports = {
     }
 
     function TapFormatter () {
-      let testCount = 0
-
       const format = (event) => {
         if (event.type === TestEvent.types.START) {
           return 'TAP version 13'
@@ -81,20 +79,18 @@ module.exports = {
         } else if (event.type === TestEvent.types.INFO) {
           return `# ${event.behavior}${formatInfo(event.behavior, event.log, 'comment')}`
         } else if (event.type === TestEvent.types.TEST) {
-          testCount += 1
-
           switch (event.status) {
             case TestEvent.status.PASSED:
-              return `ok ${testCount} - ${event.behavior}${formatInfo(event.behavior, event.log, 'comment')}`
+              return `ok ${event.count} - ${event.behavior}${formatInfo(event.behavior, event.log, 'comment')}`
             case TestEvent.status.SKIPPED:
               return event.behavior.indexOf('# TODO') > -1
-                ? `ok ${testCount} # TODO ${event.behavior.replace('# TODO ', '')}`
-                : `ok ${testCount} # SKIP ${event.behavior}`
+                ? `ok ${event.count} # TODO ${event.behavior.replace('# TODO ', '')}`
+                : `ok ${event.count} # SKIP ${event.behavior}`
             case TestEvent.status.FAILED:
-              return `not ok ${testCount} - ${event.behavior}${formatError(event.error, 'fail')}`
+              return `not ok ${event.count} - ${event.behavior}${formatError(event.error, 'fail')}`
 
             case TestEvent.status.BROKEN:
-              return `not ok ${testCount} - ${event.behavior}${formatError(event.error, 'broken')}`
+              return `not ok ${event.count} - ${event.behavior}${formatError(event.error, 'broken')}`
           }
         }
       } // /format

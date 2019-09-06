@@ -54,7 +54,6 @@
     reporterFactory.add(function QuietReporter () { // legacy
       return { write: new ArrayReporter().write }
     })
-    reporterFactory.add(module.factories.JsonReporterFactory({ TestEvent }).JsonReporter)
     reporterFactory.add(module.factories.NoopReporterFactory({}).NoopReporter)
     reporterFactory.add(Tally)
     subscribe(reporterFactory.get(Tally.name))
@@ -67,10 +66,6 @@
       }).DefaultFormatter()
     }
 
-    const blockFormatter = module.factories.BlockFormatterFactory({ consoleStyles, DefaultFormatter }).BlockFormatter()
-    const symbolFormatter = module.factories.SymbolFormatterFactory({ consoleStyles, DefaultFormatter }).SymbolFormatter()
-    const tapFormatter = module.factories.TapFormatterFactory({ consoleStyles, TestEvent }).TapFormatter()
-
     function ConsoleReporter (options) {
       return module.factories.DomReporterFactory({
         TestEvent,
@@ -78,32 +73,51 @@
       }).DomReporter()
     }
 
+    const symbolFormatter = module.factories.SymbolFormatterFactory({ consoleStyles, DefaultFormatter }).SymbolFormatter()
+
     reporterFactory.add(function DefaultReporter () {
       return {
         write: ConsoleReporter({ formatter: symbolFormatter }).write
       }
     }).add(function BlockReporter () {
       return {
-        write: ConsoleReporter({ formatter: blockFormatter }).write
+        write: ConsoleReporter({
+          formatter: module.factories.BlockFormatterFactory({ consoleStyles, DefaultFormatter }).BlockFormatter()
+        }).write
+      }
+    }).add(function BriefReporter () {
+      return {
+        write: ConsoleReporter({
+          formatter: module.factories.BriefFormatterFactory({ consoleStyles, DefaultFormatter, TestEvent }).BriefFormatter()
+        }).write
+      }
+    }).add(function JsonReporter () {
+      return {
+        write: ConsoleReporter({
+          formatter: module.factories.JsonFormatterFactory({ TestEvent }).JsonFormatter()
+        }).write
       }
     }).add(function JustTheDescriptionsReporter () {
       return {
         write: ConsoleReporter({
           formatter: {
-            format: (event) => symbolFormatter.format(event).split('\n')[0]
+            format: (event) => {
+              if (event.type === TestEvent.types.TEST) {
+                return symbolFormatter.format(event).split('\n')[0]
+              } else {
+                return symbolFormatter.format(event)
+              }
+            }
           }
         }).write
       }
     }).add(function TapReporter () {
       return {
-        write: ConsoleReporter({ formatter: tapFormatter }).write
+        write: ConsoleReporter({
+          formatter: module.factories.TapFormatterFactory({ consoleStyles, TestEvent }).TapFormatter()
+        }).write
       }
-    }).add(module.factories.BriefReporterFactory({
-      consoleStyles,
-      ConsoleReporter,
-      DefaultFormatter,
-      TestEvent
-    }).BriefReporter)
+    })
 
     const { AsyncTest } = module.factories.AsyncTestFactory({ isPromise, publish, TestEvent })
     const { makeBatch } = module.factories.makeBatchFactory({})

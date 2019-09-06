@@ -27,6 +27,17 @@ module.exports = {
       reportDiv.appendChild(reportPre)
     }
 
+    const scrollToBottom = () => {
+      if (
+        typeof window !== 'undefined' &&
+        typeof window.scrollTo === 'function' &&
+        typeof document !== 'undefined' &&
+        document.body
+      ) {
+        window.scrollTo(0, document.body.scrollHeight)
+      }
+    }
+
     function DomReporter () {
       initDom()
 
@@ -39,17 +50,14 @@ module.exports = {
           TestEvent.types.END
         ].indexOf(event.type) > -1) {
           const line = format(event)
+
+          if (!line) {
+            return
+          }
+
           console.log(line)
           reportPre.append(`${line}\n`)
-
-          if (
-            typeof window !== 'undefined' &&
-            typeof window.scrollTo === 'function' &&
-            typeof document !== 'undefined' &&
-            document.body
-          ) {
-            window.scrollTo(0, document.body.scrollHeight)
-          }
+          scrollToBottom()
         }
       } // /write
 

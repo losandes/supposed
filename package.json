@@ -1,12 +1,11 @@
 {
   "name": "supposed",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "a test library for node.js",
   "main": "index.js",
   "scripts": {
     "build": "node build.browser.js",
     "pre-push": "npm test && node pre-push.js",
-    "test": "node tests/index.js",
     "watch": "nodemon -e js --exec 'node tests/index.js --tap | tap-nyan'"
   },
   "pre-push": [
@@ -51,6 +50,7 @@
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
     "pre-push": "^0.1.1",
+    "puppeteer": "^1.19.0",
     "tap-parser": "^9.3.3"
   }
 }

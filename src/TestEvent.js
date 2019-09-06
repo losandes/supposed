@@ -5,6 +5,7 @@ module.exports = {
 
     const TYPE_EXPRESSION = /(^START$)|(^START_BATCH$)|(^TEST$)|(^INFO$)|(^END_BATCH$)|(^END_TALLY$)|(^END$)/
     const STATUS_EXPRESSION = /(^PASSED$)|(^SKIPPED$)|(^FAILED$)|(^BROKEN$)/
+    let testCount = 0
 
     const makeJSONStringifiableError = (err) => {
       const error = {
@@ -30,6 +31,11 @@ module.exports = {
       event = Object.assign({}, event)
 
       self.type = getType(event.type)
+
+      if (self.type === TestEvent.types.TEST) {
+        testCount += 1
+        self.count = testCount
+      }
 
       if (typeof event.status === 'string' && STATUS_EXPRESSION.test(event.status)) {
         self.status = event.status
