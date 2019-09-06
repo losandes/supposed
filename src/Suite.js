@@ -12,6 +12,7 @@ module.exports = {
       publish,
       subscribe,
       reporterFactory,
+      resolveTests,
       runServer,
       runTests,
       Tally,
@@ -162,11 +163,11 @@ module.exports = {
         })
     }
 
-    const nodeRunner = (config, test) => (options) => () => {
+    const runner = (config, test) => (findAndRun) => () => {
       publishStartAndEnd = false
 
       return publish({ type: TestEvent.types.START, time: Date.now(), suiteId: config.name })
-        .then(() => findFiles(options).then(runTests(test)))
+        .then(() => findAndRun())
         .then((output) => {
           if (output.broken.length) {
             // these tests failed before being executed
@@ -227,8 +228,8 @@ module.exports = {
       const byMatcher = matcher(config)
       const mapToTests = mapper(config, byMatcher)
       const test = tester(config, mapToTests)
-      const findAndRun = nodeRunner(config, test)
       const findAndStart = browserRunner(config, test)
+      const run = runner(config, test)
 
       /**
       // Make a newly configured suite
@@ -248,7 +249,14 @@ module.exports = {
       test.suiteName = config.name
       test.runner = (options) => {
         return {
-          run: findAndRun(options),
+          // find and run (node)
+          run: run(() => findFiles(options)
+            .then(resolveTests(test))
+            .then(runTests(test))
+          ),
+          // run (browser|node)
+          runTests: run(() => runTests(test)(options)),
+          // start test server (browser)
           startServer: findAndStart(options)
         }
       }

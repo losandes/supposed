@@ -9,7 +9,6 @@ const path = require('path')
 const allSettledFactory = require('./src/all-settled.js').factory
 const AsyncTestFactory = require('./src/AsyncTest.js').factory
 const makeBatchFactory = require('./src/make-batch.js').factory
-const makeDebuggerFactory = require('./src/make-debugger.js').factory
 const makeSuiteConfigFactory = require('./src/make-suite-config.js').factory
 const pubsubFactory = require('./src/pubsub.js').factory
 const readEnvvarsFactory = require('./src/read-envvars.js').factory
@@ -18,21 +17,22 @@ const TestEventFactory = require('./src/TestEvent.js').factory
 
 // discovery
 const findFilesFactory = require('./src/discovery/find-files.js').factory
+const resolveTestsFactory = require('./src/discovery/resolve-tests.js').factory
 const runServerFactory = require('./src/discovery/run-server.js').factory
 const runTestsFactory = require('./src/discovery/run-tests.js').factory
 
 // formatters
+const BlockFormatterFactory = require('./src/formatters/BlockFormatter.js').factory
 const consoleStylesFactory = require('./src/formatters/console-styles.js').factory
 const consoleUtilsFactory = require('./src/formatters/console-utils.js').factory
 const DefaultFormatterFactory = require('./src/formatters/DefaultFormatter.js').factory
+const SymbolFormatterFactory = require('./src/formatters/SymbolFormatter.js').factory
 const TapFormatterFactory = require('./src/formatters/TapFormatter.js').factory
 
 // reporters
 const ArrayReporterFactory = require('./src/reporters/ArrayReporter.js').factory
-const BlockReporterFactory = require('./src/reporters/BlockReporter.js').factory
 const BriefReporterFactory = require('./src/reporters/BriefReporter.js').factory
 const ConsoleReporterFactory = require('./src/reporters/ConsoleReporter.js').factory
-const DefaultReporterFactory = require('./src/reporters/DefaultReporter.js').factory
 const JsonReporterFactory = require('./src/reporters/JsonReporter.js').factory
 const NoopReporterFactory = require('./src/reporters/NoopReporter.js').factory
 const NyanReporterFactory = require('./src/reporters/NyanReporter.js').factory
@@ -47,14 +47,12 @@ let supposed = null
 
 // resolve the dependency graph
 function Supposed (options) {
-  const { makeDebugger } = makeDebuggerFactory()
-  const { allSettled } = allSettledFactory({ makeDebugger })
-  const { readEnvvars } = readEnvvarsFactory({ makeDebugger })
-  const { TestEvent } = TestEventFactory({ makeDebugger })
+  const { allSettled } = allSettledFactory({})
+  const { readEnvvars } = readEnvvarsFactory({})
+  const { TestEvent } = TestEventFactory({})
   const { Pubsub } = pubsubFactory({
     allSettled,
     isPromise,
-    makeDebugger,
     TestEvent
   })
   const { publish, subscribe, subscriptionExists, allSubscriptions } = new Pubsub()
@@ -79,53 +77,68 @@ function Supposed (options) {
     })()
   }
 
-  const { findFiles } = findFilesFactory({ fs, path, makeDebugger })
-  const { runServer } = runServerFactory({ makeDebugger })
-  const { runTests } = runTestsFactory({ allSettled, makeDebugger })
+  const { findFiles } = findFilesFactory({ fs, path })
+  const { resolveTests } = resolveTestsFactory({})
+  const { runServer } = runServerFactory({})
+  const { runTests } = runTestsFactory({ allSettled })
 
-  const consoleStyles = consoleStylesFactory({ envvars, makeDebugger }).consoleStyles
-  const consoleUtils = consoleUtilsFactory({ makeDebugger }).consoleUtils
+  const consoleStyles = consoleStylesFactory({ envvars }).consoleStyles
+  const consoleUtils = consoleUtilsFactory({}).consoleUtils
 
-  const { TallyFactory } = TallyFactoryFactory({ publish, TestEvent, makeDebugger })
+  const { TallyFactory } = TallyFactoryFactory({ publish, TestEvent })
   const { Tally } = TallyFactory()
-  const { ReporterFactory } = ReporterFactoryFactory({ makeDebugger })
+  const { ReporterFactory } = ReporterFactoryFactory({})
   const reporterFactory = new ReporterFactory()
-  const ArrayReporter = ArrayReporterFactory({ makeDebugger }).ArrayReporter
+  const ArrayReporter = ArrayReporterFactory({}).ArrayReporter
   reporterFactory.add(ArrayReporter)
   reporterFactory.add(function QuietReporter () { // legacy
     return { write: new ArrayReporter().write }
   })
-  reporterFactory.add(JsonReporterFactory({ makeDebugger, TestEvent }).JsonReporter)
-  reporterFactory.add(NoopReporterFactory({ makeDebugger }).NoopReporter)
+  reporterFactory.add(JsonReporterFactory({ TestEvent }).JsonReporter)
+  reporterFactory.add(NoopReporterFactory({}).NoopReporter)
   reporterFactory.add(Tally)
   subscribe(reporterFactory.get(Tally.name))
 
   function DefaultFormatter (options) {
     return DefaultFormatterFactory({
       consoleStyles,
-      makeDebugger,
       TestEvent,
       SYMBOLS: options.SYMBOLS
     }).DefaultFormatter()
   }
 
+  const blockFormatter = BlockFormatterFactory({ consoleStyles, DefaultFormatter }).BlockFormatter()
+  const symbolFormatter = SymbolFormatterFactory({ consoleStyles, DefaultFormatter }).SymbolFormatter()
+  const tapFormatter = TapFormatterFactory({ consoleStyles, TestEvent }).TapFormatter()
+
   function ConsoleReporter (options) {
     return ConsoleReporterFactory({
-      makeDebugger,
       TestEvent,
       formatter: options.formatter
     }).ConsoleReporter()
   }
 
-  reporterFactory.add(DefaultReporterFactory({
-    consoleStyles,
-    ConsoleReporter,
-    DefaultFormatter
-  }).DefaultReporter).add(BlockReporterFactory({
-    consoleStyles,
-    ConsoleReporter,
-    DefaultFormatter
-  }).BlockReporter).add(BriefReporterFactory({
+  reporterFactory.add(function DefaultReporter () {
+    return {
+      write: ConsoleReporter({ formatter: symbolFormatter }).write
+    }
+  }).add(function BlockReporter () {
+    return {
+      write: ConsoleReporter({ formatter: blockFormatter }).write
+    }
+  }).add(function JustTheDescriptionsReporter () {
+    return {
+      write: ConsoleReporter({
+        formatter: {
+          format: (event) => symbolFormatter.format(event).split('\n')[0]
+        }
+      }).write
+    }
+  }).add(function TapReporter () {
+    return {
+      write: ConsoleReporter({ formatter: tapFormatter }).write
+    }
+  }).add(BriefReporterFactory({
     consoleStyles,
     ConsoleReporter,
     DefaultFormatter,
@@ -135,35 +148,28 @@ function Supposed (options) {
     consoleUtils,
     DefaultFormatter,
     TestEvent
-  }).NyanReporter).add(function TapReporter () {
-    const write = ConsoleReporter({
-      formatter: TapFormatterFactory({ consoleStyles, makeDebugger, TestEvent }).TapFormatter()
-    }).write
+  }).NyanReporter)
 
-    return { write }
-  })
-
-  const { AsyncTest } = AsyncTestFactory({ isPromise, makeDebugger, publish, TestEvent })
-  const { makeBatch } = makeBatchFactory({ makeDebugger })
+  const { AsyncTest } = AsyncTestFactory({ isPromise, publish, TestEvent })
+  const { makeBatch } = makeBatchFactory({})
 
   const { makeSuiteConfig } = makeSuiteConfigFactory({
     defaults: envvars,
     subscriptionExists,
     subscribe,
     allSubscriptions,
-    reporterFactory,
-    makeDebugger
+    reporterFactory
   })
   const { Suite } = SuiteFactory({
     allSettled,
     AsyncTest,
     findFiles,
     makeBatch,
-    makeDebugger,
     makeSuiteConfig,
     publish,
     subscribe,
     reporterFactory,
+    resolveTests,
     runServer,
     runTests,
     Tally,

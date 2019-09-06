@@ -13,23 +13,26 @@ const modules = [beginning]
 modules.push(fs.readFileSync('./src/all-settled.js'))
 modules.push(fs.readFileSync('./src/AsyncTest.js'))
 modules.push(fs.readFileSync('./src/make-batch.js'))
-modules.push(fs.readFileSync('./src/make-debugger.js'))
 modules.push(fs.readFileSync('./src/make-suite-config.js'))
 modules.push(fs.readFileSync('./src/pubsub.js'))
 modules.push(fs.readFileSync('./src/Suite.js'))
 modules.push(fs.readFileSync('./src/TestEvent.js'))
 
+// discovery
+modules.push(fs.readFileSync('./src/discovery/run-tests.js'))
+
 // formatters
 modules.push(fs.readFileSync('./src/formatters/browser-console-styles.js'))
+modules.push(fs.readFileSync('./src/formatters/BlockFormatter.js'))
 modules.push(fs.readFileSync('./src/formatters/DefaultFormatter.js'))
+modules.push(fs.readFileSync('./src/formatters/SymbolFormatter.js'))
 modules.push(fs.readFileSync('./src/formatters/TapFormatter.js'))
 
 // reporters
 modules.push(fs.readFileSync('./src/reporters/ArrayReporter.js'))
-modules.push(fs.readFileSync('./src/reporters/BlockReporter.js'))
 modules.push(fs.readFileSync('./src/reporters/BriefReporter.js'))
 modules.push(fs.readFileSync('./src/reporters/ConsoleReporter.js'))
-modules.push(fs.readFileSync('./src/reporters/DefaultReporter.js'))
+modules.push(fs.readFileSync('./src/reporters/DomReporter.js'))
 modules.push(fs.readFileSync('./src/reporters/JsonReporter.js'))
 modules.push(fs.readFileSync('./src/reporters/NoopReporter.js'))
 modules.push(fs.readFileSync('./src/reporters/reporter-factory.js'))

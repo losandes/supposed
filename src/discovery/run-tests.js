@@ -3,17 +3,14 @@ module.exports = {
   factory: (dependencies) => {
     'use strict'
 
-    const { allSettled, makeDebugger } = dependencies
-    const debug = makeDebugger().withSource('run-tests')
+    const { allSettled } = dependencies
 
     const hasThen = (obj) => {
       return obj && typeof obj.then === 'function'
     }
 
-    const toPromise = (config, suite) => (file) => {
+    const toPromise = (config, suite) => ({ test, path }) => {
       try {
-        const test = require(file)
-
         if (suite && config.injectSuite !== false && typeof test === 'function') {
           const maybePromise = test(suite, suite.dependencies)
           return hasThen(maybePromise) ? maybePromise : Promise.resolve(maybePromise)
@@ -21,7 +18,7 @@ module.exports = {
 
         return Promise.resolve()
       } catch (e) {
-        e.filePath = file
+        e.filePath = path
         return Promise.reject(e)
       }
     }
@@ -41,15 +38,14 @@ module.exports = {
     }
 
     const runTests = (suite) => (context) => {
-      const { config, paths } = context
+      const { config, tests, paths } = context
 
-      if (!paths) {
-        throw new Error('run-tests expects paths to the tests to be provided')
+      if (!tests) {
+        throw new Error('run-tests expects tests to be provided')
       }
 
-      return Promise.resolve(paths.map(toPromise(config, suite)))
+      return Promise.resolve(tests.map(toPromise(config || context, suite)))
         .then(allSettled)
-        .then(debug)
         .then(mapToResults(config, paths))
     }
 

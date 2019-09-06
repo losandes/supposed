@@ -8,20 +8,30 @@ module.exports = {
     'use strict'
 
     const isString = (input) => typeof input === 'string' && input.trim().length
+    const makeTestBundle = ({ paths, template, stringifiedSuiteConfig }) => {
+      const beginning = template[0]
+      const end = template[1]
+      const modules = [beginning]
+      paths.forEach((file) => modules.push(fs.readFileSync(file).toString()))
+      modules.push(end.replace(/\/\*{{suiteConfig}}\*\//, stringifiedSuiteConfig))
 
-    function Config (config) {
+      return modules.join('\n\n')
+    }
+
+    function Config (config, paths, suite) {
       config = Object.assign({}, config)
 
       const self = {
-        cwd: process.cwd(),
+        cwd: suite.config.cwd,
         title: 'supposed',
         port: 42001,
         dependencies: [],
         scripts: [],
-        supposed: fs.readFileSync(path.join(__dirname.split('/src/discovery')[0], 'dist/supposed.min.js'))
-          .toString(),
+        styles: '',
+        supposed: undefined,
         template: undefined,
-        stringifiedSuiteConfig: ''
+        stringifiedSuiteConfig: `{ reporter: '${suite.config.reporter || 'default'}'}`,
+        page: undefined
       }
 
       if (isString(config.cwd)) {
@@ -52,8 +62,16 @@ module.exports = {
         })
       }
 
+      if (isString(config.styles)) {
+        self.styles = config.styles
+      }
+
       if (isString(config.supposedPath)) {
-        self.supposedPath = config.supposedPath.trim()
+        self.supposed = fs.readFileSync(config.supposedPath).toString()
+      } else {
+        self.supposed = fs.readFileSync(
+          path.join(__dirname.split('/src/discovery')[0], 'dist/supposed.min.js')
+        ).toString()
       }
 
       if (isString(config.stringifiedSuiteConfig)) {
@@ -70,25 +88,66 @@ module.exports = {
           .split('// {{TEST_MODULES}}')
       }
 
+      if (isString(config.page)) {
+        self.page = config.page
+      } else {
+        self.testBundle = makeTestBundle({
+          paths,
+          template: self.template,
+          stringifiedSuiteConfig: self.stringifiedSuiteConfig
+        })
+        const scriptTags = self.dependencies.map((filePath) => `<script src="${filePath}"></script>`)
+        self.page = /* html */`
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <meta charset="UTF-8">
+    <title>${self.title}</title>
+    <style>
+      body { font-family: monospace, "Courier New", Courier; }
+      .supposed_summary { font-size: 1.2em; margin-bottom: 20px; }
+      .supposed_summary_item { margin-right: 20px; }
+      .supposed_summary_item.supposed_color_passed { color: #4c8000; }
+      .supposed_summary_item.supposed_color_failed { color: #c52b20; }
+      .supposed_summary_item.supposed_color_skipped { color: #804c00; }
+      .supposed_summary_item.supposed_color_info { color: #185c92; }
+      ${self.styles}
+    </style>
+    </head>
+    <body>
+      <h1>${self.title}</h1>
+      <script>
+      ${self.supposed}
+      </script>
+      ${scriptTags.join('\n')}
+      <script>
+      ${self.scripts.join('\n\n')}
+      </script>
+      <script>
+      ${self.testBundle}
+      </script>
+    </body>
+    </html>`
+      }
+
       return Object.freeze(self)
     }
 
-    const makeTestBundle = ({ paths, template, stringifiedSuiteConfig }) => {
-      const beginning = template[0]
-      const end = template[1]
-      const modules = [beginning]
-      paths.forEach((file) => modules.push(fs.readFileSync(file).toString()))
-      modules.push(end.replace('/*{{suiteConfig}}*/', stringifiedSuiteConfig))
+    const makeRequestHandler = ({ page, cwd, makeConfig }) => (request, response) => {
+      let _isRefresh = false
 
-      return modules.join('\n\n')
-    }
-
-    const makeRequestHandler = ({ page, cwd }) => (request, response) => {
       if (request.url === '/' || request.url === '') {
+        let _page
+
+        if (_isRefresh) {
+          _page = makeConfig().page
+        }
+
         response.writeHead(200, {
           'Content-Type': 'text/html'
         })
-        response.end(page)
+        response.end(_page || page)
+        _isRefresh = true
         return
       }
 
@@ -116,55 +175,9 @@ module.exports = {
       }
     }
 
-    function start ({
-      title,
-      dependencies,
-      scripts,
-      testBundle,
-      port = 42001,
-      supposed,
-      cwd = process.cwd()
-    }) {
-      const scriptTags = dependencies.map((filePath) => `<script src="${filePath}"></script>`)
-      const server = http.createServer(makeRequestHandler({
-        cwd,
-        page: /* html */`
-    <!DOCTYPE html>
-    <html>
-    <head>
-    <meta charset="UTF-8">
-    <title>${title}</title>
-    <style>
-      body { font-family: "Courier New", Courier, monospace; }
-      .supposed_summary { font-size: 1.2em; margin-bottom: 20px; }
-      .supposed_summary_item { margin-right: 20px; }
-      .supposed_summary_item.supposed_color_passed { color: #4c8000; }
-      .supposed_summary_item.supposed_color_failed { color: #c52b20; }
-      .supposed_summary_item.supposed_color_skipped { color: #804c00; }
-      .supposed_summary_item.supposed_color_info { color: #185c92; }
-      .supposed_test { margin-top: 10px; }
-      .supposed_behavior { padding-left: 10px; }
-      .supposed_icon.supposed_color_passed { display: block; background-color: #4c8000; color: #ffffff; padding: 0 5px; }
-      .supposed_icon.supposed_color_failed { display: block; background-color: #c52b20; color: #ffffff; padding: 0 5px; }
-      .supposed_icon.supposed_color_skipped { display: block; background-color: #804c00; color: #ffffff; padding: 0 5px; }
-      .supposed_icon.supposed_color_info { display: block; background-color: #185c92; color: #ffffff; padding: 0 5px; }
-    </style>
-    </head>
-    <body>
-      <h1>${title}</h1>
-      <script>
-      ${supposed}
-      </script>
-      ${scriptTags.join('\n')}
-      <script>
-      ${scripts.join('\n\n')}
-      </script>
-      <script>
-      ${testBundle}
-      </script>
-    </body>
-    </html>`
-      }))
+    function start (makeConfig) {
+      const { port = 42001, page, cwd = process.cwd() } = makeConfig()
+      const server = http.createServer(makeRequestHandler({ cwd, page, makeConfig }))
 
       server.listen(port, (err) => {
         if (err) {
@@ -179,24 +192,25 @@ module.exports = {
 
     const runServer = (suite, serverConfig) => (context) => {
       const { paths } = context
-      const _serverConfig = new Config(serverConfig)
 
       if (!paths) {
         throw new Error('run-server expects paths to the tests to be provided')
       }
 
-      return start({
-        title: _serverConfig.title,
-        dependencies: _serverConfig.dependencies,
-        scripts: _serverConfig.scripts,
-        testBundle: makeTestBundle({
-          paths,
-          template: _serverConfig.template,
-          stringifiedSuiteConfig: _serverConfig.stringifiedSuiteConfig
-        }),
-        port: _serverConfig.port,
-        cwd: _serverConfig.cwd,
-        supposed: _serverConfig.supposed
+      return start(() => {
+        const _serverConfig = new Config(serverConfig, paths, suite)
+
+        return {
+          title: _serverConfig.title,
+          dependencies: _serverConfig.dependencies,
+          scripts: _serverConfig.scripts,
+          styles: _serverConfig.styles,
+          testBundle: _serverConfig.testBundle,
+          port: _serverConfig.port,
+          page: _serverConfig.page,
+          cwd: _serverConfig.cwd,
+          supposed: _serverConfig.supposed
+        }
       })
     }
 

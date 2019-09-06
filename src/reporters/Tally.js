@@ -1,5 +1,5 @@
 module.exports = {
-  name: 'tally',
+  name: 'Tally',
   factory: (dependencies) => {
     'use strict'
 
@@ -50,13 +50,18 @@ module.exports = {
       }
 
       const bump = (event) => {
-        const name = event.status.toLowerCase()
+        try {
+          const name = event.status.toLowerCase()
 
-        totals[name] += 1
-        totals.total += 1
-        totals.batches[event.batchId][name] += 1
-        totals.batches[event.batchId].total += 1
-        totals.results.push(event)
+          totals[name] += 1
+          totals.total += 1
+          totals.batches[event.batchId][name] += 1
+          totals.batches[event.batchId].total += 1
+          totals.results.push(event)
+        } catch (e) {
+          console.log(event)
+          console.log(e)
+        }
       }
 
       function Tally () {

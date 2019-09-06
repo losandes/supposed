@@ -3,8 +3,7 @@ module.exports = {
   factory: (dependencies) => {
     'use strict'
 
-    const { fs, path, makeDebugger } = dependencies
-    const debug = makeDebugger().withSource('find-files')
+    const { fs, path } = dependencies
 
     const isString = (input) => typeof input === 'string' && input.trim().length
 
@@ -70,7 +69,7 @@ module.exports = {
     }
 
     function findFiles (options) {
-      const config = debug(new Config(options))
+      const config = new Config(options)
       const walker = new Walker(config)
 
       const paths = config.directories.reduce((testPaths, directory) => {
@@ -80,7 +79,7 @@ module.exports = {
       }, [])
 
       // return a promise in case we decide to make the walker async
-      return Promise.resolve(debug({ config, paths }))
+      return Promise.resolve({ config, paths })
     }
 
     return { findFiles }

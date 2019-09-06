@@ -1,10 +1,7 @@
 module.exports = {
   name: 'reporterFactory',
-  factory: (dependencies) => {
+  factory: () => {
     'use strict'
-
-    const { makeDebugger } = dependencies
-    const debug = makeDebugger().withSource('reporter-factory')
 
     function ReporterFactory () {
       const self = {}
@@ -21,7 +18,6 @@ module.exports = {
           throw new Error(`A reporter by name, "${name}", is not registered`)
         }
 
-        debug(`Getting: ${_name}`, map[_name])
         const reporter = new map[_name]()
         reporter.name = reporter.name || _name
         return reporter
@@ -49,12 +45,10 @@ module.exports = {
 
         const name = uppered(reporter.name)
         map[name] = reporter
-        debug(`Adding: ${name}`, reporter)
 
         if (name.indexOf('REPORTER')) {
           const shortName = name.substring(0, name.indexOf('REPORTER'))
           map[shortName] = reporter
-          debug(`Adding: ${shortName}`, reporter)
         }
 
         return self

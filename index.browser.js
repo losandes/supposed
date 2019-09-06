@@ -27,13 +27,12 @@
 
   // resolve the dependency graph
   function Supposed (options) {
-    const { makeDebugger } = module.factories.makeDebuggerFactory()
-    const { allSettled } = module.factories.allSettledFactory({ makeDebugger })
-    const { TestEvent } = module.factories.TestEventFactory({ makeDebugger })
+    const { allSettled } = module.factories.allSettledFactory({})
+    const { runTests } = module.factories.runTestsFactory({ allSettled })
+    const { TestEvent } = module.factories.TestEventFactory({})
     const { Pubsub } = module.factories.pubsubFactory({
       allSettled,
       isPromise,
-      makeDebugger,
       TestEvent
     })
     const { publish, subscribe, subscriptionExists, allSubscriptions } = new Pubsub()
@@ -44,89 +43,93 @@
       useColors: true
     }
 
-    const consoleStyles = module.factories.consoleStylesFactory({ envvars, makeDebugger }).consoleStyles
+    const consoleStyles = module.factories.consoleStylesFactory({ envvars }).consoleStyles
 
-    const { TallyFactory } = module.factories.TallyFactory({ publish, TestEvent, makeDebugger })
+    const { TallyFactory } = module.factories.TallyFactory({ publish, TestEvent })
     const { Tally } = TallyFactory()
-    const { ReporterFactory } = module.factories.reporterFactory({ makeDebugger })
+    const { ReporterFactory } = module.factories.reporterFactoryFactory({})
     const reporterFactory = new ReporterFactory()
-    const ArrayReporter = module.factories.ArrayReporterFactory({ makeDebugger }).ArrayReporter
+    const ArrayReporter = module.factories.ArrayReporterFactory({}).ArrayReporter
     reporterFactory.add(ArrayReporter)
     reporterFactory.add(function QuietReporter () { // legacy
       return { write: new ArrayReporter().write }
     })
-    reporterFactory.add(module.factories.JsonReporterFactory({ makeDebugger, TestEvent }).JsonReporter)
-    reporterFactory.add(module.factories.NoopReporterFactory({ makeDebugger }).NoopReporter)
+    reporterFactory.add(module.factories.JsonReporterFactory({ TestEvent }).JsonReporter)
+    reporterFactory.add(module.factories.NoopReporterFactory({}).NoopReporter)
     reporterFactory.add(Tally)
     subscribe(reporterFactory.get(Tally.name))
 
     function DefaultFormatter (options) {
       return module.factories.DefaultFormatterFactory({
         consoleStyles,
-        makeDebugger,
         TestEvent,
         SYMBOLS: options.SYMBOLS
       }).DefaultFormatter()
     }
 
+    const blockFormatter = module.factories.BlockFormatterFactory({ consoleStyles, DefaultFormatter }).BlockFormatter()
+    const symbolFormatter = module.factories.SymbolFormatterFactory({ consoleStyles, DefaultFormatter }).SymbolFormatter()
+    const tapFormatter = module.factories.TapFormatterFactory({ consoleStyles, TestEvent }).TapFormatter()
+
     function ConsoleReporter (options) {
-      return module.factories.ConsoleReporterFactory({
-        makeDebugger,
+      return module.factories.DomReporterFactory({
         TestEvent,
         formatter: options.formatter
-      }).ConsoleReporter()
+      }).DomReporter()
     }
 
-    reporterFactory.add(module.factories.DefaultReporterFactory({
-      consoleStyles,
-      ConsoleReporter,
-      DefaultFormatter
-    }).DefaultReporter).add(module.factories.BlockReporterFactory({
-      consoleStyles,
-      ConsoleReporter,
-      DefaultFormatter
-    }).BlockReporter).add(module.factories.BriefReporterFactory({
+    reporterFactory.add(function DefaultReporter () {
+      return {
+        write: ConsoleReporter({ formatter: symbolFormatter }).write
+      }
+    }).add(function BlockReporter () {
+      return {
+        write: ConsoleReporter({ formatter: blockFormatter }).write
+      }
+    }).add(function JustTheDescriptionsReporter () {
+      return {
+        write: ConsoleReporter({
+          formatter: {
+            format: (event) => symbolFormatter.format(event).split('\n')[0]
+          }
+        }).write
+      }
+    }).add(function TapReporter () {
+      return {
+        write: ConsoleReporter({ formatter: tapFormatter }).write
+      }
+    }).add(module.factories.BriefReporterFactory({
       consoleStyles,
       ConsoleReporter,
       DefaultFormatter,
       TestEvent
-    }).BriefReporter).add(function TapReporter () {
-      const write = ConsoleReporter({
-        formatter: module.factories.TapFormatterFactory({ consoleStyles, makeDebugger, TestEvent }).TapFormatter()
-      }).write
+    }).BriefReporter)
 
-      return { write }
-    })
-
-    const { AsyncTest } = module.factories.AsyncTestFactory({ isPromise, makeDebugger, publish, TestEvent })
-    const { makeBatch } = module.factories.makeBatchFactory({ makeDebugger })
+    const { AsyncTest } = module.factories.AsyncTestFactory({ isPromise, publish, TestEvent })
+    const { makeBatch } = module.factories.makeBatchFactory({})
 
     const { makeSuiteConfig } = module.factories.makeSuiteConfigFactory({
       defaults: envvars,
       subscriptionExists,
       subscribe,
       allSubscriptions,
-      reporterFactory,
-      makeDebugger
+      reporterFactory
     })
     const { Suite } = module.factories.SuiteFactory({
       allSettled,
       AsyncTest,
       makeBatch,
-      makeDebugger,
       makeSuiteConfig,
       publish,
       subscribe,
       reporterFactory,
+      runTests,
       Tally,
       TestEvent
     })
 
     const suite = new Suite(options)
     suite.Suite = Supposed
-
-    // suite.runner is for the terminal only
-    delete suite.runner
 
     if (supposed && supposed.suites) {
       supposed.suites.push(suite)
@@ -138,7 +141,4 @@
   supposed.suites = [supposed]
 
   window.supposed = supposed
-
-  // we don't need these anymore
-  delete module.factories
 }(window))

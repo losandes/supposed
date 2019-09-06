@@ -2,9 +2,11 @@
 .gitignore
 .eslintrc
 .vscode
+archive
 npm-debug.log
 tests
 tests.browser
+tests.manual
 build.browser.js
 index.browser.js
 pre-push.js

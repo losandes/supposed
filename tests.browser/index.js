@@ -11,12 +11,17 @@ const suite = supposed.Suite({
   }
 })
 
+const __projectdir = __dirname.split('tests.browser')[0]
+
 suite.runner({
-  cwd: __dirname,
+  cwd: __projectdir,
+  directories: ['./tests.browser'],
   title: 'supposed-browser-tests',
-  port: 42002
-  // dependencies: [],
-  // supposedPath: path.join(__dirname.split('/src/discovery'), 'dist/supposed.min.js'),
+  port: 42002,
+  stringifiedSuiteConfig: '{ reporter: \'tap\', assertionLibrary: browserTestAssert }',
+  dependencies: ['/tests.browser/assert.js'],
+  supposedPath: path.join(__projectdir, 'dist/supposed.js')
   // template: undefined,
   // stringifiedSuiteConfig: '{ noColor: true }'
 }).startServer()
+// .run()

@@ -476,38 +476,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }
   };
   module.exports = {
-    name: 'makeDebugger',
-    factory: function factory() {
-      'use strict';
-
-      var makeDebugger = function makeDebugger(include) {
-        var INCLUDE = include || typeof process !== 'undefined' && process.env && process.env.NODE_DEBUG;
-        return {
-          withSource: function withSource(source) {
-            return function () {
-              for (var _len = arguments.length, params = new Array(_len), _key = 0; _key < _len; _key++) {
-                params[_key] = arguments[_key];
-              }
-
-              if (INCLUDE && (INCLUDE.split(',').indexOf('supposed') > -1 || INCLUDE.split(',').indexOf(source) > -1)) {
-                console.dir(params, {
-                  depth: null
-                });
-              } // return the 1st input to make this pass-through/chainable
-
-
-              return params && params[0];
-            };
-          }
-        };
-      };
-
-      return {
-        makeDebugger: makeDebugger
-      };
-    }
-  };
-  module.exports = {
     name: 'makeSuiteConfig',
     factory: function factory(dependencies) {
       'use strict';
@@ -694,6 +662,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           publish = dependencies.publish,
           subscribe = dependencies.subscribe,
           reporterFactory = dependencies.reporterFactory,
+          resolveTests = dependencies.resolveTests,
           runServer = dependencies.runServer,
           runTests = dependencies.runTests,
           Tally = dependencies.Tally,
@@ -873,8 +842,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         };
       };
 
-      var nodeRunner = function nodeRunner(config, test) {
-        return function (options) {
+      var runner = function runner(config, test) {
+        return function (findAndRun) {
           return function () {
             publishStartAndEnd = false;
             return publish({
@@ -882,7 +851,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               time: Date.now(),
               suiteId: config.name
             }).then(function () {
-              return findFiles(options).then(runTests(test));
+              return findAndRun();
             }).then(function (output) {
               if (output.broken.length) {
                 // these tests failed before being executed
@@ -957,8 +926,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         var byMatcher = matcher(config);
         var mapToTests = mapper(config, byMatcher);
         var test = tester(config, mapToTests);
-        var findAndRun = nodeRunner(config, test);
         var findAndStart = browserRunner(config, test);
+        var run = runner(config, test);
         /**
         // Make a newly configured suite
         */
@@ -981,7 +950,15 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
         test.runner = function (options) {
           return {
-            run: findAndRun(options),
+            // find and run (node)
+            run: run(function () {
+              return findFiles(options).then(resolveTests(test)).then(runTests(test));
+            }),
+            // run (browser|node)
+            runTests: run(function () {
+              return runTests(test)(options);
+            }),
+            // start test server (browser)
             startServer: findAndStart(options)
           };
         };
@@ -1106,6 +1083,78 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
   };
   module.exports = {
+    name: 'runTests',
+    factory: function factory(dependencies) {
+      'use strict';
+
+      var allSettled = dependencies.allSettled;
+
+      var hasThen = function hasThen(obj) {
+        return obj && typeof obj.then === 'function';
+      };
+
+      var toPromise = function toPromise(config, suite) {
+        return function (_ref2) {
+          var test = _ref2.test,
+              path = _ref2.path;
+
+          try {
+            if (suite && config.injectSuite !== false && typeof test === 'function') {
+              var maybePromise = test(suite, suite.dependencies);
+              return hasThen(maybePromise) ? maybePromise : Promise.resolve(maybePromise);
+            }
+
+            return Promise.resolve();
+          } catch (e) {
+            e.filePath = path;
+            return Promise.reject(e);
+          }
+        };
+      };
+
+      var mapToResults = function mapToResults(config, paths) {
+        return function (results) {
+          return Object.freeze({
+            results: results.filter(function (result) {
+              return result.status === 'fullfilled';
+            }).map(function (result) {
+              return result.value;
+            }).filter(function (result) {
+              return result;
+            }),
+            broken: results.filter(function (result) {
+              return result.status !== 'fullfilled';
+            }).map(function (result) {
+              return result.reason;
+            }),
+            files: paths,
+            config: config
+          });
+        };
+      };
+
+      var runTests = function runTests(suite) {
+        return function (context) {
+          var config = context.config,
+              tests = context.tests,
+              paths = context.paths;
+
+          if (!tests) {
+            throw new Error('run-tests expects tests to be provided');
+          }
+
+          return Promise.resolve(tests.map(toPromise(config || context, suite))).then(allSettled).then(mapToResults(config, paths));
+        };
+      };
+
+      return {
+        runTests: runTests
+      };
+    } // /factory
+    // /module
+
+  };
+  module.exports = {
     name: 'consoleStyles',
     factory: function factory() {
       'use strict';
@@ -1206,6 +1255,31 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }
   };
   module.exports = {
+    name: 'BlockFormatter',
+    factory: function factory(dependencies) {
+      'use strict';
+
+      var consoleStyles = dependencies.consoleStyles,
+          DefaultFormatter = dependencies.DefaultFormatter;
+
+      function BlockFormatter() {
+        return DefaultFormatter({
+          SYMBOLS: {
+            PASSED: "".concat(consoleStyles.bgGreen(consoleStyles.black(' PASS ')), " "),
+            FAILED: "".concat(consoleStyles.bgRed(consoleStyles.black(' FAIL ')), " "),
+            BROKEN: "".concat(consoleStyles.bgMagenta(consoleStyles.black(' !!!! ')), " "),
+            SKIPPED: "".concat(consoleStyles.bgYellow(consoleStyles.black(' SKIP ')), " "),
+            INFO: "".concat(consoleStyles.bgCyan(consoleStyles.black(' INFO ')), " ")
+          }
+        });
+      }
+
+      return {
+        BlockFormatter: BlockFormatter
+      };
+    }
+  };
+  module.exports = {
     name: 'DefaultFormatter',
     factory: function factory(dependencies) {
       'use strict';
@@ -1287,6 +1361,34 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
       return {
         DefaultFormatter: DefaultFormatter
+      };
+    }
+  };
+  module.exports = {
+    name: 'SymbolFormatter',
+    factory: function factory(dependencies) {
+      'use strict';
+
+      var consoleStyles = dependencies.consoleStyles,
+          DefaultFormatter = dependencies.DefaultFormatter;
+
+      function SymbolFormatter() {
+        return DefaultFormatter({
+          SYMBOLS: {
+            PASSED: consoleStyles.green('✓ '),
+            // heavy-check: '✔',
+            FAILED: consoleStyles.red('✗ '),
+            // heavy-x '✘',
+            BROKEN: consoleStyles.red('!= '),
+            // heavy-x '✘',
+            SKIPPED: consoleStyles.yellow('⸕ '),
+            INFO: consoleStyles.cyan('→ ')
+          }
+        });
+      }
+
+      return {
+        SymbolFormatter: SymbolFormatter
       };
     }
   };
@@ -1417,37 +1519,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }
   };
   module.exports = {
-    name: 'BlockReporter',
-    factory: function factory(dependencies) {
-      'use strict';
-
-      var consoleStyles = dependencies.consoleStyles,
-          ConsoleReporter = dependencies.ConsoleReporter,
-          DefaultFormatter = dependencies.DefaultFormatter;
-
-      function BlockReporter() {
-        var write = ConsoleReporter({
-          formatter: DefaultFormatter({
-            SYMBOLS: {
-              PASSED: "".concat(consoleStyles.bgGreen(consoleStyles.black(' PASS ')), " "),
-              FAILED: "".concat(consoleStyles.bgRed(consoleStyles.black(' FAIL ')), " "),
-              BROKEN: "".concat(consoleStyles.bgMagenta(consoleStyles.black(' !!!! ')), " "),
-              SKIPPED: "".concat(consoleStyles.bgYellow(consoleStyles.black(' SKIP ')), " "),
-              INFO: "".concat(consoleStyles.bgCyan(consoleStyles.black(' INFO ')), " ")
-            }
-          })
-        }).write;
-        return {
-          write: write
-        };
-      }
-
-      return {
-        BlockReporter: BlockReporter
-      };
-    }
-  };
-  module.exports = {
     name: 'BriefReporter',
     factory: function factory(dependencies) {
       'use strict';
@@ -1519,36 +1590,59 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }
   };
   module.exports = {
-    name: 'DefaultReporter',
+    name: 'DomReporter',
     factory: function factory(dependencies) {
       'use strict';
 
-      var consoleStyles = dependencies.consoleStyles,
-          ConsoleReporter = dependencies.ConsoleReporter,
-          DefaultFormatter = dependencies.DefaultFormatter;
+      var TestEvent = dependencies.TestEvent,
+          formatter = dependencies.formatter;
+      var format = formatter.format;
+      var reportDivId = 'supposed_report';
+      var reportPreId = 'supposed_report_results';
+      var reportDiv;
+      var reportPre;
 
-      function DefaultReporter() {
-        var write = ConsoleReporter({
-          formatter: DefaultFormatter({
-            SYMBOLS: {
-              PASSED: consoleStyles.green('✓ '),
-              // heavy-check: '✔',
-              FAILED: consoleStyles.red('✗ '),
-              // heavy-x '✘',
-              BROKEN: consoleStyles.red('!= '),
-              // heavy-x '✘',
-              SKIPPED: consoleStyles.yellow('⸕ '),
-              INFO: consoleStyles.cyan('→ ')
+      var initDom = function initDom() {
+        var _reportDiv = document.getElementById(reportDivId);
+
+        if (_reportDiv) {
+          reportDiv = _reportDiv;
+          reportPre = document.getElementById(reportPreId);
+          return;
+        }
+
+        reportDiv = document.createElement('div');
+        reportDiv.setAttribute('id', reportDivId);
+        document.body.appendChild(reportDiv);
+        reportPre = document.createElement('pre');
+        reportPre.setAttribute('id', reportPreId);
+        reportDiv.appendChild(reportPre);
+      };
+
+      function DomReporter() {
+        initDom();
+
+        var write = function write(event) {
+          // write to the console
+          if ([TestEvent.types.START, TestEvent.types.TEST, TestEvent.types.INFO, TestEvent.types.END].indexOf(event.type) > -1) {
+            var line = format(event);
+            console.log(line);
+            reportPre.append("".concat(line, "\n"));
+
+            if (typeof window !== 'undefined' && typeof window.scrollTo === 'function' && typeof document !== 'undefined' && document.body) {
+              window.scrollTo(0, document.body.scrollHeight);
             }
-          })
-        }).write;
+          }
+        }; // /write
+
+
         return {
           write: write
         };
       }
 
       return {
-        DefaultReporter: DefaultReporter
+        DomReporter: DomReporter
       };
     }
   };
@@ -1605,11 +1699,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
   };
   module.exports = {
     name: 'reporterFactory',
-    factory: function factory(dependencies) {
+    factory: function factory() {
       'use strict';
-
-      var makeDebugger = dependencies.makeDebugger;
-      var debug = makeDebugger().withSource('reporter-factory');
 
       function ReporterFactory() {
         var self = {};
@@ -1626,7 +1717,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             throw new Error("A reporter by name, \"".concat(name, "\", is not registered"));
           }
 
-          debug("Getting: ".concat(_name), map[_name]);
           var reporter = new map[_name]();
           reporter.name = reporter.name || _name;
           return reporter;
@@ -1656,12 +1746,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
           var name = uppered(reporter.name);
           map[name] = reporter;
-          debug("Adding: ".concat(name), reporter);
 
           if (name.indexOf('REPORTER')) {
             var shortName = name.substring(0, name.indexOf('REPORTER'));
             map[shortName] = reporter;
-            debug("Adding: ".concat(shortName), reporter);
           }
 
           return self;
@@ -1676,7 +1764,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }
   };
   module.exports = {
-    name: 'tally',
+    name: 'Tally',
     factory: function factory(dependencies) {
       'use strict';
 
@@ -1731,12 +1819,17 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         };
 
         var bump = function bump(event) {
-          var name = event.status.toLowerCase();
-          totals[name] += 1;
-          totals.total += 1;
-          totals.batches[event.batchId][name] += 1;
-          totals.batches[event.batchId].total += 1;
-          totals.results.push(event);
+          try {
+            var name = event.status.toLowerCase();
+            totals[name] += 1;
+            totals.total += 1;
+            totals.batches[event.batchId][name] += 1;
+            totals.batches[event.batchId].total += 1;
+            totals.results.push(event);
+          } catch (e) {
+            console.log(event);
+            console.log(e);
+          }
         };
 
         function Tally() {
@@ -1813,32 +1906,29 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
   var supposed = null; // resolve the dependency graph
 
   function Supposed(options) {
-    var _module$factories$mak = module.factories.makeDebuggerFactory(),
-        makeDebugger = _module$factories$mak.makeDebugger;
-
-    var _module$factories$all = module.factories.allSettledFactory({
-      makeDebugger: makeDebugger
-    }),
+    var _module$factories$all = module.factories.allSettledFactory({}),
         allSettled = _module$factories$all.allSettled;
 
-    var _module$factories$Tes = module.factories.TestEventFactory({
-      makeDebugger: makeDebugger
+    var _module$factories$run = module.factories.runTestsFactory({
+      allSettled: allSettled
     }),
+        runTests = _module$factories$run.runTests;
+
+    var _module$factories$Tes = module.factories.TestEventFactory({}),
         TestEvent = _module$factories$Tes.TestEvent;
 
     var _module$factories$pub = module.factories.pubsubFactory({
       allSettled: allSettled,
       isPromise: isPromise,
-      makeDebugger: makeDebugger,
       TestEvent: TestEvent
     }),
         Pubsub = _module$factories$pub.Pubsub;
 
-    var _ref2 = new Pubsub(),
-        publish = _ref2.publish,
-        subscribe = _ref2.subscribe,
-        subscriptionExists = _ref2.subscriptionExists,
-        allSubscriptions = _ref2.allSubscriptions;
+    var _ref3 = new Pubsub(),
+        publish = _ref3.publish,
+        subscribe = _ref3.subscribe,
+        subscriptionExists = _ref3.subscriptionExists,
+        allSubscriptions = _ref3.allSubscriptions;
 
     var envvars = {
       assertionLibrary: {},
@@ -1846,29 +1936,23 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       useColors: true
     };
     var consoleStyles = module.factories.consoleStylesFactory({
-      envvars: envvars,
-      makeDebugger: makeDebugger
+      envvars: envvars
     }).consoleStyles;
 
     var _module$factories$Tal = module.factories.TallyFactory({
       publish: publish,
-      TestEvent: TestEvent,
-      makeDebugger: makeDebugger
+      TestEvent: TestEvent
     }),
         TallyFactory = _module$factories$Tal.TallyFactory;
 
     var _TallyFactory = TallyFactory(),
         Tally = _TallyFactory.Tally;
 
-    var _module$factories$rep = module.factories.reporterFactory({
-      makeDebugger: makeDebugger
-    }),
+    var _module$factories$rep = module.factories.reporterFactoryFactory({}),
         ReporterFactory = _module$factories$rep.ReporterFactory;
 
     var reporterFactory = new ReporterFactory();
-    var ArrayReporter = module.factories.ArrayReporterFactory({
-      makeDebugger: makeDebugger
-    }).ArrayReporter;
+    var ArrayReporter = module.factories.ArrayReporterFactory({}).ArrayReporter;
     reporterFactory.add(ArrayReporter);
     reporterFactory.add(function QuietReporter() {
       // legacy
@@ -1877,99 +1961,110 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       };
     });
     reporterFactory.add(module.factories.JsonReporterFactory({
-      makeDebugger: makeDebugger,
       TestEvent: TestEvent
     }).JsonReporter);
-    reporterFactory.add(module.factories.NoopReporterFactory({
-      makeDebugger: makeDebugger
-    }).NoopReporter);
+    reporterFactory.add(module.factories.NoopReporterFactory({}).NoopReporter);
     reporterFactory.add(Tally);
     subscribe(reporterFactory.get(Tally.name));
 
     function DefaultFormatter(options) {
       return module.factories.DefaultFormatterFactory({
         consoleStyles: consoleStyles,
-        makeDebugger: makeDebugger,
         TestEvent: TestEvent,
         SYMBOLS: options.SYMBOLS
       }).DefaultFormatter();
     }
 
+    var blockFormatter = module.factories.BlockFormatterFactory({
+      consoleStyles: consoleStyles,
+      DefaultFormatter: DefaultFormatter
+    }).BlockFormatter();
+    var symbolFormatter = module.factories.SymbolFormatterFactory({
+      consoleStyles: consoleStyles,
+      DefaultFormatter: DefaultFormatter
+    }).SymbolFormatter();
+    var tapFormatter = module.factories.TapFormatterFactory({
+      consoleStyles: consoleStyles,
+      TestEvent: TestEvent
+    }).TapFormatter();
+
     function ConsoleReporter(options) {
-      return module.factories.ConsoleReporterFactory({
-        makeDebugger: makeDebugger,
+      return module.factories.DomReporterFactory({
         TestEvent: TestEvent,
         formatter: options.formatter
-      }).ConsoleReporter();
+      }).DomReporter();
     }
 
-    reporterFactory.add(module.factories.DefaultReporterFactory({
-      consoleStyles: consoleStyles,
-      ConsoleReporter: ConsoleReporter,
-      DefaultFormatter: DefaultFormatter
-    }).DefaultReporter).add(module.factories.BlockReporterFactory({
-      consoleStyles: consoleStyles,
-      ConsoleReporter: ConsoleReporter,
-      DefaultFormatter: DefaultFormatter
-    }).BlockReporter).add(module.factories.BriefReporterFactory({
+    reporterFactory.add(function DefaultReporter() {
+      return {
+        write: ConsoleReporter({
+          formatter: symbolFormatter
+        }).write
+      };
+    }).add(function BlockReporter() {
+      return {
+        write: ConsoleReporter({
+          formatter: blockFormatter
+        }).write
+      };
+    }).add(function JustTheDescriptionsReporter() {
+      return {
+        write: ConsoleReporter({
+          formatter: {
+            format: function format(event) {
+              return symbolFormatter.format(event).split('\n')[0];
+            }
+          }
+        }).write
+      };
+    }).add(function TapReporter() {
+      return {
+        write: ConsoleReporter({
+          formatter: tapFormatter
+        }).write
+      };
+    }).add(module.factories.BriefReporterFactory({
       consoleStyles: consoleStyles,
       ConsoleReporter: ConsoleReporter,
       DefaultFormatter: DefaultFormatter,
       TestEvent: TestEvent
-    }).BriefReporter).add(function TapReporter() {
-      var write = ConsoleReporter({
-        formatter: module.factories.TapFormatterFactory({
-          consoleStyles: consoleStyles,
-          makeDebugger: makeDebugger,
-          TestEvent: TestEvent
-        }).TapFormatter()
-      }).write;
-      return {
-        write: write
-      };
-    });
+    }).BriefReporter);
 
     var _module$factories$Asy = module.factories.AsyncTestFactory({
       isPromise: isPromise,
-      makeDebugger: makeDebugger,
       publish: publish,
       TestEvent: TestEvent
     }),
         AsyncTest = _module$factories$Asy.AsyncTest;
 
-    var _module$factories$mak2 = module.factories.makeBatchFactory({
-      makeDebugger: makeDebugger
-    }),
-        makeBatch = _module$factories$mak2.makeBatch;
+    var _module$factories$mak = module.factories.makeBatchFactory({}),
+        makeBatch = _module$factories$mak.makeBatch;
 
-    var _module$factories$mak3 = module.factories.makeSuiteConfigFactory({
+    var _module$factories$mak2 = module.factories.makeSuiteConfigFactory({
       defaults: envvars,
       subscriptionExists: subscriptionExists,
       subscribe: subscribe,
       allSubscriptions: allSubscriptions,
-      reporterFactory: reporterFactory,
-      makeDebugger: makeDebugger
+      reporterFactory: reporterFactory
     }),
-        makeSuiteConfig = _module$factories$mak3.makeSuiteConfig;
+        makeSuiteConfig = _module$factories$mak2.makeSuiteConfig;
 
     var _module$factories$Sui = module.factories.SuiteFactory({
       allSettled: allSettled,
       AsyncTest: AsyncTest,
       makeBatch: makeBatch,
-      makeDebugger: makeDebugger,
       makeSuiteConfig: makeSuiteConfig,
       publish: publish,
       subscribe: subscribe,
       reporterFactory: reporterFactory,
+      runTests: runTests,
       Tally: Tally,
       TestEvent: TestEvent
     }),
         Suite = _module$factories$Sui.Suite;
 
     var suite = new Suite(options);
-    suite.Suite = Supposed; // suite.runner is for the terminal only
-
-    delete suite.runner;
+    suite.Suite = Supposed;
 
     if (supposed && supposed.suites) {
       supposed.suites.push(suite);
@@ -1980,7 +2075,5 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
   supposed = Supposed();
   supposed.suites = [supposed];
-  window.supposed = supposed; // we don't need these anymore
-
-  delete module.factories;
+  window.supposed = supposed;
 })(window);

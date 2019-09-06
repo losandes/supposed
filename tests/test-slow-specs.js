@@ -1,4 +1,4 @@
-module.exports = (describe) => {
+module.exports = (test) => {
   const SKIP_SLOW_TESTS = process.env.SUPPOSED_INCLUDE_SLOW_TESTS === 'false'
   const COUNT = process.env.SUPPOSED_SLOW_TEST_COUNT
     ? parseInt(process.env.SUPPOSED_SLOW_TEST_COUNT)
@@ -18,7 +18,7 @@ module.exports = (describe) => {
       const description = SKIP_SLOW_TESTS
         ? '// slow tests (export SUPPOSED_INCLUDE_SLOW_TESTS=true to turn these on)'
         : `slow test ${i}`
-      await describe(description, slowTest)
+      await test(description, slowTest)
     }
   })()
 }
