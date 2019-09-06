@@ -28,7 +28,7 @@ module.exports = {
       return batch
     }
 
-    const normalizeBatch = async (description, assertions) => {
+    const normalizeBatch = (description, assertions) => {
       const descriptionType = typeof description
       const assertionsType = typeof assertions
 
@@ -81,117 +81,141 @@ module.exports = {
       }, [])
     }
 
-    const tester = (config, mapToTests) => async (behaviorOrBatch, sut) => {
-      try {
-        const batch = await normalizeBatch(behaviorOrBatch, sut)
-        const context = mapToTests(batch)
-        const plan = {
-          count: context.batch.reduce((count, item) => count + item.assertions.length, 0),
-          completed: 0
-        }
+    const tester = (config, mapToTests) => (description, assertions) => {
+      return normalizeBatch(description, assertions)
+        .then(mapToTests)
+        .then((context) => {
+          context.plan = {
+            count: context.batch.reduce((count, item) => count + item.assertions.length, 0),
+            completed: 0
+          }
 
-        if (publishStartAndEnd) {
-          await publish({ type: TestEvent.types.START, time: Date.now(), suiteId: config.name })
-        }
+          return context
+        }).then((context) => {
+          if (publishStartAndEnd) {
+            return publish({ type: TestEvent.types.START, time: Date.now(), suiteId: config.name })
+              .then(() => context)
+          }
 
-        await publish({
-          type: TestEvent.types.START_BATCH,
-          batchId: context.batchId,
-          time: Date.now(),
-          suiteId: config.name,
-          plan
-        })
-
-        const results = await allSettled(context.tests.map((test) => test()))
-        const batchTotals = Tally.getTally().batches[context.batchId]
-
-        await publish({
-          type: TestEvent.types.END_BATCH,
-          batchId: context.batchId,
-          time: Date.now(),
-          suiteId: config.name,
-          plan: {
-            count: plan.count,
-            completed: batchTotals.total
-          },
-          totals: batchTotals
-        })
-
-        if (publishStartAndEnd) {
-          await publish(new TestEvent({ type: TestEvent.types.END_TALLY, suiteId: config.name }))
-          await publish(new TestEvent({
-            type: TestEvent.types.END,
+          return Promise.resolve(context)
+        }).then((context) => {
+          const { batchId, plan } = context
+          return publish({
+            type: TestEvent.types.START_BATCH,
+            batchId: batchId,
             time: Date.now(),
             suiteId: config.name,
-            totals: batchTotals
-          }))
+            plan
+          }).then(() => context)
+        }).then((context) => {
+          const { batchId, tests } = context
 
-          return {
-            batchId: context.batchId,
+          return allSettled(tests.map((test) => test()))
+            .then((results) => {
+              context.results = results
+              context.batchTotals = Tally.getTally().batches[batchId]
+              return context
+            })
+        }).then((context) => {
+          const { batchId, plan, batchTotals } = context
+
+          return publish({
+            type: TestEvent.types.END_BATCH,
+            batchId: batchId,
+            time: Date.now(),
+            suiteId: config.name,
+            plan: {
+              count: plan.count,
+              completed: batchTotals.total
+            },
+            totals: batchTotals
+          }).then(() => context)
+        }).then((context) => {
+          const { batchId, batchTotals, results } = context
+          const output = {
+            batchId: batchId,
             results: reduceResults(results),
             totals: batchTotals
           }
-        }
 
-        return {
-          batchId: context.batchId,
-          results: reduceResults(results),
-          totals: batchTotals
-        }
-      } catch (e) {
-        publish({
-          type: TestEvent.types.TEST,
-          status: TestEvent.status.BROKEN,
-          behavior: 'Failed to load test',
-          suiteId: config.name,
-          error: e
-        })
-        throw e
-      }
-    }
+          if (publishStartAndEnd) {
+            return publish(new TestEvent({ type: TestEvent.types.END_TALLY, suiteId: config.name }))
+              .then(() => publish(new TestEvent({
+                type: TestEvent.types.END,
+                time: Date.now(),
+                suiteId: config.name,
+                totals: batchTotals
+              })))
+              .then(() => output)
+          }
 
-    const nodeRunner = (config, test) => (options) => async () => {
-      publishStartAndEnd = false
-      await publish({ type: TestEvent.types.START, time: Date.now(), suiteId: config.name })
-      const output = await findFiles(options).then(runTests(test))
-
-      if (output.broken.length) {
-        // these tests failed before being executed
-
-        const brokenPromises = output.broken
-          .map((error) => publish({
+          return Promise.resolve(output)
+        }).catch((e) => {
+          publish({
             type: TestEvent.types.TEST,
             status: TestEvent.status.BROKEN,
-            behavior: `Failed to load test: ${error.filePath}`,
+            behavior: 'Failed to load test',
             suiteId: config.name,
-            error
-          }))
-
-        await allSettled(brokenPromises)
-      }
-
-      await publish(new TestEvent({ type: TestEvent.types.END_TALLY, suiteId: config.name }))
-      const tally = Tally.getSimpleTally()
-      await publish(new TestEvent({
-        type: TestEvent.types.END,
-        time: Date.now(),
-        suiteId: config.name,
-        totals: tally
-      }))
-
-      return {
-        files: output.files,
-        results: output.results,
-        broken: output.broken,
-        config: output.config,
-        suite: test,
-        totals: tally
-      }
+            error: e
+          })
+          throw e
+        })
     }
 
-    const browserRunner = (config, test) => (options) => async () => {
-      const output = await findFiles(options).then(runServer(test, options))
-      return output
+    const nodeRunner = (config, test) => (options) => () => {
+      publishStartAndEnd = false
+
+      return publish({ type: TestEvent.types.START, time: Date.now(), suiteId: config.name })
+        .then(() => findFiles(options).then(runTests(test)))
+        .then((output) => {
+          if (output.broken.length) {
+            // these tests failed before being executed
+
+            const brokenPromises = output.broken
+              .map((error) => publish({
+                type: TestEvent.types.TEST,
+                status: TestEvent.status.BROKEN,
+                behavior: `Failed to load test: ${error.filePath}`,
+                suiteId: config.name,
+                error
+              }))
+
+            return allSettled(brokenPromises).then(() => output)
+          }
+
+          return Promise.resolve(output)
+        })
+        .then((output) => {
+          return publish(new TestEvent({ type: TestEvent.types.END_TALLY, suiteId: config.name }))
+            .then(() => output)
+        })
+        .then((output) => {
+          // only get the tally _after_ END_TALLY was emitted
+          return {
+            output,
+            tally: Tally.getSimpleTally()
+          }
+        }).then((context) => {
+          return publish(new TestEvent({
+            type: TestEvent.types.END,
+            time: Date.now(),
+            suiteId: config.name,
+            totals: context.tally
+          })).then(() => context)
+        }).then(({ output, tally }) => {
+          return {
+            files: output.files,
+            results: output.results,
+            broken: output.broken,
+            config: output.config,
+            suite: test,
+            totals: tally
+          }
+        })
+    }
+
+    const browserRunner = (config, test) => (options) => () => {
+      return findFiles(options).then(runServer(test, options))
     }
 
     /**
@@ -210,8 +234,8 @@ module.exports = {
       // Make a newly configured suite
       */
       // test.Suite = Suite
-      test.printSummary = async () => {
-        await publish(new TestEvent({
+      test.printSummary = () => {
+        return publish(new TestEvent({
           type: TestEvent.types.END,
           time: Date.now(),
           suiteId: config.name,

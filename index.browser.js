@@ -20,6 +20,9 @@
   // MODULES_HERE
 
   // resolve the dependency graph
+  function isPromise (input) {
+    return input && typeof input.then === 'function'
+  }
   let supposed = null
 
   // resolve the dependency graph
@@ -29,6 +32,7 @@
     const { TestEvent } = module.factories.TestEventFactory({ makeDebugger })
     const { Pubsub } = module.factories.pubsubFactory({
       allSettled,
+      isPromise,
       makeDebugger,
       TestEvent
     })
@@ -94,7 +98,7 @@
       return { write }
     })
 
-    const { AsyncTest } = module.factories.AsyncTestFactory({ TestEvent, publish, makeDebugger })
+    const { AsyncTest } = module.factories.AsyncTestFactory({ isPromise, makeDebugger, publish, TestEvent })
     const { makeBatch } = module.factories.makeBatchFactory({ makeDebugger })
 
     const { makeSuiteConfig } = module.factories.makeSuiteConfigFactory({

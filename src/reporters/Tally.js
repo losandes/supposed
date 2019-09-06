@@ -31,21 +31,22 @@ module.exports = {
         batches: {}
       }
 
-      const makeBatchTally = async (event) => {
+      const makeBatchTally = (event) => {
         if (totals.batches[event.batchId]) {
-          await publish({
-            type: TestEvent.types.BROKEN,
+          return publish({
+            type: TestEvent.types.TEST,
+            status: TestEvent.status.BROKEN,
             batchId: event.batchId,
             error: new Error('Duplicate Batch Ids were created, or multiple START_BATCH events were emitted for the same batch')
+          }).then(() => {
+            return undefined
           })
-
-          return
         }
 
         const tally = makeTally()
         tally.startTime = now()
 
-        return tally
+        return Promise.resolve(tally)
       }
 
       const bump = (event) => {
@@ -59,23 +60,27 @@ module.exports = {
       }
 
       function Tally () {
-        const write = async (event) => {
+        const write = (event) => {
           switch (event.type) {
             case TestEvent.types.START:
               totals.startTime = now()
-              break
+              return Promise.resolve()
             case TestEvent.types.START_BATCH:
-              totals.batches[event.batchId] = await makeBatchTally(event)
-              break
+              return makeBatchTally(event)
+                .then((tally) => {
+                  if (tally) {
+                    totals.batches[event.batchId] = tally
+                  }
+                })
             case TestEvent.types.TEST:
               bump(event)
-              break
+              return Promise.resolve()
             case TestEvent.types.END_BATCH:
               totals.batches[event.batchId].endTime = now()
-              break
+              return Promise.resolve()
             case TestEvent.types.END_TALLY:
               totals.endTime = now()
-              break
+              return Promise.resolve()
           } // /switch
         } // /write
 

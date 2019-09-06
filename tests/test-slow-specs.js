@@ -8,7 +8,9 @@ module.exports = (describe) => {
     : 10
 
   const slowTest = async () => new Promise((resolve) => {
-    setTimeout(() => { resolve() }, DELAY)
+    setTimeout(() => {
+      resolve()
+    }, DELAY)
   })
 
   return (async () => {

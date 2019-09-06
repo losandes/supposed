@@ -182,7 +182,7 @@ module.exports = {
       const { draw } = new NyanPrinter()
       const stats = { total: 0, success: 0, failed: 0, skipped: 0, errors: [] }
 
-      const write = async (event) => {
+      const write = (event) => {
         if (event.type === TestEvent.types.START) {
           draw.begin(stats)
         } else if (event.type === TestEvent.types.END) {

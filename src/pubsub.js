@@ -3,23 +3,20 @@ module.exports = {
   factory: (dependencies) => {
     'use strict'
 
-    const { allSettled, TestEvent } = dependencies
+    const { allSettled, isPromise, TestEvent } = dependencies
 
     const makeId = () => `S${(Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase()}`
 
     function Pubsub () {
       const subscriptions = []
 
-      const publish = async (input) => {
+      const publish = (input) => {
         const event = new TestEvent(input)
 
-        await allSettled(subscriptions.map(
-          async (subscription) => {
-            await subscription.write(event)
-          })
-        )
-
-        return event
+        return allSettled(subscriptions.map((subscription) => {
+          const result = subscription.write(event)
+          return isPromise(result) ? result : Promise.resolve(result)
+        })).then(() => event)
       }
 
       const subscribe = (subscription) => {

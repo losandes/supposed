@@ -30,7 +30,8 @@ module.exports = {
       return Object.freeze({
         results: results
           .filter((result) => result.status === 'fullfilled')
-          .map((result) => result.value),
+          .map((result) => result.value)
+          .filter((result) => result),
         broken: results
           .filter((result) => result.status !== 'fullfilled')
           .map((result) => result.reason),

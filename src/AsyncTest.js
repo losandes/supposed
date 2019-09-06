@@ -3,7 +3,7 @@ module.exports = {
   factory: (dependencies) => {
     'use strict'
 
-    const { TestEvent, publish } = dependencies
+    const { isPromise, publish, TestEvent } = dependencies
 
     function noop () { }
 
@@ -35,22 +35,29 @@ module.exports = {
         )
     }
 
-    function isPromise (input) {
-      return input && typeof input.then === 'function'
-    }
-
     /**
      * Runs `given` and passes any output forward
      * @param {Object} context
      */
-    async function runGiven (context) {
+    function runGiven (context) {
+      if (typeof context.given !== 'function' && typeof context.given !== 'object') {
+        return Promise.resolve(context)
+      }
+
       try {
         const actual = context.given()
-        context.resultOfGiven = isPromise(actual)
-          ? await actual
-          : actual
+        if (isPromise(actual)) {
+          return actual.then((value) => {
+            context.resultOfGiven = value
+            return context
+          }).catch((e) => {
+            context.err = e
+            throw e
+          })
+        }
 
-        return context
+        context.resultOfGiven = actual
+        return Promise.resolve(context)
       } catch (e) {
         context.err = e
         throw e
@@ -61,14 +68,25 @@ module.exports = {
      * Runs `when` and passes any output forward
      * @param {Object} context
      */
-    async function runWhen (context) {
+    function runWhen (context) {
+      if (typeof context.when !== 'function' && typeof context.when !== 'object') {
+        return Promise.resolve(context)
+      }
+
       try {
         const actual = context.when(context.resultOfGiven)
-        context.resultOfWhen = isPromise(actual)
-          ? await actual
-          : actual
+        if (isPromise(actual)) {
+          return actual.then((value) => {
+            context.resultOfWhen = value
+            return context
+          }).catch((e) => {
+            context.err = e
+            return context
+          })
+        }
 
-        return context
+        context.resultOfWhen = actual
+        return Promise.resolve(context)
       } catch (e) {
         context.err = e
         return context
@@ -79,7 +97,7 @@ module.exports = {
      * Executes the assertions
      * @param {Object} context
      */
-    async function checkAssertions (context) {
+    function checkAssertions (context) {
       const promises = context.test.assertions.map((assertion) => {
         return assertOne(context.batchId, assertion, () => {
           if (assertion.test.length > 1) {
@@ -116,25 +134,30 @@ module.exports = {
         })
     } // /checkAssertions
 
-    async function maybeLog (maybePromise) {
-      if (isPromise(maybePromise)) {
-        const result = await maybePromise()
-
-        if (result && typeof result.log !== 'undefined') {
-          return result.log
-        }
-      } else {
-        if (maybePromise && typeof maybePromise.log !== 'undefined') {
-          return maybePromise.log
-        }
-      }
+    function maybeLog (result) {
+      return result && typeof result.log !== 'undefined' ? result.log : undefined
     }
 
     /**
      * Executes one assertion
      * @param {Object} context
      */
-    async function assertOne (batchId, assertion, test) {
+    function assertOne (batchId, assertion, test) {
+      const pass = (result) => publish({
+        type: TestEvent.types.TEST,
+        status: TestEvent.status.PASSED,
+        batchId,
+        behavior: assertion.behavior,
+        log: maybeLog(result)
+      })
+      const fail = (e) => publish({
+        type: TestEvent.types.TEST,
+        status: TestEvent.status.FAILED,
+        batchId,
+        behavior: assertion.behavior,
+        error: e
+      })
+
       try {
         if (assertion.skipped) {
           return publish({
@@ -145,23 +168,13 @@ module.exports = {
           })
         }
 
-        const maybePromise = await test()
+        const result = test()
 
-        return publish({
-          type: TestEvent.types.TEST,
-          status: TestEvent.status.PASSED,
-          batchId,
-          behavior: assertion.behavior,
-          log: await maybeLog(maybePromise)
-        })
+        return isPromise(result)
+          ? result.then(pass).catch(fail)
+          : pass(result)
       } catch (e) {
-        return publish({
-          type: TestEvent.types.TEST,
-          status: TestEvent.status.FAILED,
-          batchId,
-          behavior: assertion.behavior,
-          error: e
-        })
+        return fail(e)
       }
     } // /assertOne
 
@@ -205,14 +218,14 @@ module.exports = {
               test: test,
               config: config,
               batchId,
-              timer: setTimeout(async () => {
-                return resolve(await publish({ // was reject
+              timer: setTimeout(() => {
+                publish({
                   type: TestEvent.types.TEST,
                   status: TestEvent.status.BROKEN,
                   batchId,
                   behavior: test.behavior,
                   error: new Error(`Timeout: the test exceeded ${context.config.timeout} ms`)
-                }))
+                }).then(resolve)
               }, config.timeout),
               err: null // null is the default
             })
@@ -226,15 +239,15 @@ module.exports = {
               .then(context => {
                 clearTimeout(context.timer)
                 return resolve(context.outcomes)
-              }).catch(async (err) => {
+              }).catch((err) => {
                 clearTimeout(context.timer)
-                return resolve(await publish({ // was reject
+                publish({
                   type: TestEvent.types.TEST,
                   status: TestEvent.status.BROKEN,
                   batchId,
                   behavior: test.behavior,
                   error: err && err.error ? err.error : err
-                }))
+                }).then(resolve)
               }) // /flow
           }, 0) // /setTimeout
         }) // /outer Promise

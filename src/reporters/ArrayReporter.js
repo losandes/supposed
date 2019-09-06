@@ -5,7 +5,7 @@ module.exports = {
 
     function ArrayReporter () {
       const events = []
-      const write = async (event) => events.push(event)
+      const write = (event) => events.push(event)
 
       return { write, events }
     }

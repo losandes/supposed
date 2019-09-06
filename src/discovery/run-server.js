@@ -17,6 +17,7 @@ module.exports = {
         title: 'supposed',
         port: 42001,
         dependencies: [],
+        scripts: [],
         supposed: fs.readFileSync(path.join(__dirname.split('/src/discovery')[0], 'dist/supposed.min.js'))
           .toString(),
         template: undefined,
@@ -39,6 +40,14 @@ module.exports = {
         config.dependencies.forEach((dependency) => {
           if (isString(dependency)) {
             self.dependencies.push(dependency)
+          }
+        })
+      }
+
+      if (Array.isArray(config.scripts)) {
+        config.scripts.forEach((dependency) => {
+          if (isString(dependency)) {
+            self.scripts.push(dependency)
           }
         })
       }
@@ -107,8 +116,16 @@ module.exports = {
       }
     }
 
-    function start ({ title, dependencies, testBundle, port = 42001, supposed, cwd = process.cwd() }) {
-      const scripts = dependencies.map((filePath) => `<script src="${filePath}"></script>\n`)
+    function start ({
+      title,
+      dependencies,
+      scripts,
+      testBundle,
+      port = 42001,
+      supposed,
+      cwd = process.cwd()
+    }) {
+      const scriptTags = dependencies.map((filePath) => `<script src="${filePath}"></script>`)
       const server = http.createServer(makeRequestHandler({
         cwd,
         page: /* html */`
@@ -138,7 +155,10 @@ module.exports = {
       <script>
       ${supposed}
       </script>
-      ${scripts}
+      ${scriptTags.join('\n')}
+      <script>
+      ${scripts.join('\n\n')}
+      </script>
       <script>
       ${testBundle}
       </script>
@@ -168,6 +188,7 @@ module.exports = {
       return start({
         title: _serverConfig.title,
         dependencies: _serverConfig.dependencies,
+        scripts: _serverConfig.scripts,
         testBundle: makeTestBundle({
           paths,
           template: _serverConfig.template,

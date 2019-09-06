@@ -39,6 +39,10 @@ const NyanReporterFactory = require('./src/reporters/NyanReporter.js').factory
 const ReporterFactoryFactory = require('./src/reporters/reporter-factory.js').factory
 const TallyFactoryFactory = require('./src/reporters/Tally.js').factory
 
+function isPromise (input) {
+  return input && typeof input.then === 'function'
+}
+
 let supposed = null
 
 // resolve the dependency graph
@@ -49,6 +53,7 @@ function Supposed (options) {
   const { TestEvent } = TestEventFactory({ makeDebugger })
   const { Pubsub } = pubsubFactory({
     allSettled,
+    isPromise,
     makeDebugger,
     TestEvent
   })
@@ -138,7 +143,7 @@ function Supposed (options) {
     return { write }
   })
 
-  const { AsyncTest } = AsyncTestFactory({ TestEvent, publish, makeDebugger })
+  const { AsyncTest } = AsyncTestFactory({ isPromise, makeDebugger, publish, TestEvent })
   const { makeBatch } = makeBatchFactory({ makeDebugger })
 
   const { makeSuiteConfig } = makeSuiteConfigFactory({

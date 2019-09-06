@@ -8,10 +8,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
-
-function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
-
 // Node, or global
 ;
 
@@ -75,8 +71,9 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     factory: function factory(dependencies) {
       'use strict';
 
-      var TestEvent = dependencies.TestEvent,
-          publish = dependencies.publish;
+      var isPromise = dependencies.isPromise,
+          publish = dependencies.publish,
+          TestEvent = dependencies.TestEvent;
 
       function noop() {}
       /**
@@ -106,18 +103,36 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
           return a.skipped;
         }).length === test.assertions.length;
       }
-
-      function isPromise(input) {
-        return input && typeof input.then === 'function';
-      }
       /**
        * Runs `given` and passes any output forward
        * @param {Object} context
        */
 
 
-      function runGiven(_x) {
-        return _runGiven.apply(this, arguments);
+      function runGiven(context) {
+        if (typeof context.given !== 'function' && _typeof(context.given) !== 'object') {
+          return Promise.resolve(context);
+        }
+
+        try {
+          var actual = context.given();
+
+          if (isPromise(actual)) {
+            return actual.then(function (value) {
+              context.resultOfGiven = value;
+              return context;
+            }).catch(function (e) {
+              context.err = e;
+              throw e;
+            });
+          }
+
+          context.resultOfGiven = actual;
+          return Promise.resolve(context);
+        } catch (e) {
+          context.err = e;
+          throw e;
+        }
       }
       /**
        * Runs `when` and passes any output forward
@@ -125,56 +140,30 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
        */
 
 
-      function _runGiven() {
-        _runGiven = _asyncToGenerator(
-        /*#__PURE__*/
-        regeneratorRuntime.mark(function _callee3(context) {
-          var actual;
-          return regeneratorRuntime.wrap(function _callee3$(_context3) {
-            while (1) {
-              switch (_context3.prev = _context3.next) {
-                case 0:
-                  _context3.prev = 0;
-                  actual = context.given();
+      function runWhen(context) {
+        if (typeof context.when !== 'function' && _typeof(context.when) !== 'object') {
+          return Promise.resolve(context);
+        }
 
-                  if (!isPromise(actual)) {
-                    _context3.next = 8;
-                    break;
-                  }
+        try {
+          var actual = context.when(context.resultOfGiven);
 
-                  _context3.next = 5;
-                  return actual;
+          if (isPromise(actual)) {
+            return actual.then(function (value) {
+              context.resultOfWhen = value;
+              return context;
+            }).catch(function (e) {
+              context.err = e;
+              return context;
+            });
+          }
 
-                case 5:
-                  _context3.t0 = _context3.sent;
-                  _context3.next = 9;
-                  break;
-
-                case 8:
-                  _context3.t0 = actual;
-
-                case 9:
-                  context.resultOfGiven = _context3.t0;
-                  return _context3.abrupt("return", context);
-
-                case 13:
-                  _context3.prev = 13;
-                  _context3.t1 = _context3["catch"](0);
-                  context.err = _context3.t1;
-                  throw _context3.t1;
-
-                case 17:
-                case "end":
-                  return _context3.stop();
-              }
-            }
-          }, _callee3, null, [[0, 13]]);
-        }));
-        return _runGiven.apply(this, arguments);
-      }
-
-      function runWhen(_x2) {
-        return _runWhen.apply(this, arguments);
+          context.resultOfWhen = actual;
+          return Promise.resolve(context);
+        } catch (e) {
+          context.err = e;
+          return context;
+        }
       }
       /**
        * Executes the assertions
@@ -182,110 +171,41 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
        */
 
 
-      function _runWhen() {
-        _runWhen = _asyncToGenerator(
-        /*#__PURE__*/
-        regeneratorRuntime.mark(function _callee4(context) {
-          var actual;
-          return regeneratorRuntime.wrap(function _callee4$(_context4) {
-            while (1) {
-              switch (_context4.prev = _context4.next) {
-                case 0:
-                  _context4.prev = 0;
-                  actual = context.when(context.resultOfGiven);
-
-                  if (!isPromise(actual)) {
-                    _context4.next = 8;
-                    break;
-                  }
-
-                  _context4.next = 5;
-                  return actual;
-
-                case 5:
-                  _context4.t0 = _context4.sent;
-                  _context4.next = 9;
-                  break;
-
-                case 8:
-                  _context4.t0 = actual;
-
-                case 9:
-                  context.resultOfWhen = _context4.t0;
-                  return _context4.abrupt("return", context);
-
-                case 13:
-                  _context4.prev = 13;
-                  _context4.t1 = _context4["catch"](0);
-                  context.err = _context4.t1;
-                  return _context4.abrupt("return", context);
-
-                case 17:
-                case "end":
-                  return _context4.stop();
-              }
+      function checkAssertions(context) {
+        var promises = context.test.assertions.map(function (assertion) {
+          return assertOne(context.batchId, assertion, function () {
+            if (assertion.test.length > 1) {
+              // the assertion accepts all arguments to a single function
+              return assertion.test(context.config.assertionLibrary, context.err, context.resultOfWhen);
             }
-          }, _callee4, null, [[0, 13]]);
-        }));
-        return _runWhen.apply(this, arguments);
-      }
 
-      function checkAssertions(_x3) {
-        return _checkAssertions.apply(this, arguments);
+            var maybeFunc = assertion.test(context.config.assertionLibrary);
+
+            if (typeof maybeFunc === 'function') {
+              // the assertion curries: (t) => (err, actual) => { ... }
+              return maybeFunc(context.err, context.resultOfWhen);
+            }
+
+            return maybeFunc;
+          });
+        });
+        return Promise.all(promises).then(function (events) {
+          if (!Array.isArray(events)) {
+            return context;
+          }
+
+          events.forEach(function (event) {
+            context.outcomes.push(Object.assign({
+              behavior: 'anonymous'
+            }, event));
+          });
+          return context;
+        });
       } // /checkAssertions
 
 
-      function _checkAssertions() {
-        _checkAssertions = _asyncToGenerator(
-        /*#__PURE__*/
-        regeneratorRuntime.mark(function _callee5(context) {
-          var promises;
-          return regeneratorRuntime.wrap(function _callee5$(_context5) {
-            while (1) {
-              switch (_context5.prev = _context5.next) {
-                case 0:
-                  promises = context.test.assertions.map(function (assertion) {
-                    return assertOne(context.batchId, assertion, function () {
-                      if (assertion.test.length > 1) {
-                        // the assertion accepts all arguments to a single function
-                        return assertion.test(context.config.assertionLibrary, context.err, context.resultOfWhen);
-                      }
-
-                      var maybeFunc = assertion.test(context.config.assertionLibrary);
-
-                      if (typeof maybeFunc === 'function') {
-                        // the assertion curries: (t) => (err, actual) => { ... }
-                        return maybeFunc(context.err, context.resultOfWhen);
-                      }
-
-                      return maybeFunc;
-                    });
-                  });
-                  return _context5.abrupt("return", Promise.all(promises).then(function (events) {
-                    if (!Array.isArray(events)) {
-                      return context;
-                    }
-
-                    events.forEach(function (event) {
-                      context.outcomes.push(Object.assign({
-                        behavior: 'anonymous'
-                      }, event));
-                    });
-                    return context;
-                  }));
-
-                case 2:
-                case "end":
-                  return _context5.stop();
-              }
-            }
-          }, _callee5);
-        }));
-        return _checkAssertions.apply(this, arguments);
-      }
-
-      function maybeLog(_x4) {
-        return _maybeLog.apply(this, arguments);
+      function maybeLog(result) {
+        return result && typeof result.log !== 'undefined' ? result.log : undefined;
       }
       /**
        * Executes one assertion
@@ -293,57 +213,42 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
        */
 
 
-      function _maybeLog() {
-        _maybeLog = _asyncToGenerator(
-        /*#__PURE__*/
-        regeneratorRuntime.mark(function _callee6(maybePromise) {
-          var result;
-          return regeneratorRuntime.wrap(function _callee6$(_context6) {
-            while (1) {
-              switch (_context6.prev = _context6.next) {
-                case 0:
-                  if (!isPromise(maybePromise)) {
-                    _context6.next = 8;
-                    break;
-                  }
+      function assertOne(batchId, assertion, test) {
+        var pass = function pass(result) {
+          return publish({
+            type: TestEvent.types.TEST,
+            status: TestEvent.status.PASSED,
+            batchId: batchId,
+            behavior: assertion.behavior,
+            log: maybeLog(result)
+          });
+        };
 
-                  _context6.next = 3;
-                  return maybePromise();
+        var fail = function fail(e) {
+          return publish({
+            type: TestEvent.types.TEST,
+            status: TestEvent.status.FAILED,
+            batchId: batchId,
+            behavior: assertion.behavior,
+            error: e
+          });
+        };
 
-                case 3:
-                  result = _context6.sent;
+        try {
+          if (assertion.skipped) {
+            return publish({
+              type: TestEvent.types.TEST,
+              status: TestEvent.status.SKIPPED,
+              batchId: batchId,
+              behavior: assertion.behavior
+            });
+          }
 
-                  if (!(result && typeof result.log !== 'undefined')) {
-                    _context6.next = 6;
-                    break;
-                  }
-
-                  return _context6.abrupt("return", result.log);
-
-                case 6:
-                  _context6.next = 10;
-                  break;
-
-                case 8:
-                  if (!(maybePromise && typeof maybePromise.log !== 'undefined')) {
-                    _context6.next = 10;
-                    break;
-                  }
-
-                  return _context6.abrupt("return", maybePromise.log);
-
-                case 10:
-                case "end":
-                  return _context6.stop();
-              }
-            }
-          }, _callee6);
-        }));
-        return _maybeLog.apply(this, arguments);
-      }
-
-      function assertOne(_x5, _x6, _x7) {
-        return _assertOne.apply(this, arguments);
+          var result = test();
+          return isPromise(result) ? result.then(pass).catch(fail) : pass(result);
+        } catch (e) {
+          return fail(e);
+        }
       } // /assertOne
 
       /**
@@ -351,75 +256,6 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
        * @param {Object} context
        */
 
-
-      function _assertOne() {
-        _assertOne = _asyncToGenerator(
-        /*#__PURE__*/
-        regeneratorRuntime.mark(function _callee7(batchId, assertion, test) {
-          var maybePromise;
-          return regeneratorRuntime.wrap(function _callee7$(_context7) {
-            while (1) {
-              switch (_context7.prev = _context7.next) {
-                case 0:
-                  _context7.prev = 0;
-
-                  if (!assertion.skipped) {
-                    _context7.next = 3;
-                    break;
-                  }
-
-                  return _context7.abrupt("return", publish({
-                    type: TestEvent.types.TEST,
-                    status: TestEvent.status.SKIPPED,
-                    batchId: batchId,
-                    behavior: assertion.behavior
-                  }));
-
-                case 3:
-                  _context7.next = 5;
-                  return test();
-
-                case 5:
-                  maybePromise = _context7.sent;
-                  _context7.t0 = publish;
-                  _context7.t1 = TestEvent.types.TEST;
-                  _context7.t2 = TestEvent.status.PASSED;
-                  _context7.t3 = batchId;
-                  _context7.t4 = assertion.behavior;
-                  _context7.next = 13;
-                  return maybeLog(maybePromise);
-
-                case 13:
-                  _context7.t5 = _context7.sent;
-                  _context7.t6 = {
-                    type: _context7.t1,
-                    status: _context7.t2,
-                    batchId: _context7.t3,
-                    behavior: _context7.t4,
-                    log: _context7.t5
-                  };
-                  return _context7.abrupt("return", (0, _context7.t0)(_context7.t6));
-
-                case 18:
-                  _context7.prev = 18;
-                  _context7.t7 = _context7["catch"](0);
-                  return _context7.abrupt("return", publish({
-                    type: TestEvent.types.TEST,
-                    status: TestEvent.status.FAILED,
-                    batchId: batchId,
-                    behavior: assertion.behavior,
-                    error: _context7.t7
-                  }));
-
-                case 21:
-                case "end":
-                  return _context7.stop();
-              }
-            }
-          }, _callee7, null, [[0, 18]]);
-        }));
-        return _assertOne.apply(this, arguments);
-      }
 
       function Context(context) {
         var self = {
@@ -457,37 +293,15 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
                 test: test,
                 config: config,
                 batchId: batchId,
-                timer: setTimeout(
-                /*#__PURE__*/
-                _asyncToGenerator(
-                /*#__PURE__*/
-                regeneratorRuntime.mark(function _callee() {
-                  return regeneratorRuntime.wrap(function _callee$(_context) {
-                    while (1) {
-                      switch (_context.prev = _context.next) {
-                        case 0:
-                          _context.t0 = resolve;
-                          _context.next = 3;
-                          return publish({
-                            // was reject
-                            type: TestEvent.types.TEST,
-                            status: TestEvent.status.BROKEN,
-                            batchId: batchId,
-                            behavior: test.behavior,
-                            error: new Error("Timeout: the test exceeded ".concat(context.config.timeout, " ms"))
-                          });
-
-                        case 3:
-                          _context.t1 = _context.sent;
-                          return _context.abrupt("return", (0, _context.t0)(_context.t1));
-
-                        case 5:
-                        case "end":
-                          return _context.stop();
-                      }
-                    }
-                  }, _callee);
-                })), config.timeout),
+                timer: setTimeout(function () {
+                  publish({
+                    type: TestEvent.types.TEST,
+                    status: TestEvent.status.BROKEN,
+                    batchId: batchId,
+                    behavior: test.behavior,
+                    error: new Error("Timeout: the test exceeded ".concat(context.config.timeout, " ms"))
+                  }).then(resolve);
+                }, config.timeout),
                 err: null // null is the default
 
               }); // run the flow
@@ -495,44 +309,16 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
               return Promise.resolve(context).then(useNoopsIfSkipped).then(runGiven).then(runWhen).then(checkAssertions).then(function (context) {
                 clearTimeout(context.timer);
                 return resolve(context.outcomes);
-              }).catch(
-              /*#__PURE__*/
-              function () {
-                var _ref2 = _asyncToGenerator(
-                /*#__PURE__*/
-                regeneratorRuntime.mark(function _callee2(err) {
-                  return regeneratorRuntime.wrap(function _callee2$(_context2) {
-                    while (1) {
-                      switch (_context2.prev = _context2.next) {
-                        case 0:
-                          clearTimeout(context.timer);
-                          _context2.t0 = resolve;
-                          _context2.next = 4;
-                          return publish({
-                            // was reject
-                            type: TestEvent.types.TEST,
-                            status: TestEvent.status.BROKEN,
-                            batchId: batchId,
-                            behavior: test.behavior,
-                            error: err && err.error ? err.error : err
-                          });
-
-                        case 4:
-                          _context2.t1 = _context2.sent;
-                          return _context2.abrupt("return", (0, _context2.t0)(_context2.t1));
-
-                        case 6:
-                        case "end":
-                          return _context2.stop();
-                      }
-                    }
-                  }, _callee2);
-                }));
-
-                return function (_x8) {
-                  return _ref2.apply(this, arguments);
-                };
-              }()); // /flow
+              }).catch(function (err) {
+                clearTimeout(context.timer);
+                publish({
+                  type: TestEvent.types.TEST,
+                  status: TestEvent.status.BROKEN,
+                  batchId: batchId,
+                  behavior: test.behavior,
+                  error: err && err.error ? err.error : err
+                }).then(resolve);
+              }); // /flow
             }, 0); // /setTimeout
           }); // /outer Promise
         }; // /wrapper
@@ -830,6 +616,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       'use strict';
 
       var allSettled = dependencies.allSettled,
+          isPromise = dependencies.isPromise,
           TestEvent = dependencies.TestEvent;
 
       var makeId = function makeId() {
@@ -839,60 +626,15 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       function Pubsub() {
         var subscriptions = [];
 
-        var publish =
-        /*#__PURE__*/
-        function () {
-          var _ref3 = _asyncToGenerator(
-          /*#__PURE__*/
-          regeneratorRuntime.mark(function _callee9(input) {
-            var event;
-            return regeneratorRuntime.wrap(function _callee9$(_context9) {
-              while (1) {
-                switch (_context9.prev = _context9.next) {
-                  case 0:
-                    event = new TestEvent(input);
-                    _context9.next = 3;
-                    return allSettled(subscriptions.map(
-                    /*#__PURE__*/
-                    function () {
-                      var _ref4 = _asyncToGenerator(
-                      /*#__PURE__*/
-                      regeneratorRuntime.mark(function _callee8(subscription) {
-                        return regeneratorRuntime.wrap(function _callee8$(_context8) {
-                          while (1) {
-                            switch (_context8.prev = _context8.next) {
-                              case 0:
-                                _context8.next = 2;
-                                return subscription.write(event);
-
-                              case 2:
-                              case "end":
-                                return _context8.stop();
-                            }
-                          }
-                        }, _callee8);
-                      }));
-
-                      return function (_x10) {
-                        return _ref4.apply(this, arguments);
-                      };
-                    }()));
-
-                  case 3:
-                    return _context9.abrupt("return", event);
-
-                  case 4:
-                  case "end":
-                    return _context9.stop();
-                }
-              }
-            }, _callee9);
-          }));
-
-          return function publish(_x9) {
-            return _ref3.apply(this, arguments);
-          };
-        }();
+        var publish = function publish(input) {
+          var event = new TestEvent(input);
+          return allSettled(subscriptions.map(function (subscription) {
+            var result = subscription.write(event);
+            return isPromise(result) ? result : Promise.resolve(result);
+          })).then(function () {
+            return event;
+          });
+        };
 
         var subscribe = function subscribe(subscription) {
           var name = subscription.name || makeId();
@@ -969,70 +711,31 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
         return batch;
       };
 
-      var normalizeBatch =
-      /*#__PURE__*/
-      function () {
-        var _ref5 = _asyncToGenerator(
-        /*#__PURE__*/
-        regeneratorRuntime.mark(function _callee10(description, assertions) {
-          var descriptionType, assertionsType;
-          return regeneratorRuntime.wrap(function _callee10$(_context10) {
-            while (1) {
-              switch (_context10.prev = _context10.next) {
-                case 0:
-                  descriptionType = _typeof(description);
-                  assertionsType = _typeof(assertions);
+      var normalizeBatch = function normalizeBatch(description, assertions) {
+        var descriptionType = _typeof(description);
 
-                  if (!(descriptionType === 'string' && assertionsType === 'function')) {
-                    _context10.next = 6;
-                    break;
-                  }
+        var assertionsType = _typeof(assertions);
 
-                  return _context10.abrupt("return", Promise.resolve(makeNormalBatch(description, {
-                    '': assertions
-                  })));
-
-                case 6:
-                  if (!(descriptionType === 'string')) {
-                    _context10.next = 10;
-                    break;
-                  }
-
-                  return _context10.abrupt("return", Promise.resolve(makeNormalBatch(description, assertions)));
-
-                case 10:
-                  if (!(descriptionType === 'object')) {
-                    _context10.next = 14;
-                    break;
-                  }
-
-                  return _context10.abrupt("return", Promise.resolve(description));
-
-                case 14:
-                  if (!(descriptionType === 'function')) {
-                    _context10.next = 18;
-                    break;
-                  }
-
-                  return _context10.abrupt("return", Promise.resolve({
-                    '': description
-                  }));
-
-                case 18:
-                  return _context10.abrupt("return", Promise.reject(new Error('An invalid test was found: a test or batch of tests is required')));
-
-                case 19:
-                case "end":
-                  return _context10.stop();
-              }
-            }
-          }, _callee10);
-        }));
-
-        return function normalizeBatch(_x11, _x12) {
-          return _ref5.apply(this, arguments);
-        };
-      }(); // /normalizebatch
+        if (descriptionType === 'string' && assertionsType === 'function') {
+          // description, IAssert
+          return Promise.resolve(makeNormalBatch(description, {
+            '': assertions
+          }));
+        } else if (descriptionType === 'string') {
+          // description, IBDD|IAAA|IVow
+          return Promise.resolve(makeNormalBatch(description, assertions));
+        } else if (descriptionType === 'object') {
+          // description is IBDD|IAAA|IVow
+          return Promise.resolve(description);
+        } else if (descriptionType === 'function') {
+          // description is IAssert
+          return Promise.resolve({
+            '': description
+          });
+        } else {
+          return Promise.reject(new Error('An invalid test was found: a test or batch of tests is required'));
+        }
+      }; // /normalizebatch
 
 
       var matcher = function matcher(config) {
@@ -1070,247 +773,177 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       };
 
       var tester = function tester(config, mapToTests) {
-        return (
-          /*#__PURE__*/
-          function () {
-            var _ref6 = _asyncToGenerator(
-            /*#__PURE__*/
-            regeneratorRuntime.mark(function _callee11(behaviorOrBatch, sut) {
-              var batch, context, plan, results, batchTotals;
-              return regeneratorRuntime.wrap(function _callee11$(_context11) {
-                while (1) {
-                  switch (_context11.prev = _context11.next) {
-                    case 0:
-                      _context11.prev = 0;
-                      _context11.next = 3;
-                      return normalizeBatch(behaviorOrBatch, sut);
-
-                    case 3:
-                      batch = _context11.sent;
-                      context = mapToTests(batch);
-                      plan = {
-                        count: context.batch.reduce(function (count, item) {
-                          return count + item.assertions.length;
-                        }, 0),
-                        completed: 0
-                      };
-
-                      if (!publishStartAndEnd) {
-                        _context11.next = 9;
-                        break;
-                      }
-
-                      _context11.next = 9;
-                      return publish({
-                        type: TestEvent.types.START,
-                        time: Date.now(),
-                        suiteId: config.name
-                      });
-
-                    case 9:
-                      _context11.next = 11;
-                      return publish({
-                        type: TestEvent.types.START_BATCH,
-                        batchId: context.batchId,
-                        time: Date.now(),
-                        suiteId: config.name,
-                        plan: plan
-                      });
-
-                    case 11:
-                      _context11.next = 13;
-                      return allSettled(context.tests.map(function (test) {
-                        return test();
-                      }));
-
-                    case 13:
-                      results = _context11.sent;
-                      batchTotals = Tally.getTally().batches[context.batchId];
-                      _context11.next = 17;
-                      return publish({
-                        type: TestEvent.types.END_BATCH,
-                        batchId: context.batchId,
-                        time: Date.now(),
-                        suiteId: config.name,
-                        plan: {
-                          count: plan.count,
-                          completed: batchTotals.total
-                        },
-                        totals: batchTotals
-                      });
-
-                    case 17:
-                      if (!publishStartAndEnd) {
-                        _context11.next = 23;
-                        break;
-                      }
-
-                      _context11.next = 20;
-                      return publish(new TestEvent({
-                        type: TestEvent.types.END_TALLY,
-                        suiteId: config.name
-                      }));
-
-                    case 20:
-                      _context11.next = 22;
-                      return publish(new TestEvent({
-                        type: TestEvent.types.END,
-                        time: Date.now(),
-                        suiteId: config.name,
-                        totals: batchTotals
-                      }));
-
-                    case 22:
-                      return _context11.abrupt("return", {
-                        batchId: context.batchId,
-                        results: reduceResults(results),
-                        totals: batchTotals
-                      });
-
-                    case 23:
-                      return _context11.abrupt("return", {
-                        batchId: context.batchId,
-                        results: reduceResults(results),
-                        totals: batchTotals
-                      });
-
-                    case 26:
-                      _context11.prev = 26;
-                      _context11.t0 = _context11["catch"](0);
-                      publish({
-                        type: TestEvent.types.TEST,
-                        status: TestEvent.status.BROKEN,
-                        behavior: 'Failed to load test',
-                        suiteId: config.name,
-                        error: _context11.t0
-                      });
-                      throw _context11.t0;
-
-                    case 30:
-                    case "end":
-                      return _context11.stop();
-                  }
-                }
-              }, _callee11, null, [[0, 26]]);
-            }));
-
-            return function (_x13, _x14) {
-              return _ref6.apply(this, arguments);
+        return function (description, assertions) {
+          return normalizeBatch(description, assertions).then(mapToTests).then(function (context) {
+            context.plan = {
+              count: context.batch.reduce(function (count, item) {
+                return count + item.assertions.length;
+              }, 0),
+              completed: 0
             };
-          }()
-        );
+            return context;
+          }).then(function (context) {
+            if (publishStartAndEnd) {
+              return publish({
+                type: TestEvent.types.START,
+                time: Date.now(),
+                suiteId: config.name
+              }).then(function () {
+                return context;
+              });
+            }
+
+            return Promise.resolve(context);
+          }).then(function (context) {
+            var batchId = context.batchId,
+                plan = context.plan;
+            return publish({
+              type: TestEvent.types.START_BATCH,
+              batchId: batchId,
+              time: Date.now(),
+              suiteId: config.name,
+              plan: plan
+            }).then(function () {
+              return context;
+            });
+          }).then(function (context) {
+            var batchId = context.batchId,
+                tests = context.tests;
+            return allSettled(tests.map(function (test) {
+              return test();
+            })).then(function (results) {
+              context.results = results;
+              context.batchTotals = Tally.getTally().batches[batchId];
+              return context;
+            });
+          }).then(function (context) {
+            var batchId = context.batchId,
+                plan = context.plan,
+                batchTotals = context.batchTotals;
+            return publish({
+              type: TestEvent.types.END_BATCH,
+              batchId: batchId,
+              time: Date.now(),
+              suiteId: config.name,
+              plan: {
+                count: plan.count,
+                completed: batchTotals.total
+              },
+              totals: batchTotals
+            }).then(function () {
+              return context;
+            });
+          }).then(function (context) {
+            var batchId = context.batchId,
+                batchTotals = context.batchTotals,
+                results = context.results;
+            var output = {
+              batchId: batchId,
+              results: reduceResults(results),
+              totals: batchTotals
+            };
+
+            if (publishStartAndEnd) {
+              return publish(new TestEvent({
+                type: TestEvent.types.END_TALLY,
+                suiteId: config.name
+              })).then(function () {
+                return publish(new TestEvent({
+                  type: TestEvent.types.END,
+                  time: Date.now(),
+                  suiteId: config.name,
+                  totals: batchTotals
+                }));
+              }).then(function () {
+                return output;
+              });
+            }
+
+            return Promise.resolve(output);
+          }).catch(function (e) {
+            publish({
+              type: TestEvent.types.TEST,
+              status: TestEvent.status.BROKEN,
+              behavior: 'Failed to load test',
+              suiteId: config.name,
+              error: e
+            });
+            throw e;
+          });
+        };
       };
 
       var nodeRunner = function nodeRunner(config, test) {
         return function (options) {
-          return (
-            /*#__PURE__*/
-            _asyncToGenerator(
-            /*#__PURE__*/
-            regeneratorRuntime.mark(function _callee12() {
-              var output, brokenPromises, tally;
-              return regeneratorRuntime.wrap(function _callee12$(_context12) {
-                while (1) {
-                  switch (_context12.prev = _context12.next) {
-                    case 0:
-                      publishStartAndEnd = false;
-                      _context12.next = 3;
-                      return publish({
-                        type: TestEvent.types.START,
-                        time: Date.now(),
-                        suiteId: config.name
-                      });
+          return function () {
+            publishStartAndEnd = false;
+            return publish({
+              type: TestEvent.types.START,
+              time: Date.now(),
+              suiteId: config.name
+            }).then(function () {
+              return findFiles(options).then(runTests(test));
+            }).then(function (output) {
+              if (output.broken.length) {
+                // these tests failed before being executed
+                var brokenPromises = output.broken.map(function (error) {
+                  return publish({
+                    type: TestEvent.types.TEST,
+                    status: TestEvent.status.BROKEN,
+                    behavior: "Failed to load test: ".concat(error.filePath),
+                    suiteId: config.name,
+                    error: error
+                  });
+                });
+                return allSettled(brokenPromises).then(function () {
+                  return output;
+                });
+              }
 
-                    case 3:
-                      _context12.next = 5;
-                      return findFiles(options).then(runTests(test));
-
-                    case 5:
-                      output = _context12.sent;
-
-                      if (!output.broken.length) {
-                        _context12.next = 10;
-                        break;
-                      }
-
-                      // these tests failed before being executed
-                      brokenPromises = output.broken.map(function (error) {
-                        return publish({
-                          type: TestEvent.types.TEST,
-                          status: TestEvent.status.BROKEN,
-                          behavior: "Failed to load test: ".concat(error.filePath),
-                          suiteId: config.name,
-                          error: error
-                        });
-                      });
-                      _context12.next = 10;
-                      return allSettled(brokenPromises);
-
-                    case 10:
-                      _context12.next = 12;
-                      return publish(new TestEvent({
-                        type: TestEvent.types.END_TALLY,
-                        suiteId: config.name
-                      }));
-
-                    case 12:
-                      tally = Tally.getSimpleTally();
-                      _context12.next = 15;
-                      return publish(new TestEvent({
-                        type: TestEvent.types.END,
-                        time: Date.now(),
-                        suiteId: config.name,
-                        totals: tally
-                      }));
-
-                    case 15:
-                      return _context12.abrupt("return", {
-                        files: output.files,
-                        results: output.results,
-                        broken: output.broken,
-                        config: output.config,
-                        suite: test,
-                        totals: tally
-                      });
-
-                    case 16:
-                    case "end":
-                      return _context12.stop();
-                  }
-                }
-              }, _callee12);
-            }))
-          );
+              return Promise.resolve(output);
+            }).then(function (output) {
+              return publish(new TestEvent({
+                type: TestEvent.types.END_TALLY,
+                suiteId: config.name
+              })).then(function () {
+                return output;
+              });
+            }).then(function (output) {
+              // only get the tally _after_ END_TALLY was emitted
+              return {
+                output: output,
+                tally: Tally.getSimpleTally()
+              };
+            }).then(function (context) {
+              return publish(new TestEvent({
+                type: TestEvent.types.END,
+                time: Date.now(),
+                suiteId: config.name,
+                totals: context.tally
+              })).then(function () {
+                return context;
+              });
+            }).then(function (_ref) {
+              var output = _ref.output,
+                  tally = _ref.tally;
+              return {
+                files: output.files,
+                results: output.results,
+                broken: output.broken,
+                config: output.config,
+                suite: test,
+                totals: tally
+              };
+            });
+          };
         };
       };
 
       var browserRunner = function browserRunner(config, test) {
         return function (options) {
-          return (
-            /*#__PURE__*/
-            _asyncToGenerator(
-            /*#__PURE__*/
-            regeneratorRuntime.mark(function _callee13() {
-              var output;
-              return regeneratorRuntime.wrap(function _callee13$(_context13) {
-                while (1) {
-                  switch (_context13.prev = _context13.next) {
-                    case 0:
-                      _context13.next = 2;
-                      return findFiles(options).then(runServer(test, options));
-
-                    case 2:
-                      output = _context13.sent;
-                      return _context13.abrupt("return", output);
-
-                    case 4:
-                    case "end":
-                      return _context13.stop();
-                  }
-                }
-              }, _callee13);
-            }))
-          );
+          return function () {
+            return findFiles(options).then(runServer(test, options));
+          };
         };
       };
       /**
@@ -1331,30 +964,14 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
         */
         // test.Suite = Suite
 
-        test.printSummary =
-        /*#__PURE__*/
-        _asyncToGenerator(
-        /*#__PURE__*/
-        regeneratorRuntime.mark(function _callee14() {
-          return regeneratorRuntime.wrap(function _callee14$(_context14) {
-            while (1) {
-              switch (_context14.prev = _context14.next) {
-                case 0:
-                  _context14.next = 2;
-                  return publish(new TestEvent({
-                    type: TestEvent.types.END,
-                    time: Date.now(),
-                    suiteId: config.name,
-                    totals: Tally.getSimpleTally()
-                  }));
-
-                case 2:
-                case "end":
-                  return _context14.stop();
-              }
-            }
-          }, _callee14);
-        }));
+        test.printSummary = function () {
+          return publish(new TestEvent({
+            type: TestEvent.types.END,
+            time: Date.now(),
+            suiteId: config.name,
+            totals: Tally.getSimpleTally()
+          }));
+        };
 
         test.getTotals = function () {
           return Tally.getSimpleTally();
@@ -1784,30 +1401,9 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       function ArrayReporter() {
         var events = [];
 
-        var write =
-        /*#__PURE__*/
-        function () {
-          var _ref10 = _asyncToGenerator(
-          /*#__PURE__*/
-          regeneratorRuntime.mark(function _callee15(event) {
-            return regeneratorRuntime.wrap(function _callee15$(_context15) {
-              while (1) {
-                switch (_context15.prev = _context15.next) {
-                  case 0:
-                    return _context15.abrupt("return", events.push(event));
-
-                  case 1:
-                  case "end":
-                    return _context15.stop();
-                }
-              }
-            }, _callee15);
-          }));
-
-          return function write(_x15) {
-            return _ref10.apply(this, arguments);
-          };
-        }();
+        var write = function write(event) {
+          return events.push(event);
+        };
 
         return {
           write: write,
@@ -1905,32 +1501,11 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       var format = formatter.format;
 
       function ConsoleReporter() {
-        var write =
-        /*#__PURE__*/
-        function () {
-          var _ref11 = _asyncToGenerator(
-          /*#__PURE__*/
-          regeneratorRuntime.mark(function _callee16(event) {
-            return regeneratorRuntime.wrap(function _callee16$(_context16) {
-              while (1) {
-                switch (_context16.prev = _context16.next) {
-                  case 0:
-                    if ([TestEvent.types.START, TestEvent.types.TEST, TestEvent.types.INFO, TestEvent.types.END].indexOf(event.type) > -1) {
-                      console.log(format(event));
-                    }
-
-                  case 1:
-                  case "end":
-                    return _context16.stop();
-                }
-              }
-            }, _callee16);
-          }));
-
-          return function write(_x16) {
-            return _ref11.apply(this, arguments);
-          };
-        }(); // /write
+        var write = function write(event) {
+          if ([TestEvent.types.START, TestEvent.types.TEST, TestEvent.types.INFO, TestEvent.types.END].indexOf(event.type) > -1) {
+            console.log(format(event));
+          }
+        }; // /write
 
 
         return {
@@ -1985,42 +1560,21 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       var TestEvent = dependencies.TestEvent;
 
       function JsonReporter() {
-        var write =
-        /*#__PURE__*/
-        function () {
-          var _ref12 = _asyncToGenerator(
-          /*#__PURE__*/
-          regeneratorRuntime.mark(function _callee17(event) {
-            return regeneratorRuntime.wrap(function _callee17$(_context17) {
-              while (1) {
-                switch (_context17.prev = _context17.next) {
-                  case 0:
-                    if (event.type === TestEvent.types.START) {
-                      console.log("[".concat(JSON.stringify({
-                        event: event
-                      }, null, 2), ","));
-                    } else if (event.type === TestEvent.types.END) {
-                      console.log("".concat(JSON.stringify({
-                        event: event
-                      }, null, 2), "]"));
-                    } else if ([TestEvent.types.END_TALLY].indexOf(event.type) === -1) {
-                      console.log("".concat(JSON.stringify({
-                        event: event
-                      }, null, 2), ","));
-                    }
-
-                  case 1:
-                  case "end":
-                    return _context17.stop();
-                }
-              }
-            }, _callee17);
-          }));
-
-          return function write(_x17) {
-            return _ref12.apply(this, arguments);
-          };
-        }(); // /write
+        var write = function write(event) {
+          if (event.type === TestEvent.types.START) {
+            console.log("[".concat(JSON.stringify({
+              event: event
+            }, null, 2), ","));
+          } else if (event.type === TestEvent.types.END) {
+            console.log("".concat(JSON.stringify({
+              event: event
+            }, null, 2), "]"));
+          } else if ([TestEvent.types.END_TALLY].indexOf(event.type) === -1) {
+            console.log("".concat(JSON.stringify({
+              event: event
+            }, null, 2), ","));
+          }
+        }; // /write
 
 
         return {
@@ -2040,27 +1594,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
 
       function NoopReporter() {
         return {
-          write: function () {
-            var _write2 = _asyncToGenerator(
-            /*#__PURE__*/
-            regeneratorRuntime.mark(function _callee18() {
-              return regeneratorRuntime.wrap(function _callee18$(_context18) {
-                while (1) {
-                  switch (_context18.prev = _context18.next) {
-                    case 0:
-                    case "end":
-                      return _context18.stop();
-                  }
-                }
-              }, _callee18);
-            }));
-
-            function write() {
-              return _write2.apply(this, arguments);
-            }
-
-            return write;
-          }()
+          write: function write() {}
         };
       }
 
@@ -2179,49 +1713,22 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
           batches: {}
         };
 
-        var makeBatchTally =
-        /*#__PURE__*/
-        function () {
-          var _ref13 = _asyncToGenerator(
-          /*#__PURE__*/
-          regeneratorRuntime.mark(function _callee19(event) {
-            var tally;
-            return regeneratorRuntime.wrap(function _callee19$(_context19) {
-              while (1) {
-                switch (_context19.prev = _context19.next) {
-                  case 0:
-                    if (!totals.batches[event.batchId]) {
-                      _context19.next = 4;
-                      break;
-                    }
+        var makeBatchTally = function makeBatchTally(event) {
+          if (totals.batches[event.batchId]) {
+            return publish({
+              type: TestEvent.types.TEST,
+              status: TestEvent.status.BROKEN,
+              batchId: event.batchId,
+              error: new Error('Duplicate Batch Ids were created, or multiple START_BATCH events were emitted for the same batch')
+            }).then(function () {
+              return undefined;
+            });
+          }
 
-                    _context19.next = 3;
-                    return publish({
-                      type: TestEvent.types.BROKEN,
-                      batchId: event.batchId,
-                      error: new Error('Duplicate Batch Ids were created, or multiple START_BATCH events were emitted for the same batch')
-                    });
-
-                  case 3:
-                    return _context19.abrupt("return");
-
-                  case 4:
-                    tally = makeTally();
-                    tally.startTime = now();
-                    return _context19.abrupt("return", tally);
-
-                  case 7:
-                  case "end":
-                    return _context19.stop();
-                }
-              }
-            }, _callee19);
-          }));
-
-          return function makeBatchTally(_x18) {
-            return _ref13.apply(this, arguments);
-          };
-        }();
+          var tally = makeTally();
+          tally.startTime = now();
+          return Promise.resolve(tally);
+        };
 
         var bump = function bump(event) {
           var name = event.status.toLowerCase();
@@ -2233,56 +1740,33 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
         };
 
         function Tally() {
-          var write =
-          /*#__PURE__*/
-          function () {
-            var _ref14 = _asyncToGenerator(
-            /*#__PURE__*/
-            regeneratorRuntime.mark(function _callee20(event) {
-              return regeneratorRuntime.wrap(function _callee20$(_context20) {
-                while (1) {
-                  switch (_context20.prev = _context20.next) {
-                    case 0:
-                      _context20.t0 = event.type;
-                      _context20.next = _context20.t0 === TestEvent.types.START ? 3 : _context20.t0 === TestEvent.types.START_BATCH ? 5 : _context20.t0 === TestEvent.types.TEST ? 9 : _context20.t0 === TestEvent.types.END_BATCH ? 11 : _context20.t0 === TestEvent.types.END_TALLY ? 13 : 15;
-                      break;
+          var write = function write(event) {
+            switch (event.type) {
+              case TestEvent.types.START:
+                totals.startTime = now();
+                return Promise.resolve();
 
-                    case 3:
-                      totals.startTime = now();
-                      return _context20.abrupt("break", 15);
-
-                    case 5:
-                      _context20.next = 7;
-                      return makeBatchTally(event);
-
-                    case 7:
-                      totals.batches[event.batchId] = _context20.sent;
-                      return _context20.abrupt("break", 15);
-
-                    case 9:
-                      bump(event);
-                      return _context20.abrupt("break", 15);
-
-                    case 11:
-                      totals.batches[event.batchId].endTime = now();
-                      return _context20.abrupt("break", 15);
-
-                    case 13:
-                      totals.endTime = now();
-                      return _context20.abrupt("break", 15);
-
-                    case 15:
-                    case "end":
-                      return _context20.stop();
+              case TestEvent.types.START_BATCH:
+                return makeBatchTally(event).then(function (tally) {
+                  if (tally) {
+                    totals.batches[event.batchId] = tally;
                   }
-                }
-              }, _callee20);
-            }));
+                });
 
-            return function write(_x19) {
-              return _ref14.apply(this, arguments);
-            };
-          }(); // /write
+              case TestEvent.types.TEST:
+                bump(event);
+                return Promise.resolve();
+
+              case TestEvent.types.END_BATCH:
+                totals.batches[event.batchId].endTime = now();
+                return Promise.resolve();
+
+              case TestEvent.types.END_TALLY:
+                totals.endTime = now();
+                return Promise.resolve();
+            } // /switch
+
+          }; // /write
 
 
           return {
@@ -2321,6 +1805,11 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     } // resolve the dependency graph
 
   };
+
+  function isPromise(input) {
+    return input && typeof input.then === 'function';
+  }
+
   var supposed = null; // resolve the dependency graph
 
   function Supposed(options) {
@@ -2339,16 +1828,17 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
 
     var _module$factories$pub = module.factories.pubsubFactory({
       allSettled: allSettled,
+      isPromise: isPromise,
       makeDebugger: makeDebugger,
       TestEvent: TestEvent
     }),
         Pubsub = _module$factories$pub.Pubsub;
 
-    var _ref15 = new Pubsub(),
-        publish = _ref15.publish,
-        subscribe = _ref15.subscribe,
-        subscriptionExists = _ref15.subscriptionExists,
-        allSubscriptions = _ref15.allSubscriptions;
+    var _ref2 = new Pubsub(),
+        publish = _ref2.publish,
+        subscribe = _ref2.subscribe,
+        subscriptionExists = _ref2.subscriptionExists,
+        allSubscriptions = _ref2.allSubscriptions;
 
     var envvars = {
       assertionLibrary: {},
@@ -2440,9 +1930,10 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     });
 
     var _module$factories$Asy = module.factories.AsyncTestFactory({
-      TestEvent: TestEvent,
+      isPromise: isPromise,
+      makeDebugger: makeDebugger,
       publish: publish,
-      makeDebugger: makeDebugger
+      TestEvent: TestEvent
     }),
         AsyncTest = _module$factories$Asy.AsyncTest;
 

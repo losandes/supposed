@@ -6,7 +6,7 @@ module.exports = {
     const { TestEvent } = dependencies
 
     function JsonReporter () {
-      const write = async (event) => {
+      const write = (event) => {
         if (event.type === TestEvent.types.START) {
           console.log(`[${JSON.stringify({ event }, null, 2)},`)
         } else if (event.type === TestEvent.types.END) {

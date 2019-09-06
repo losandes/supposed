@@ -7,7 +7,7 @@ module.exports = {
     const { format } = formatter
 
     function ConsoleReporter () {
-      const write = async (event) => {
+      const write = (event) => {
         if ([
           TestEvent.types.START,
           TestEvent.types.TEST,

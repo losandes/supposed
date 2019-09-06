@@ -4,7 +4,7 @@ module.exports = {
     'use strict'
 
     function NoopReporter () {
-      return { write: async () => {} }
+      return { write: () => {} }
     }
 
     return { NoopReporter }
