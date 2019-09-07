@@ -1,32 +1,39 @@
+// Type definitions for @polyn/supposed
+// Project: https://github.com/losandes/polyn-supposed
+// Definitions by: Andy Wright <https://github.com/losandes>
+// TypeScript Version: 2.1
+
+import * as http from 'http'
+
 type IFunc = () => any;
 type IPromise = () => Promise<any>;
 type IPromiseOrFunction = IFunc | IPromise;
 // err and actual are produces after calling when/act, etc.
-export type IAssert = (assert?: any, err?: Error, actual?: any) => IPromiseOrFunction;
-export type ICurriedAssert = (assert?: any) => (err?: Error, actual?: any) => IPromiseOrFunction;
+export type IAssert = (assert?: any, err?: Error, actual?: any) => any | Promise<any>;
+export type ICurriedAssert = (assert?: any) => (err?: Error, actual?: any) => any | Promise<any>;
 
 export interface IBehaviors {
   [then: string]: IBehaviors | IAssert;
 }
 
 export interface IBDD {
-  given?: IPromiseOrFunction;
-  when?: IPromiseOrFunction;
-  // NOTE: only `given` and `when` can return IPromiseOrFunction
-  [then: string]: IBDD | IBehaviors | ICurriedAssert | IPromiseOrFunction;
+  given?: IPromiseOrFunction | undefined;
+  when?: IPromiseOrFunction | undefined;
+  // NOTE: only `given` and `when` can return `IPromiseOrFunction | undefined`
+  [then: string]: IBDD | IBehaviors | IAssert | ICurriedAssert | IPromiseOrFunction | undefined;
 }
 
 export interface IAAA {
-  arrange?: IPromiseOrFunction;
-  act?: IPromiseOrFunction;
-  // NOTE: only `arrange` and `act` can return IPromiseOrFunction
-  [then: string]: IBDD | IBehaviors | ICurriedAssert | IPromiseOrFunction;
+  arrange?: IPromiseOrFunction | undefined;
+  act?: IPromiseOrFunction | undefined;
+  // NOTE: only `arrange` and `act` can return `IPromiseOrFunction | undefined`
+  [assert: string]: IBDD | IBehaviors | IAssert | ICurriedAssert | IPromiseOrFunction | undefined;
 }
 
 export interface IVow {
-  topic?: IPromiseOrFunction;
-  // NOTE: only `topic` can return IPromiseOrFunction
-  [then: string]: IBDD | IBehaviors | ICurriedAssert | IPromiseOrFunction;
+  topic?: IPromiseOrFunction | undefined;
+  // NOTE: only `topic` can return `IPromiseOrFunction | undefined`
+  [assert: string]: IBDD | IBehaviors | IAssert | ICurriedAssert | IPromiseOrFunction | undefined;
 }
 
 interface ITally {
@@ -108,20 +115,48 @@ interface ITestString {
   test (filePath: string): boolean;
 }
 
-export interface IRunnerConfigInput {
+export interface INodeRunnerConfigInput {
   cwd?: string;
   directories?: string[];
   matchesNamingConvention?: RegExp | ITestString;
   matchesIgnoredConvention?: RegExp | ITestString;
   injectSuite?: boolean;
+  tests?: (Function | Object)[]
 }
 
-export interface IRunnerConfigOutput extends IRunnerConfigInput {
+export interface INodeRunnerConfigOutput {
   cwd: string;
   directories: string[];
   matchesNamingConvention: RegExp | ITestString;
   matchesIgnoredConvention: RegExp | ITestString;
   injectSuite: boolean;
+}
+
+export interface IBrowserRunnerConfigInput extends INodeRunnerConfigInput {
+  title?: string;
+  port?: number;
+  dependencies?: string[];
+  scripts?: string[];
+  styles?: string;
+  supposed?: string;
+  template?: string;
+  page?: string;
+  testBundle?: string;
+  stringifiedSuiteConfig?: string;
+}
+
+export interface IBrowserRunnerConfigOutput {
+  cwd: string;
+  title: string;
+  port: number;
+  dependencies: string[];
+  scripts: string[];
+  styles: string;
+  supposed: string;
+  template: string;
+  page: string;
+  testBundle: string;
+  stringifiedSuiteConfig: string;
 }
 
 export interface ICompletedBatch {
@@ -134,9 +169,15 @@ export interface INodeRunnerOutput {
   files: string[];
   results: ICompletedBatch[];
   broken: Error[];
-  config: IRunnerConfigOutput;
+  config: INodeRunnerConfigOutput;
   suite: ISuppose;
   totals: ITally;
+}
+
+export interface IBrowserRunnerOutput {
+  server: http.Server;
+  paths: string[];
+  config: IBrowserRunnerConfigOutput;
 }
 
 export interface ISuppose {
@@ -150,8 +191,28 @@ export interface ISuppose {
 
   Suite (config?: ISuiteConfig): ISuppose;
   subscribe (subscription: IWrite | IReport): void;
+  reporters: IReporter[];
   reporterFactory: IReporterFactory;
-  runner (config?: IRunnerConfigInput): {
-    run (): INodeRunnerOutput
+  runner (config?: INodeRunnerConfigInput | IBrowserRunnerConfigInput): {
+    // find files, load them, and run the tests
+    run (): Promise<INodeRunnerOutput>;
+    // run the tests (expects tests to be presented in the INodeRunnerConfigInput)
+    runTests (): Promise<INodeRunnerOutput>;
+    // find files, load them, and serve them from an HTTP server
+    startServer (): Promise<IBrowserRunnerOutput>;
   };
 }
+
+export default ISuppose;
+export function Suite (config?: ISuiteConfig): ISuppose;
+export function subscribe (subscription: IWrite | IReport): void;
+export const reporters: IReporter[];
+export const reporterFactory: IReporterFactory;
+export function runner (config?: INodeRunnerConfigInput | IBrowserRunnerConfigInput): {
+  // find files, load them, and run the tests
+  run (): Promise<INodeRunnerOutput>;
+  // run the tests (expects tests to be presented in the INodeRunnerConfigInput)
+  runTests (): Promise<INodeRunnerOutput>;
+  // find files, load them, and serve them from an HTTP server
+  startServer (): Promise<IBrowserRunnerOutput>;
+};

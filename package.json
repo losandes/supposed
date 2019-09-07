@@ -6,6 +6,8 @@
   "scripts": {
     "build": "node build.browser.js",
     "pre-push": "npm test && node pre-push.js",
+    "test": "npm run test:ts && node tests.browser && node tests",
+    "test:ts": "tsc -p ./tsconfig.json && node tests.typescript/index.js",
     "watch": "nodemon -e js --exec 'node tests/index.js --tap | tap-nyan'"
   },
   "pre-push": [
@@ -42,6 +44,8 @@
   "devDependencies": {
     "@babel/core": "^7.5.5",
     "@babel/preset-env": "^7.5.5",
+    "@types/chai": "^4.2.1",
+    "@types/node": "^12.7.4",
     "chai": "^4.2.0",
     "eslint": "^6.2.2",
     "eslint-config-standard": "^14.0.1",
@@ -51,6 +55,7 @@
     "eslint-plugin-standard": "^4.0.1",
     "pre-push": "^0.1.1",
     "puppeteer": "^1.19.0",
-    "tap-parser": "^9.3.3"
+    "tap-parser": "^9.3.3",
+    "typescript": "^3.6.2"
   }
 }

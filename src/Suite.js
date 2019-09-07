@@ -234,7 +234,8 @@ module.exports = {
       /**
       // Make a newly configured suite
       */
-      // test.Suite = Suite
+
+      // @deprecated
       test.printSummary = () => {
         return publish(new TestEvent({
           type: TestEvent.types.END,

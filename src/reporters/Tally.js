@@ -55,8 +55,12 @@ module.exports = {
 
           totals[name] += 1
           totals.total += 1
-          totals.batches[event.batchId][name] += 1
-          totals.batches[event.batchId].total += 1
+
+          if (totals.batches[event.batchId]) {
+            totals.batches[event.batchId][name] += 1
+            totals.batches[event.batchId].total += 1
+          }
+
           totals.results.push(event)
         } catch (e) {
           console.log(event)

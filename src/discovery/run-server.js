@@ -104,8 +104,16 @@ module.exports = {
     <meta charset="UTF-8">
     <title>${self.title}</title>
     <style>
-      body { font-family: monospace, "Courier New", Courier; }
-      
+      body {
+        font-family: monospace, "Courier New", Courier;
+        background-color: #0B050D;
+        color: #E0E0E0;
+      }
+
+      pre#supposed_report_results {
+        font-size: 1.2em;
+      }
+
       ${self.styles}
     </style>
     </head>

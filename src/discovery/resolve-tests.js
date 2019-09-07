@@ -14,7 +14,12 @@ module.exports = {
         ...context,
         ...{
           tests: paths.map((path) => {
-            return { path, test: require(path) }
+            try {
+              return { path, test: require(path) }
+            } catch (e) {
+              e.filePath = path
+              return { path, err: e }
+            }
           })
         }
       }

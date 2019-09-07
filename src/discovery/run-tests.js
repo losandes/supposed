@@ -9,10 +9,26 @@ module.exports = {
       return obj && typeof obj.then === 'function'
     }
 
-    const toPromise = (config, suite) => ({ test, path }) => {
+    const toPromise = (config, suite) => ({ err, test, path }) => {
       try {
+        if (err) {
+          err.filePath = path
+          return Promise.reject(err)
+        }
+
         if (suite && config.injectSuite !== false && typeof test === 'function') {
+          // module.exports = function (test) {}
+          // export = function (test) {}
           const maybePromise = test(suite, suite.dependencies)
+          return hasThen(maybePromise) ? maybePromise : Promise.resolve(maybePromise)
+        } else if (
+          suite &&
+          config.injectSuite !== false &&
+          typeof test === 'object' &&
+          typeof test.default === 'function'
+        ) {
+          // export default function (test) {}
+          const maybePromise = test.default(suite, suite.dependencies)
           return hasThen(maybePromise) ? maybePromise : Promise.resolve(maybePromise)
         }
 
