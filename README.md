@@ -1,8 +1,22 @@
 Supposed
 ========
-_Supposed_ is a simple, unopinionated, Promise friendly test runner for Node.js, TypeScript, and the Browser that runs tests concurrently, provides BDD, TDD, and xunit Domain Service Languages (DSLs), and has no other dependencies. It draws significant influence from vows, ava, and tape so it is partially compatible with some of their syntaxes.
+_Supposed_ is a simple test runner for Node.js, TypeScript, and the Browser that:
 
-_Supposed_ has several test runner, and reporter options, and does not require a client. All you need is node.js. It uses node.js `assert` by default. You can use whatever assertion library you want.
+* Is Promise-friendly
+* Is async-await friendly
+* Runs tests concurrently
+* Provides BDD, TDD, and xunit Domain Service Languages (DSLs)
+* Supports test discovery, and execution
+* Has many reporter (test output) options: concise (default - like mocha, but without nesting), TAP, JSON, nyan cat, block (jest style), brief (summary and errors only), array (no output, but test output is available on reporter output), noop (can be useful with pubsub (see below)), custom (supply your own easily)
+* Supports pubsub - you can subscribe to the events to write your own reporter, or stream test output to a file or other services
+* Can run in the terminal/console
+* Can start a server for browser testing
+* Can easily be used to pipe browser test output into the terminal
+* Does not require a client (simple, functional, async JS/TS config)
+* Supports suite injection, with a composition root
+* Draws significant influence from vows, ava, and tape so it is partially compatible with some of their syntaxes
+* Will work with mocha's `describe`, `it` syntax with a little bit of test refactoring (`before` and `after` aren't supported, though - this library uses async-await, `then`, or BDD, or TDD syntax to support setup and tear down)
+* Has 0 dependencies (not counting dev-dependencies)
 
 ## Adding Supposed to your project
 
@@ -79,6 +93,32 @@ test('when dividing a number by zero, it should return Infinity', t => {
 })
 ```
 
+Or if you still want to setup and teardown with BDD, or AAA, but using the xunit DSL:
+
+```JavaScript
+var test = require('supposed')
+
+test('when dividing a number by zero, it should return Infinity', (t) => {
+  return Promise.resolve(42)
+    .then((given) => divideByZero(given))
+    .then((actual) => t.strictEqual(actual, Infinity))
+    .catch((err) => t.ifError(err))
+})
+
+test('when dividing a number by zero, it should return Infinity', async (t) => {
+  let actual
+
+  try {
+    const given = 42
+    actual = await divideByZero(given)
+  } catch (e) {
+    t.ifError(err)
+  } finally {
+    t.strictEqual(actual, Infinity)
+  }
+})
+```
+
 ## Running Tests
 _Supposed_ does not require a client. You can run tests with node:
 
@@ -89,18 +129,21 @@ $ node test/my-test.js
 The following switches are supported:
 
 * **-m**: run only tests that match the regular expression
-* **--tap**, **-t**: use the TAP reporter
-* **--brief**: use the brief reporter (errors and totals only)
-* **--quiet**, **-q**: use the quiet reporter (no output to the console)
-* **--quiet-tap**, **-qt**: use the quiet TAP reporter (no output to the console)
-* **-r**: choose a reporter by name (`tap|nyan|brief|quiet|quiet_tap|block`)
+* **-r**: choose a reporter by name (`tap|json|nyan|brief|array|quiet|block|justthedescriptions|noop`)
 
 ```Shell
-$ node test/my-test.js -m foo --tap | tap-nyan
+$ npm install --save-dev tap-spec
+$ node tests -m foo -r tap | npx tap-parser -j | jq
 ```
 
+> In that example, we run tests that have the word "foo" in their descriptions, using TAP output, and pipe the output of the tests into another package, [tap-parser](https://www.npmjs.com/package/tap-parser), and then pipe the output of that package into [jq](https://stedolan.github.io/jq/)
+
 ### Test Discovery & the Runner
-As you can see above, it's not necessary to write, or use a runner. Supposed has one you can use, though. In the following example, we see 2 test files, and a test runner file.
+As you can see above, it's not necessary to write, or use a runner. A bear bones test suite might simply `require`, or `import` each test file. However that produces multiple result summaries which can be hard to parse or understand.
+
+If we export functions for each of our tests, and use the runner, supposed will collect all of the results across test files, and report on them as a suite.
+
+In the following example, we see 2 test files, and a test runner file.
 
 ```JavaScript
 // ./first-module/first-spec.js
