@@ -148,18 +148,21 @@ In the following example, we see 2 test files, and a test runner file.
 ```JavaScript
 // ./first-module/first-spec.js
 const test = require('supposed')
-test('when... it...', t => {
+
+module.exports = test('given first-module, when... it...', (t) => {
   t.strictEqual(42 / 0, Infinity)
 })
 
 // ./second-module/second-spec.js
 const test = require('supposed')
-test('when... it...', t => {
+
+module.exports = test('given second-module, when... it...', (t) => {
   t.strictEqual(42 / 0, Infinity)
 })
 
 // ./tests.js
-require('supposed')
+module.exports = require('supposed')
+  .configure({ name: 'foo', inject: { foo: 'bar' } }) // optional
   .runner()
   .run()
 ```

@@ -43,6 +43,7 @@ function isPromise (input) {
   return input && typeof input.then === 'function'
 }
 
+const suites = {}
 let supposed = null
 
 // resolve the dependency graph
@@ -193,13 +194,14 @@ function Supposed (options) {
   const suite = new Suite(options)
   suite.Suite = Supposed
 
-  if (supposed && supposed.suites) {
-    supposed.suites.push(suite)
+  if (!suites[suite.config.name]) {
+    suites[suite.config.name] = suite
   }
   return suite
 }
 
-supposed = Supposed()
-supposed.suites = [supposed]
+supposed = Supposed({ name: 'supposed' })
+suites.supposed = supposed
+supposed.suites = suites
 
 module.exports = supposed

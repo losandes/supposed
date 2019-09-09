@@ -180,6 +180,10 @@ export interface IBrowserRunnerOutput {
   config: IBrowserRunnerConfigOutput;
 }
 
+interface ISuites {
+  [name: string]: ISuppose
+}
+
 export interface ISuppose {
   (
     description: string,
@@ -190,6 +194,9 @@ export interface ISuppose {
   ): Promise<ICompletedBatch>;
 
   Suite (config?: ISuiteConfig): ISuppose;
+  suites: ISuites;
+  configure (config?: ISuiteConfig): ISuppose;
+  config: ISuiteConfig;
   subscribe (subscription: IWrite | IReport): void;
   reporters: IReporter[];
   reporterFactory: IReporterFactory;
@@ -205,6 +212,9 @@ export interface ISuppose {
 
 export default ISuppose;
 export function Suite (config?: ISuiteConfig): ISuppose;
+export const suites: ISuites;
+export function configure (config?: ISuiteConfig): ISuppose;
+export const config: ISuiteConfig;
 export function subscribe (subscription: IWrite | IReport): void;
 export const reporters: IReporter[];
 export const reporterFactory: IReporterFactory;

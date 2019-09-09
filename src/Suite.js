@@ -1,3 +1,5 @@
+let publishStartAndEnd = true
+
 module.exports = {
   name: 'Suite',
   factory: (dependencies) => {
@@ -20,7 +22,6 @@ module.exports = {
     } = dependencies
 
     const makeBatchId = () => `B${(Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase()}`
-    let publishStartAndEnd = true
 
     const makeNormalBatch = (description, assertions) => {
       const batch = {}
@@ -224,52 +225,63 @@ module.exports = {
      * @param {Object} suiteConfig : optional configuration
     */
     function Suite (suiteConfig) {
-      const config = makeSuiteConfig(suiteConfig)
-      const byMatcher = matcher(config)
-      const mapToTests = mapper(config, byMatcher)
-      const test = tester(config, mapToTests)
-      const findAndStart = browserRunner(config, test)
-      const run = runner(config, test)
-
-      /**
-      // Make a newly configured suite
-      */
-
-      // @deprecated
-      test.printSummary = () => {
-        return publish(new TestEvent({
-          type: TestEvent.types.END,
-          time: Date.now(),
-          suiteId: config.name,
-          totals: Tally.getSimpleTally()
-        }))
-      }
-      test.getTotals = () => {
-        return Tally.getSimpleTally()
-      }
-      test.suiteName = config.name
-      test.runner = (options) => {
-        return {
-          // find and run (node)
-          run: run(() => findFiles(options)
-            .then(resolveTests(test))
-            .then(runTests(test))
-          ),
-          // run (browser|node)
-          runTests: run(() => runTests(test)(options)),
-          // start test server (browser)
-          startServer: findAndStart(options)
+      const configure = (_suiteConfig) => {
+        if (_suiteConfig && suiteConfig) {
+          Object.keys(suiteConfig).forEach((key) => {
+            _suiteConfig[key] = _suiteConfig[key] || suiteConfig[key]
+          })
         }
+
+        const config = makeSuiteConfig(_suiteConfig)
+        const byMatcher = matcher(config)
+        const mapToTests = mapper(config, byMatcher)
+        const test = tester(config, mapToTests)
+        const findAndStart = browserRunner(config, test)
+        const run = runner(config, test)
+
+        /**
+        // Make a newly configured suite
+        */
+
+        test.id = config.name
+
+        // @deprecated
+        test.printSummary = () => {
+          return publish(new TestEvent({
+            type: TestEvent.types.END,
+            time: Date.now(),
+            suiteId: config.name,
+            totals: Tally.getSimpleTally()
+          }))
+        }
+        test.getTotals = () => {
+          return Tally.getSimpleTally()
+        }
+        test.suiteName = config.name
+        test.runner = (options) => {
+          return {
+            // find and run (node)
+            run: run(() => findFiles(options)
+              .then(resolveTests(test))
+              .then(runTests(test))
+            ),
+            // run (browser|node)
+            runTests: run(() => runTests(test)(options)),
+            // start test server (browser)
+            startServer: findAndStart(options)
+          }
+        }
+        test.reporters = config.reporters
+        test.config = config
+        test.configure = configure
+        test.subscribe = subscribe
+        test.dependencies = _suiteConfig && _suiteConfig.inject
+        test.reporterFactory = reporterFactory
+
+        return test
       }
-      test.reporters = config.reporters
-      test.config = config
-      test.subscribe = subscribe
-      test.dependencies = suiteConfig && suiteConfig.inject
-      test.reporterFactory = reporterFactory
 
-      // Suite.suites.push(test)
-
-      return test
+      return configure(suiteConfig)
     }
 
     // Suite.suites = []

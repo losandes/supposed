@@ -21,14 +21,15 @@
 //   })
 // }
 
-const test = require('..')
+const test = require('..').suites['supposed-tests.docs']
+const { expect } = test.dependencies
 
-test('when dividing a number by zero', {
+module.exports = test('(1) when dividing a number by zero', {
   given: () => 42,
   when: (number) => { return number / 0 },
   'it should return Infinity': (then) => (err, actual) => {
     then.ifError(err)
-    then.strictEqual(actual, Infinity)
+    expect(actual).to.equal(Infinity)
   },
   'if the number is zero': {
     given: () => 0,

@@ -3,7 +3,7 @@ const supposed = require('../index.js')
 
 supposed.Suite({
   name: 'supposed-tests.docs',
-  assertionLibrary: expect
+  inject: { expect }
 }).runner({
   cwd: __dirname
 }).run()

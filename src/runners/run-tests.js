@@ -16,7 +16,10 @@ module.exports = {
           return Promise.reject(err)
         }
 
-        if (suite && config.injectSuite !== false && typeof test === 'function') {
+        if (hasThen(test)) {
+          // module.exports = test('something', (t) => {...})
+          return test
+        } else if (suite && config.injectSuite !== false && typeof test === 'function') {
           // module.exports = function (test) {}
           // export = function (test) {}
           const maybePromise = test(suite, suite.dependencies)
