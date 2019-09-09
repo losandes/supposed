@@ -18,8 +18,8 @@ modules.push(fs.readFileSync('./src/pubsub.js'))
 modules.push(fs.readFileSync('./src/Suite.js'))
 modules.push(fs.readFileSync('./src/TestEvent.js'))
 
-// discovery
-modules.push(fs.readFileSync('./src/discovery/run-tests.js'))
+// runners
+modules.push(fs.readFileSync('./src/runners/run-tests.js'))
 
 // formatters
 modules.push(fs.readFileSync('./src/formatters/browser-console-styles.js'))

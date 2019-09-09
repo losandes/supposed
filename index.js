@@ -15,11 +15,11 @@ const readEnvvarsFactory = require('./src/read-envvars.js').factory
 const SuiteFactory = require('./src/Suite.js').factory
 const TestEventFactory = require('./src/TestEvent.js').factory
 
-// discovery
-const findFilesFactory = require('./src/discovery/find-files.js').factory
-const resolveTestsFactory = require('./src/discovery/resolve-tests.js').factory
-const runServerFactory = require('./src/discovery/run-server.js').factory
-const runTestsFactory = require('./src/discovery/run-tests.js').factory
+// runners
+const findFilesFactory = require('./src/runners/find-files.js').factory
+const resolveTestsFactory = require('./src/runners/resolve-tests.js').factory
+const runServerFactory = require('./src/runners/run-server.js').factory
+const runTestsFactory = require('./src/runners/run-tests.js').factory
 
 // formatters
 const BlockFormatterFactory = require('./src/formatters/BlockFormatter.js').factory
