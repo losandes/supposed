@@ -1,12 +1,9 @@
 const { expect } = require('chai')
-const supposed = require('../index.js')
+const supposed = require('supposed')
 
 supposed.Suite({
   name: 'supposed-tests.docs',
   inject: { expect }
-}).runner({
-  cwd: __dirname
-}).run()
-// .then((context) => {
-//   console.log(context)
-// })
+})
+  .runner({ cwd: __dirname })
+  .run()

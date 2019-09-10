@@ -49,7 +49,7 @@ interface ITally {
 // different events have different properties - this has all-possibilities (nullable)
 export interface ITestEvent {
   type: string;
-  status?: string;
+  status?: string;  // only when type === 'TEST'
   time?: number;
   behavior?: string;
   error?: Error;
@@ -59,7 +59,8 @@ export interface ITestEvent {
     count: number;
     completed: number;
   };
-  log?: any;
+  log?: any;      // only when type === 'TEST'
+  context?: any;  // only when type === 'TEST'
   totals?: ITally;
 }
 

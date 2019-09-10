@@ -274,7 +274,10 @@ module.exports = {
         test.reporters = config.reporters
         test.config = config
         test.configure = configure
-        test.subscribe = subscribe
+        test.subscribe = (subscription) => {
+          subscribe(subscription)
+          return test
+        }
         test.dependencies = _suiteConfig && _suiteConfig.inject
         test.reporterFactory = reporterFactory
 

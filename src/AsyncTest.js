@@ -138,6 +138,10 @@ module.exports = {
       return result && typeof result.log !== 'undefined' ? result.log : undefined
     }
 
+    function maybeContext (result) {
+      return result && typeof result.context !== 'undefined' ? result.context : undefined
+    }
+
     /**
      * Executes one assertion
      * @param {Object} context
@@ -148,7 +152,8 @@ module.exports = {
         status: TestEvent.status.PASSED,
         batchId,
         behavior: assertion.behavior,
-        log: maybeLog(result)
+        log: maybeLog(result),
+        context: maybeContext(result)
       })
       const fail = (e) => publish({
         type: TestEvent.types.TEST,

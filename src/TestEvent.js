@@ -75,6 +75,10 @@ module.exports = {
         self.totals = event.totals
       }
 
+      if (event.context) {
+        self.context = event.context
+      }
+
       return Object.freeze(self)
     }
 

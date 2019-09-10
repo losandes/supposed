@@ -15,8 +15,47 @@ _Supposed_ is a simple test runner for Node.js, TypeScript, and the Browser that
 * Does not require a client (simple, functional, async JS/TS config)
 * Supports suite injection, with a composition root
 * Draws significant influence from vows, ava, and tape so it is partially compatible with some of their syntaxes
-* Will work with mocha's `describe`, `it` syntax with a little bit of test refactoring (`before` and `after` aren't supported, though - this library uses async-await, `then`, or BDD, or TDD syntax to support setup and tear down)
+* Will work with mocha's `describe`, `it` syntax with a little bit of test refactoring (`before` and `after` aren't supported, though - this library uses async-await, `then`, BDD, or TDD syntax to support setup and tear down)
 * Has 0 dependencies (not counting dev-dependencies)
+
+* [Getting Started with Node](#node)
+* [Getting Started with the Browser](#browser)
+* [Test Syntax and Domain Service Languages (DSLs)](#test-syntax-and-domain-service-languages-dsls))
+  * [The BDD DSL (Given, When, Then)](#the-bdd-dsl-given-when-then)
+  * [The AAA DSL (Arrange, Act, Assert)](#the-aaa-dsl-arrange-act-assert)
+  * [The xunit DSL (atomic)](#the-xunit-dsl-atomic)
+* [Discovering Tests and Running Them](#discovering-tests-and-running-them)
+  * [Configuring the Runner](#configuring-the-runner)
+  * [Configuring the Browser Test Server](#configuring-the-browser-test-server)
+* [Suite Configuration](#suite-configuration)
+* [Test Configuration](#test-configuration)
+* [TypeScript Support](#typescript-support)
+* [Why Supposed](#why-supposed)
+* [Cookbook](#cookbook)
+  * [Global Setup and Teardown](#global-setup-and-teardown)
+  * [Test Setup and Teardown](#test-setup-and-teardown)
+  * [Injecting Dependencies](#injecting-dependencies)
+  * [Naming Suites](#naming-suites)
+  * [Running Multiple Suites](#running-multiple-suites)
+  * [Using Promises in Tests](#using-promises-in-tests)
+  * [Using async-await in Tests](#using-async---await-in-tests)
+  * [Running Tests Serially](#running-tests-serially)
+  * [Writing a Test Reporter](#writing-a-test-reporter)
+  * [Adding Information to Report Output (event.log)](#adding-information-to-report-output-event.log)
+  * [Adding Context to Test Events (event.context)](#adding-context-to-test-events-event.context)
+  * [Skipping Tests](#skipping-tests)
+  * [Marking Tests as TODO](#marking-tests-as-todo)
+  * [Running Specific Tests (only)](#running-specific-tests-only)
+  * [Piping Browser Test Output to the Terminal](#piping-browser-test-output-to-the-terminal)
+  * [Nest/Branch Inheritance](#nest-branch-inheritance)
+  * [Streaming Output to a File](#streaming-output-to-a-file)
+  * [Roll Your Own Browser Template](#roll-your-own-browser-template)
+
+## Getting Started With Node
+
+## Getting Started With the Browser
+
+
 
 ## Adding Supposed to your project
 
@@ -88,34 +127,8 @@ If you prefer the atomic nature of xunit, it is not necessary to leverage the BD
 ```JavaScript
 var test = require('supposed')
 
-test('when dividing a number by zero, it should return Infinity', t => {
-  t.strictEqual(42 / 0, Infinity)
-})
-```
-
-Or if you still want to setup and teardown with BDD, or AAA, but using the xunit DSL:
-
-```JavaScript
-var test = require('supposed')
-
 test('when dividing a number by zero, it should return Infinity', (t) => {
-  return Promise.resolve(42)
-    .then((given) => divideByZero(given))
-    .then((actual) => t.strictEqual(actual, Infinity))
-    .catch((err) => t.ifError(err))
-})
-
-test('when dividing a number by zero, it should return Infinity', async (t) => {
-  let actual
-
-  try {
-    const given = 42
-    actual = await divideByZero(given)
-  } catch (e) {
-    t.ifError(err)
-  } finally {
-    t.strictEqual(actual, Infinity)
-  }
+  t.strictEqual(42 / 0, Infinity)
 })
 ```
 
@@ -141,9 +154,7 @@ $ node tests -m foo -r tap | npx tap-parser -j | jq
 ### Test Discovery & the Runner
 As you can see above, it's not necessary to write, or use a runner. A bear bones test suite might simply `require`, or `import` each test file. However that produces multiple result summaries which can be hard to parse or understand.
 
-If we export functions for each of our tests, and use the runner, supposed will collect all of the results across test files, and report on them as a suite.
-
-In the following example, we see 2 test files, and a test runner file.
+Using a runner, Supposed will group the tests into batches, and summarize the outcomes in a single report. In the following example, we see 2 test files, and a test runner file.
 
 ```JavaScript
 // ./first-module/first-spec.js
@@ -180,6 +191,7 @@ The runner can be configured to look in specific directories, ignore others, and
 * **directories** (Array) (default: `['.']`): You can specify an array of directories to include if you want. By default, it will recurse through every folder in the current working directory (cwd).
 * **matchesNamingConvention** (RegExp|Object) (default: `/.([-.]test(s?)\.js)|([-.]spec(s?)\.js)$/i`): The naming convention for your test files. When you define this as an object, the object must have a `test` function that returns a boolean. By default it will match any file that ends in `-test.js`, `.test.js`, `-tests.js`, `.tests.js`, `-spec.js`, `.spec.js`, `-specs.js`, or `.specs.js`. It will _not_ match `test.js`, `tests.js`, `spec.js`, nor `specs.js`, so these names are safe for defining your runner(s).
 * **matchesIgnoredConvention** (RegExp|Object) (default: `/node_modules/i`): A convention used to ignore directories, or files. When you define this as an object, the object must have a `test` function that returns a boolean. By default, the `node_modules` directory will be ignored. If you override this, you have to ignore that directory as well, unless you want it to run tests in your node_modules directory.
+* **injectSuite** (Boolean) (default: true): If your module exports a function that isn't a reference to supposed, supposed will try to inject itself into that function. If you don't want supposed to do that, set this to false
 
 ```JavaScript
 const supposed = require('supposed')
@@ -188,89 +200,65 @@ const runner = supposed.runner({
   cwd: path.join(process.cwd(), 'tests'),
   directories: ['./contracts', './repositories'],
   matchesNamingConvention: /.(-custom\.js)$/i,
-  matchesIgnoredConvention: /node_modules/i
+  matchesIgnoredConvention: /node_modules/i,
+  injectSuite: true
 })
 ```
 
 > Note that with the default configuration, the runner will walk all of the folders from the root of your project, except for `node_modules`.
 
-Both `matchesNamingConvention`, and `matchesIgnoredConvention` can be regular expressions (above), or objects that return `test` functions:
+Both `matchesNamingConvention`, and `matchesIgnoredConvention` can be regular expressions (above), or objects that match the following interface:
+
+```TypeScript
+interface {
+  test (filePath: string): boolean;
+}
+```
 
 ```JavaScript
 const supposed = require('supposed')
 const runner = supposed.runner({
   matchesNamingConvention: {
-    test: function (input) {
+    test: function (filePath) {
       return input.indexOf('test') > -1
     }
   }
 })
 ```
 
-#### Injecting a Suite
-By default, the runner will inject the suite that it was created on to any test that exports a function. This is especially handy, if you want to use the same suite configuration across multiple tests.
+#### Injecting dependencies
+The file where you configure your runner is a composition root, which can be used to share dependencies across tests. You might use this to pass around a composed System Under Test (SUT), additional assertion libraries, ENVVARS, etc.
+
+> NOTE that doing this will make your tests unable to run when called directly (i.e. `node ./first-module/first-spec.js`), so there are benefits and drawbacks. You can alway use `-m` to single out which tests get execute by the runner, though.
 
 ```JavaScript
 // ./first-module/first-spec.js
-module.exports = (test) => {
-  return test('first-module', { 'when... it...': expect => {
-    expect(42 / 0).to.equal(Infinity)
-  })})
-}
+const test = require('supposed')
+const { expect } = test.dependencies
+
+module.exports = test('given first-module, when... it...', (t) => {
+  expect(42 / 0).to.equal(Infinity)
+})
 
 // ./second-module/second-spec.js
-module.exports = (test) => {
-  return test('second-module', { 'when... it...': expect => {
-    expect(42 / 0).to.equal(Infinity)
-  })})
-}
+const test = require('supposed')
+
+module.exports = test('given second-module, when... it...', (t) => {
+  t.strictEqual(42 / 0, Infinity)
+})
 
 // ./tests.js
-const suite = require('supposed').Suite({
-  timeout: 10000, // 10 seconds
-  assertionLibrary: require('chai').expect
-})
-
-suite.runner()
+const { expect } = require('chai')
+module.exports = require('supposed')
+  .configure({
+    name: 'foo',
+    inject: {
+      expect,
+      env: process.env,
+      argv: process.argv
+    } }) // optional
+  .runner()
   .run()
-```
-
-You can use this to inject other libraries, envvars, or compositions you make in your test index.
-
-```JavaScript
-// ./test.js
-const sut = require('./index.js')
-const suite = require('supposed').Suite({
-  inject: {
-    env: process.env,
-    sut,
-    SOME_DEFAULT: true
-  }
-})
-
-suite.runner().run()
-
-// ./first-module/first-spec.js
-module.exports = (test, dependencies) => {
-  const { env, sut, SOME_DEFAULT} = dependencies
-
-  return test('first-module', { 'when... it...': expect => {
-    if (SOME_DEFAULT) {
-      // expect(...)
-    } else {
-      // expect(...)
-    }
-  })})
-}
-```
-
-You can turn this behavior off by passing `injectSuite: false` to the runner configuration:
-
-```JavaScript
-const supposed = require('supposed')
-const runner = supposed.runner({
-  injectSuite: false
-})
 ```
 
 ##### Global Setup and Teardown
