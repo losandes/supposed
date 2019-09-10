@@ -28,6 +28,7 @@ const consoleStylesFactory = require('./src/formatters/console-styles.js').facto
 const consoleUtilsFactory = require('./src/formatters/console-utils.js').factory
 const DefaultFormatterFactory = require('./src/formatters/DefaultFormatter.js').factory
 const JsonFormatterFactory = require('./src/formatters/JsonFormatter.js').factory
+const SummaryFormatterFactory = require('./src/formatters/SummaryFormatter.js').factory
 const SymbolFormatterFactory = require('./src/formatters/SymbolFormatter.js').factory
 const TapFormatterFactory = require('./src/formatters/TapFormatter.js').factory
 
@@ -152,6 +153,12 @@ function Supposed (options) {
         }
       }).write
     }
+  }).add(function SummaryReporter () {
+    return {
+      write: ConsoleReporter({
+        formatter: SummaryFormatterFactory({ consoleStyles, DefaultFormatter, TestEvent }).SummaryFormatter()
+      }).write
+    }
   }).add(function TapReporter () {
     return {
       write: ConsoleReporter({
@@ -191,7 +198,7 @@ function Supposed (options) {
     TestEvent
   })
 
-  const suite = new Suite(options)
+  const suite = new Suite(options, envvars)
   suite.Suite = Supposed
 
   if (!suites[suite.config.name]) {

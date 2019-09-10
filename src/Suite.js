@@ -224,7 +224,7 @@ module.exports = {
      * The test library
      * @param {Object} suiteConfig : optional configuration
     */
-    function Suite (suiteConfig) {
+    function Suite (suiteConfig, envvars) {
       const configure = (_suiteConfig) => {
         if (_suiteConfig && suiteConfig) {
           Object.keys(suiteConfig).forEach((key) => {
@@ -259,6 +259,10 @@ module.exports = {
         }
         test.suiteName = config.name
         test.runner = (options) => {
+          if (envvars && envvars.file && typeof envvars.file.test === 'function') {
+            options.matchesNamingConvention = envvars.file
+          }
+
           return {
             // find and run (node)
             run: run(() => findFiles(options)

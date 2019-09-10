@@ -133,6 +133,14 @@ export interface INodeRunnerConfigOutput {
   injectSuite: boolean;
 }
 
+export interface ITestRunnerConfigInput {
+  tests: IBDD | IBehaviors | IAssert | ICurriedAssert | IPromiseOrFunction;
+  config?: {
+    injectSuite?: boolean;
+  };
+  paths?: string[];
+}
+
 export interface IBrowserRunnerConfigInput extends INodeRunnerConfigInput {
   title?: string;
   port?: number;
@@ -201,7 +209,7 @@ export interface ISuppose {
   subscribe (subscription: IWrite | IReport): void;
   reporters: IReporter[];
   reporterFactory: IReporterFactory;
-  runner (config?: INodeRunnerConfigInput | IBrowserRunnerConfigInput): {
+  runner (config?: INodeRunnerConfigInput | IBrowserRunnerConfigInput | ITestRunnerConfigInput): {
     // find files, load them, and run the tests
     run (): Promise<INodeRunnerOutput>;
     // run the tests (expects tests to be presented in the INodeRunnerConfigInput)

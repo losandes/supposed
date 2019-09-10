@@ -42,7 +42,7 @@ module.exports = {
       }
     }
 
-    const mapToResults = (config, paths) => (results) => {
+    const mapToResults = (config, paths = []) => (results) => {
       return Object.freeze({
         results: results
           .filter((result) => result.status === 'fullfilled')

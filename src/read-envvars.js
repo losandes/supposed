@@ -47,6 +47,9 @@ module.exports = {
         match: process.env.SUPPOSED_MATCH
           ? new RegExp(process.env.SUPPOSED_MATCH)
           : undefined,
+        file: process.env.SUPPOSED_FILE
+          ? new RegExp(process.env.SUPPOSED_FILE)
+          : undefined,
         useColors: process.env.SUPPOSED_NO_COLOR && (
           process.env.SUPPOSED_NO_COLOR === 'true' ||
             process.env.SUPPOSED_NO_COLOR === '1'
@@ -61,6 +64,7 @@ module.exports = {
       process.argv.forEach((value, idx, args) => {
         const reporters = findMatch(Option('r', 'reporter'), value, idx, args)
         const match = findMatch(Option('m', 'match'), value, idx, args)
+        const file = findMatch(Option('f', 'file'), value, idx, args)
         const noColor = findMatch(Swatch('no-color'), value, idx, args)
 
         if (reporters) {
@@ -69,6 +73,10 @@ module.exports = {
 
         if (match) {
           output.match = new RegExp(match)
+        }
+
+        if (file) {
+          output.file = new RegExp(file)
         }
 
         if (noColor) {

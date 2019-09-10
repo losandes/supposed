@@ -27,6 +27,7 @@ modules.push(fs.readFileSync('./src/formatters/BlockFormatter.js'))
 modules.push(fs.readFileSync('./src/formatters/BriefFormatter.js'))
 modules.push(fs.readFileSync('./src/formatters/DefaultFormatter.js'))
 modules.push(fs.readFileSync('./src/formatters/JsonFormatter.js'))
+modules.push(fs.readFileSync('./src/formatters/SummaryFormatter.js'))
 modules.push(fs.readFileSync('./src/formatters/SymbolFormatter.js'))
 modules.push(fs.readFileSync('./src/formatters/TapFormatter.js'))
 

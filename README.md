@@ -18,15 +18,16 @@ _Supposed_ is a simple test runner for Node.js, TypeScript, and the Browser that
 * Will work with mocha's `describe`, `it` syntax with a little bit of test refactoring (`before` and `after` aren't supported, though - this library uses async-await, `then`, BDD, or TDD syntax to support setup and tear down)
 * Has 0 dependencies (not counting dev-dependencies)
 
-* [Getting Started with Node](#node)
-* [Getting Started with the Browser](#browser)
+* [Getting Started with Node](#getting-started-with-node)
+* [Getting Started with the Browser](#getting-started-with-the-browser)
 * [Test Syntax and Domain Service Languages (DSLs)](#test-syntax-and-domain-service-languages-dsls))
   * [The BDD DSL (Given, When, Then)](#the-bdd-dsl-given-when-then)
   * [The AAA DSL (Arrange, Act, Assert)](#the-aaa-dsl-arrange-act-assert)
   * [The xunit DSL (atomic)](#the-xunit-dsl-atomic)
+* [Arguments and ENVVARS](#arguments-and-envvars)
 * [Discovering Tests and Running Them](#discovering-tests-and-running-them)
-  * [Configuring the Runner](#configuring-the-runner)
-  * [Configuring the Browser Test Server](#configuring-the-browser-test-server)
+  * [Using the NodeJS Runner](#using-the-nodejs-runner)
+  * [Using the Browser Test Server](#using-the-browser-test-server)
 * [Suite Configuration](#suite-configuration)
 * [Test Configuration](#test-configuration)
 * [TypeScript Support](#typescript-support)
@@ -41,6 +42,8 @@ _Supposed_ is a simple test runner for Node.js, TypeScript, and the Browser that
   * [Using async-await in Tests](#using-async---await-in-tests)
   * [Running Tests Serially](#running-tests-serially)
   * [Writing a Test Reporter](#writing-a-test-reporter)
+  * [Subscribing to Test Events](#subscribing-to-test-events)
+  * [Streaming Output to a File](#streaming-output-to-a-file)
   * [Adding Information to Report Output (event.log)](#adding-information-to-report-output-event.log)
   * [Adding Context to Test Events (event.context)](#adding-context-to-test-events-event.context)
   * [Skipping Tests](#skipping-tests)
@@ -48,19 +51,49 @@ _Supposed_ is a simple test runner for Node.js, TypeScript, and the Browser that
   * [Running Specific Tests (only)](#running-specific-tests-only)
   * [Piping Browser Test Output to the Terminal](#piping-browser-test-output-to-the-terminal)
   * [Nest/Branch Inheritance](#nest-branch-inheritance)
-  * [Streaming Output to a File](#streaming-output-to-a-file)
   * [Roll Your Own Browser Template](#roll-your-own-browser-template)
 
 ## Getting Started With Node
 
+```Shell
+npm install --save-dev supposed
+```
+
+```JavaScript
+// my-test.js
+var test = require('supposed')
+
+test('when dividing a number by zero, it should return Infinity', (t) => {
+  t.strictEqual(42 / 0, Infinity)
+})
+```
+
+```Shell
+$ node my-test.js
+```
+
 ## Getting Started With the Browser
-
-
-
-## Adding Supposed to your project
 
 ```Shell
 npm install --save-dev supposed
+```
+
+```HTML
+<script src="./node_modules/supposed/dist/supposed.min.js" />
+<script>
+(function (test) {
+  'use strict'
+
+  test('when dividing a number by zero, it should return Infinity', () => {
+    const given = 42
+    const actual = given / 0
+
+    if (actual !== Infinity) {
+        throw new Error(`Expected ${given} / 0 to equal Infinity`)
+    }
+  })
+})(supposed)
+</script>
 ```
 
 ## Test Syntax and Domain Service Languages (DSLs)
@@ -69,9 +102,9 @@ npm install --save-dev supposed
 You can use BDD syntax to build your tests, separating the stages of a test into `given`, `when`, and as many assertions as you need:
 
 ```JavaScript
-var test = require('supposed')
+const test = require('supposed')
 
-test('when dividing a number by zero', {
+module.exports = test('when dividing a number by zero', {
   given: () => 42,
   when: (number) => { return number / 0 },
   'it should return Infinity': (then) => (err, actual) => {
@@ -97,9 +130,9 @@ test('when dividing a number by zero', {
 You can also use Arrange, Act, Assert TDD syntax:
 
 ```JavaScript
-var test = require('supposed')
+const test = require('supposed')
 
-test('when dividing a number by zero', {
+module.exports = test('when dividing a number by zero', {
   arrange: () => 42,
   act: (number) => { return number / 0 },
   'it should return Infinity': (assert) => (err, actual) => {
@@ -125,36 +158,155 @@ test('when dividing a number by zero', {
 If you prefer the atomic nature of xunit, it is not necessary to leverage the BDD and TDD features:
 
 ```JavaScript
-var test = require('supposed')
+const test = require('supposed')
 
-test('when dividing a number by zero, it should return Infinity', (t) => {
+module.exports = test('when dividing a number by zero, it should return Infinity', (t) => {
   t.strictEqual(42 / 0, Infinity)
 })
 ```
 
-## Running Tests
-_Supposed_ does not require a client. You can run tests with node:
+> This DSL is compatible with most test libraries when you don't nest tests within each other, and when you don't nest assertions inside of tests (i.e. describe, it)
+
+
+## Discovering Tests and Running Them
+In getting started, we saw how supposed can run tests without a runner. A bear bones test suite might simply `require`, or `import` each test file. However that produces multiple result summaries which can be hard to parse or understand.
+
+Using a runner, Supposed will group the tests into batches, and summarize the outcomes in a single report. Supposed has multiple runners: one for nodejs tests, one for browser tests, and a third that you can use without the built-in file discovery.
+
+## Arguments and ENVVARS
+Supposed has options that can be set with command-line arguments, or envvars. They are described here, and then the actual arguments, and envvars are listed and shown in examples below.
+
+* **reporters**: choose reporter(s) by name (`tap|json|nyan|brief|summary|array|block|justthedescriptions|noop`) (comma-separated)
+* **match description**: run only tests whose descriptions/behaviors match the regular expression
+* **match file name**: run only tests whose file names match the regular expression (only used with runner)
+* **no-color**: display all output in black + white
+
+### Arguments
+
+* `-r` or `--reporter` (reporters)
+* `-m` or `--match` (matches description)
+* `-f` or `--file` (matches file name)
+* `--no-color` (b+w terminal output)
+
 
 ```Shell
-$ node test/my-test.js
-```
-
-The following switches are supported:
-
-* **-m**: run only tests that match the regular expression
-* **-r**: choose a reporter by name (`tap|json|nyan|brief|array|quiet|block|justthedescriptions|noop`)
-
-```Shell
-$ npm install --save-dev tap-spec
+$ npm install --save-dev tap-parser
 $ node tests -m foo -r tap | npx tap-parser -j | jq
 ```
 
-> In that example, we run tests that have the word "foo" in their descriptions, using TAP output, and pipe the output of the tests into another package, [tap-parser](https://www.npmjs.com/package/tap-parser), and then pipe the output of that package into [jq](https://stedolan.github.io/jq/)
+> In that example, we run tests that have the word "foo" in their descriptions, using TAP output. We pipe the output of the tests into another package, [tap-parser](https://www.npmjs.com/package/tap-parser), and then pipe the output of that package into [jq](https://stedolan.github.io/jq/).
 
-### Test Discovery & the Runner
-As you can see above, it's not necessary to write, or use a runner. A bear bones test suite might simply `require`, or `import` each test file. However that produces multiple result summaries which can be hard to parse or understand.
+```Shell
+$ node tests --no-color
+```
 
-Using a runner, Supposed will group the tests into batches, and summarize the outcomes in a single report. In the following example, we see 2 test files, and a test runner file.
+### ENVVARS
+
+* `SUPPOSED_REPORTERS` (reporters)
+* `SUPPOSED_MATCH` (matches description)
+* `SUPPOSED_FILE` (matches file name)
+* `SUPPOSED_NO_COLOR` (b+w terminal output)
+
+```Shell
+$ npm install --save-dev tap-parser
+$ export SUPPOSED_REPORTERS=tap
+$ export SUPPOSED_MATCH=continuous-integration
+$ export SUPPOSED_NO_COLOR=true
+$ node tests | npx tap-parser -j | jq
+```
+
+> In that example, we run tests that have the word "continuous-integration" in their descriptions, using TAP output. We pipe the output of the tests into another package, [tap-parser](https://www.npmjs.com/package/tap-parser), and then pipe the output of that package into [jq](https://stedolan.github.io/jq/).
+
+### Using Multiple Reporters
+Supposed uses pubsub to report, so there's no limit on the number of reporters that can be used. Some reporters when used in combination can cause problems (nyan isn't really compatible with anything else), but others can be helpful. Let's say you like the TAP output, but you want a summary:
+
+```Shell
+$ node tests -r tap,summary --no-color
+
+TAP version 13
+ok 1 - given... when... then...
+1..1
+
+# total: 1  passed: 1  failed: 0  skipped: 0  duration: 0.011
+```
+
+> You can also [register your own reporters](#writing-a-test-reporter), as well as [subscribe to test events](#subscribing-to-test-events) to get the desired effect you're looking for. This is particularly useful for alerting, or sending a messages to Slack when tests fail in continuous-integration.
+
+## Suites
+The default `supposed` is a Suite, and you can mutate the configuration using `supposed.configure({...})`. Configuring this multiple times will cause unexpected behaviors, since the technique is mutation. If you have reason to have multiple configurations, or are simply uncomfortable with mutability, you can create and configure Suites.
+
+```JavaScript
+const db = require('./db')
+const supposed = require('supposed')
+
+const suite1 = supposed.Suite({
+  name: 'unit-tests',
+  reporter: 'noop'
+}).runner({
+  directories: ['unit-tests']
+})
+
+const suite2 = supposed.Suite({
+  name: 'integration-tests',
+  reporter: 'noop',
+  inject: {
+    db
+  }
+}).runner({
+  directories: ['integration-tests']
+})
+
+Promise.all([suite1.run(), suite2.run()], (results) => {
+  console.log(results)
+})
+```
+
+> You can find a more complete example for [using multiple suites](#running-multiple-suites) in the Cookbook.
+
+### Configuring a Suite
+Whether your using `supposed.configure({...})`, or creating a new `supposed.Suite({...})`, the following configurations are supported (configuration is not required):
+
+* `name` {string} (default is generated) - A name for the suite (suites can be retrieved by name: `require('supposed').suites.mySuite`)
+* `timeout` {number} (default is 2000ms) - The amount of time in milliseconds that _Supposed_ waits, before it cancels a long-running test
+* `assertionLibrary` {object} (default for nodeJS is `assert`; no default for browsers) - The assertion library that will be passed to the tests
+* `reporter` {string|`(event: ITestEvent): Promise<void>`} - The reporter to use for test output (`tap|json|nyan|brief|summary|array|block|justthedescriptions|noop`), or a function
+* `reporters` {string[]} - A comma-separated list of reporters to use (by name) (`tap|json|nyan|brief|summary|array|block|justthedescriptions|noop`)
+* `match` {string|RegExp|`{ test (description: string): boolean; }`} - run only tests whose descriptions/behaviors match the regular expression, or pass this test
+* `useColors` {boolean} - whether or not to use color in the reporter output
+* `inject` {any} - when present this object will be available to tests via `suite.dependencies`. If your test files `module.exports = (suite, dependencies) => {}`, this object will also be passed as the second argument to your exported function.
+
+> If neither `reporter`, nor `reporters` are present, the `default` reporter will be used
+
+```JavaScript
+const { expect } = require('chai')
+const { databaseConnection } = require('./db')
+const suite = require('supposed').Suite({
+  name: 'integration-tests',
+  assertionLibrary: expect,
+  timeout: 10000, // 10s
+  reporters: ['tap', 'summary'],
+  reporter: (event) => { /* ... */ },
+  match: /^ONLY/,
+  useColors: false,
+  inject: { databaseConnection }
+})
+```
+
+#### Built-in Reporters
+
+* `default` - a concise reporter with start indication, symbols for pass|fail|skip, error details, and a summary at the end
+* `tap` - a TAP compliant reporter
+* `json` - test events in JSON format
+* `nyan` - rainbows, and flying cats? check
+* `brief` - just the summary, and the output from any failing tests
+* `summary` - just the summary
+* `array` - no output, but you can read the test events from `suite.config.reporters[${indexOfArrayReporter}].events` (it's easier just to `suite.subscribe`, or `suite.runner().run().then((results) => {})` though - you probably don't need this - it's mostly for testing this library)
+* `block` - Colorized blocks with PASS|FAIL|SKIP text (like jest)
+* `justthedescriptions` - the default reporter without error output for failed tests, nor a summary (useful for copy and paste)
+* `noop` - turn reporting off, and do your own thing
+
+## Using the NodeJS Runner
+The following example has two test files, and a runner file (test.js). In this example, the default Suite is used, and is configured in test.js. The runner is not configured, so default configurations are used.
 
 ```JavaScript
 // ./first-module/first-spec.js
@@ -178,20 +330,14 @@ module.exports = require('supposed')
   .run()
 ```
 
-We can execute this, using node:
-
-```Shell
-$ node tests
-```
-
-#### Configuring the Runner
+### Configuring the NodeJS Runner
 The runner can be configured to look in specific directories, ignore others, and to match the naming conventions of your choice.
 
-* **cwd** (String) (default: `process.cwd()`): The current working directory that the file-tree walker should start from
-* **directories** (Array) (default: `['.']`): You can specify an array of directories to include if you want. By default, it will recurse through every folder in the current working directory (cwd).
-* **matchesNamingConvention** (RegExp|Object) (default: `/.([-.]test(s?)\.js)|([-.]spec(s?)\.js)$/i`): The naming convention for your test files. When you define this as an object, the object must have a `test` function that returns a boolean. By default it will match any file that ends in `-test.js`, `.test.js`, `-tests.js`, `.tests.js`, `-spec.js`, `.spec.js`, `-specs.js`, or `.specs.js`. It will _not_ match `test.js`, `tests.js`, `spec.js`, nor `specs.js`, so these names are safe for defining your runner(s).
-* **matchesIgnoredConvention** (RegExp|Object) (default: `/node_modules/i`): A convention used to ignore directories, or files. When you define this as an object, the object must have a `test` function that returns a boolean. By default, the `node_modules` directory will be ignored. If you override this, you have to ignore that directory as well, unless you want it to run tests in your node_modules directory.
-* **injectSuite** (Boolean) (default: true): If your module exports a function that isn't a reference to supposed, supposed will try to inject itself into that function. If you don't want supposed to do that, set this to false
+* `cwd` {string} (default: `process.cwd()`) - The current working directory that the file-tree walker should start from
+* `directories` {string[]} (default: `['.']`) - You can specify an array of directories to include if you want. By default, it will recurse through every folder in the current working directory (cwd).
+* `matchesNamingConvention` {string|RegExp|`{ test (filePath: string): boolean; }`} (default: `/.([-.]test(s?)\.js)|([-.]spec(s?)\.js)$/i`): The naming convention for your test files. When you define this as an object, the object must have a `test` function that returns a boolean. By default it will match any file that ends in `-test.js`, `.test.js`, `-tests.js`, `.tests.js`, `-spec.js`, `.spec.js`, `-specs.js`, or `.specs.js`. It will _not_ match `test.js`, `tests.js`, `spec.js`, nor `specs.js`, so these names are safe for defining your runner(s).
+* `matchesIgnoredConvention` {string|RegExp|`{ test (filePath: string): boolean; }`} (default: `/node_modules/i`) - A convention used to ignore directories, or files. When you define this as an object, the object must have a `test` function that returns a boolean. By default, the `node_modules` directory will be ignored. If you override this, you have to ignore that directory as well, unless you want it to run tests in your node_modules directory.
+* `injectSuite` {boolean} (default: true) - If your module exports a function that isn't a reference to supposed, supposed will try to inject itself into that function. If you don't want supposed to do that, set this to false
 
 ```JavaScript
 const supposed = require('supposed')
@@ -225,6 +371,46 @@ const runner = supposed.runner({
   }
 })
 ```
+
+---
+TODO
+
+### Skipping File Discovery
+```TypeScript
+suite.runner(options: {
+  tests: IBDD | IBehaviors | IAssert | ICurriedAssert | IPromiseOrFunction;
+  config?: {
+    injectSuite?: boolean;
+  };
+  paths?: string[];
+}).runTests(): Promise<INodeRunnerOutput>;
+```
+
+## Using the Browser Test Server
+
+### Configuring the Browser Test Server
+
+
+
+
+
+
+
+---
+
+
+### Test Discovery & the Runner
+As you can see above, it's not necessary to write, or use a runner. A bear bones test suite might simply `require`, or `import` each test file. However that produces multiple result summaries which can be hard to parse or understand.
+
+Using a runner, Supposed will group the tests into batches, and summarize the outcomes in a single report. In the following example, we see 2 test files, and a test runner file.
+
+
+We can execute this, using node:
+
+```Shell
+$ node tests
+```
+
 
 #### Injecting dependencies
 The file where you configure your runner is a composition root, which can be used to share dependencies across tests. You might use this to pass around a composed System Under Test (SUT), additional assertion libraries, ENVVARS, etc.

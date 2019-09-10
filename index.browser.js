@@ -113,6 +113,16 @@
           }
         }).write
       }
+    }).add(function SummaryReporter () {
+      return {
+        write: ConsoleReporter({
+          formatter: module.factories.SummaryFormatterFactory({
+            consoleStyles,
+            DefaultFormatter,
+            TestEvent
+          }).SummaryFormatter()
+        }).write
+      }
     }).add(function TapReporter () {
       return {
         write: ConsoleReporter({
