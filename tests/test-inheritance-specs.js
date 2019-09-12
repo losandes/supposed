@@ -18,6 +18,69 @@ module.exports = function (describe) {
         }
       }
     },
+    'when nested assertions have no given': {
+      given: () => 42,
+      'and a parent description does have a given': {
+        'and the nest has a when': {
+          when: (given) => { return given / 0 },
+          'it should support branching the rabbit hole': (t) => (err, actual) => {
+            t.ifError(err)
+            t.strictEqual(actual, Infinity)
+          },
+          'and there\'s more nesting': {
+            'with when\'s but not given\'s': {
+              when: (given) => { return given * 1 },
+              'the when\'s should receive the value from the parent given': (t) => (err, actual) => {
+                t.ifError(err)
+                t.strictEqual(actual, 42)
+              }
+            },
+            'with when\'s and given\'s': {
+              given: () => 1,
+              when: (given) => { return given * 1 },
+              'the when\'s should receive the value from the overriding given': (t) => (err, actual) => {
+                t.ifError(err)
+                t.strictEqual(actual, 1)
+              },
+              'in deeper nests': {
+                when: (given) => { return given * 2 },
+                'the when\'s should receive the value from the overriding given': (t) => (err, actual) => {
+                  t.ifError(err)
+                  t.strictEqual(actual, 2)
+                }
+              }
+            }
+          } // /more nesting
+        }, // /nest has when
+        'and the nest does NOT have a when': {
+          'the assertions should receive the value from the parent given': (t) => (err, actual) => {
+            t.ifError(err)
+            t.strictEqual(actual, 42)
+          },
+          'and there\'s more nesting': {
+            'with neither when\'s nor given\'s': {
+              'the assertions should receive the value from the parent given': (t) => (err, actual) => {
+                t.ifError(err)
+                t.strictEqual(actual, 42)
+              }
+            },
+            'with a given, but not a when': {
+              given: () => 1,
+              'the assertions should receive the value from the overriding given': (t) => (err, actual) => {
+                t.ifError(err)
+                t.strictEqual(actual, 1)
+              },
+              'in deeper nests': {
+                'the assertions should receive the value from the overriding given': (t) => (err, actual) => {
+                  t.ifError(err)
+                  t.strictEqual(actual, 1)
+                }
+              }
+            }
+          } // /more nesting
+        } // /no when
+      } // /parent has given
+    },
     'when the `when` is asynchronous': {
       when: whenIsAsync,
       'it should not execute the assertions until the when is resolved': (t) => (err, actual) => {

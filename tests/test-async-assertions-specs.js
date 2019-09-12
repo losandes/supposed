@@ -4,6 +4,7 @@ module.exports = function (describe) {
   return describe('async tests', {
     'when given returns a promise': {
       given: () => Promise.resolve(42),
+      // when: (given) => given,
       'it should resolve the promise': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual, 42)
@@ -11,6 +12,7 @@ module.exports = function (describe) {
     },
     'when given returns a value (not a promise)': {
       given: () => 42,
+      // when: (given) => given,
       'it should resolve the value': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual, 42)
