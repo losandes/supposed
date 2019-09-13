@@ -79,7 +79,8 @@ module.exports = {
         return trimBehavior(behavior)
       }
 
-      function Pass (behavior, node, given, when, skipped, timeout, assertionLib) {
+      function Layer (input) {
+        const { behavior, node, given, when, skipped, timeout, assertionLib } = input
         const skip = skipped || isSkipped(behavior)
         const assertions = getAssertions(behavior, node, skip, timeout)
 
@@ -107,15 +108,21 @@ module.exports = {
         }
       }
 
-      function parseOne (behavior, node, given, when, skipped, timeout, assertionLib) {
-        timeout = timeout || node.timeout
-        assertionLib = assertionLib || node.assertionLibrary
-        skipped = skipped || node.skipped
-        const passes = []
-        const parent = new Pass(behavior, node, given, when, skipped, timeout, assertionLib)
+      function FlattenedTests (input) {
+        const { behavior, node, given, when, skipped, timeout, assertionLib } = input
+        const layers = []
+        const parent = new Layer({
+          behavior,
+          node,
+          given,
+          when,
+          skipped: skipped || node.skipped,
+          timeout: timeout || node.timeout,
+          assertionLib: assertionLib || node.assertionLibrary
+        })
 
         if (Array.isArray(parent.assertions) && parent.assertions.length) {
-          passes.push(parent)
+          layers.push(parent)
         }
 
         Object.keys(node).filter(childKey => {
@@ -123,39 +130,33 @@ module.exports = {
         }).map(childKey => {
           const childBehavior = concatBehavior(behavior, childKey)
 
-          return parseOne(
-            childBehavior,
-            node[childKey],
-            parent.given,
-            parent.when,
+          return FlattenedTests({
+            behavior: childBehavior,
+            node: node[childKey],
+            given: parent.given,
+            when: parent.when,
             // skipping favors the parent over the child
-            parent.skipped || isSkipped(childKey),
+            skipped: parent.skipped || isSkipped(childKey),
             // timeout and assertion lib favor the child over the parent
-            node[childKey].timeout || parent.timeout,
-            node[childKey].assertionLibrary || parent.assertionLibrary
-          )
-        }).forEach(mappedPasses => {
-          mappedPasses
-            .filter(mappedPass => {
-              return Array.isArray(mappedPass.assertions) && mappedPass.assertions.length
+            timeout: node[childKey].timeout || parent.timeout,
+            assertionLib: node[childKey].assertionLibrary || parent.assertionLibrary
+          })
+        }).forEach(mappedLayers => {
+          mappedLayers
+            .filter(mappedLayer => {
+              return Array.isArray(mappedLayer.assertions) && mappedLayer.assertions.length
             })
-            .forEach(mappedPass => {
-              passes.push(mappedPass)
+            .forEach(mappedLayer => {
+              layers.push(mappedLayer)
             })
         })
 
-        return passes
+        return layers
       }
 
-      function makeBatch (tests) {
-        let parsed = []
-
-        Object.keys(tests).forEach(key => {
-          parsed = parsed.concat(parseOne(key, tests[key]))
-        })
-
-        return parsed
-      }
+      const makeBatch = (tests) => Object.keys(tests).reduce((batch, key) => {
+        return batch.concat(new FlattenedTests({ behavior: key, node: tests[key] }))
+      }, [])
 
       return { makeBatch }
     } // /BatchComposer
