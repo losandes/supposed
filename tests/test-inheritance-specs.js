@@ -81,6 +81,52 @@ module.exports = function (describe) {
         } // /no when
       } // /parent has given
     },
+    'when nested assertions have givens': {
+      when: (given) => { return given * 2 },
+      'and they stem from a parent with a when (1)': {
+        given: () => 1,
+        'it should pass the child given to the parent when': (t) => (err, actual) => {
+          t.ifError(err)
+          t.strictEqual(actual, 2)
+        }
+      },
+      'and they stem from a parent with a when (42)': {
+        given: () => 42,
+        'it should pass the child given to the parent when': (t) => (err, actual) => {
+          t.ifError(err)
+          t.strictEqual(actual, 84)
+        }
+      }
+    },
+    'when nested assertions have givens (make-batch if (!when && parentWhen && !whenIsInheritedGiven))': {
+      given: () => 42,
+      when: (given) => given * 2,
+      'it should equal 84': (t) => (err, actual) => {
+        t.ifError(err)
+        t.strictEqual(actual, 84)
+      },
+      'and they stem from a parent with a when': {
+        given: () => 1,
+        'it should equal 2': (t) => (err, actual) => {
+          t.ifError(err)
+          t.strictEqual(actual, 2)
+        }
+      }
+    },
+    'when nested assertions have givens (make-batch if (!when && given))': {
+      given: () => 42,
+      'it should equal 42': (t) => (err, actual) => {
+        t.ifError(err)
+        t.strictEqual(actual, 42)
+      },
+      'and they stem from a parent with a when': {
+        given: () => 1,
+        'it should equal 1': (t) => (err, actual) => {
+          t.ifError(err)
+          t.strictEqual(actual, 1)
+        }
+      }
+    },
     'when the `when` is asynchronous': {
       when: whenIsAsync,
       'it should not execute the assertions until the when is resolved': (t) => (err, actual) => {

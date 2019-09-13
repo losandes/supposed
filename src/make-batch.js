@@ -80,45 +80,90 @@ module.exports = {
       }
 
       function Layer (input) {
-        const { behavior, node, given, when, skipped, timeout, assertionLib } = input
-        const skip = skipped || isSkipped(behavior)
-        const assertions = getAssertions(behavior, node, skip, timeout)
+        const { behavior, node, timeout, assertionLibrary } = input
+        const parentSkipped = input.skipped
+        const parentGiven = input.given
+        const parentWhen = input.when
+        const parentWhenIsInheritedGiven = input.whenIsInheritedGiven
 
-        const _arrange = getGiven(node)
-        const arrange = _arrange || given
-        const _act = getWhen(node)
-        let act = _act || when
+        const skipped = parentSkipped || isSkipped(behavior)
+        const assertions = getAssertions(behavior, node, skipped, timeout)
+        const given = getGiven(node) || parentGiven
+        let when = getWhen(node)
+        let whenIsInheritedGiven = parentWhenIsInheritedGiven || false // false is the default
 
-        // IMPORTANT - if there's an immediate given, but not an immediate when,
-        // then inheritance starts over
-        if (_arrange && !_act) {
-          // the when/act is what feeds the assertion
-          // but leave the given/arrange there because another nest might need it
-          act = arrange
+        if (when) {
+          // an immediate when is present, so this overrides the parent
+          whenIsInheritedGiven = false
+        } if (!when && parentWhen && !whenIsInheritedGiven) {
+          // an immediate when is NOT present, there is a parent `when`, and
+          // it's not the result if `if (!when && given)` - this when
+          // should be inherited
+          /*
+          'when nested assertions have givens (make-batch inline-comments)': {
+            given: () => 42,
+            when: (given) => given * 2,
+            'it should equal 84': (t) => (err, actual) => {
+              t.ifError(err)
+              t.strictEqual(actual, 84)
+            },
+            'and they stem from a parent with a when': {
+              given: () => 1,
+              'it should equal 2': (t) => (err, actual) => {
+                t.ifError(err)
+                t.strictEqual(actual, 2)
+              }
+            }
+          }
+          */
+          when = parentWhen
+        } else if (!when && given) {
+          // There are neither an immediate when, nor a parent when because the parent
+          // when was actually a given (the result of this block)
+          /*
+          'when nested assertions have givens (make-batch if (!when && given))': {
+            given: () => 42,
+            'it should equal 42': (t) => (err, actual) => {
+              t.ifError(err)
+              t.strictEqual(actual, 42)
+            },
+            'and they stem from a parent with a when': {
+              given: () => 1,
+              'it should equal 1': (t) => (err, actual) => {
+                t.ifError(err)
+                t.strictEqual(actual, 1)
+              }
+            }
+          }
+          */
+          whenIsInheritedGiven = true
+          when = given
         }
 
         return {
-          behavior: behavior,
-          given: arrange,
-          when: act,
-          assertions: assertions,
-          skipped: skip,
-          timeout: timeout,
-          assertionLibrary: assertionLib
+          behavior,
+          given,
+          when,
+          assertions,
+          skipped,
+          timeout,
+          assertionLibrary,
+          whenIsInheritedGiven
         }
       }
 
       function FlattenedTests (input) {
-        const { behavior, node, given, when, skipped, timeout, assertionLib } = input
+        const { behavior, node, given, when, whenIsInheritedGiven, skipped, timeout, assertionLibrary } = input
         const layers = []
         const parent = new Layer({
           behavior,
           node,
           given,
           when,
+          whenIsInheritedGiven,
           skipped: skipped || node.skipped,
           timeout: timeout || node.timeout,
-          assertionLib: assertionLib || node.assertionLibrary
+          assertionLibrary: assertionLibrary || node.assertionLibrary
         })
 
         if (Array.isArray(parent.assertions) && parent.assertions.length) {
@@ -135,11 +180,12 @@ module.exports = {
             node: node[childKey],
             given: parent.given,
             when: parent.when,
+            whenIsInheritedGiven: parent.whenIsInheritedGiven,
             // skipping favors the parent over the child
             skipped: parent.skipped || isSkipped(childKey),
             // timeout and assertion lib favor the child over the parent
             timeout: node[childKey].timeout || parent.timeout,
-            assertionLib: node[childKey].assertionLibrary || parent.assertionLibrary
+            assertionLibrary: node[childKey].assertionLibrary || parent.assertionLibrary
           })
         }).forEach(mappedLayers => {
           mappedLayers

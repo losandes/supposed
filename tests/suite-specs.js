@@ -150,8 +150,8 @@ module.exports = function (test, dependencies) {
         const sut = test.Suite({
           reporter: 'QUIET',
           match: null,
-          givenSynonyms: ['before'],
-          whenSynonyms: ['execute']
+          givenSynonyms: ['before', 'setup'],
+          whenSynonyms: ['execute', 'run']
         })
 
         return sut('sut', {
@@ -163,14 +163,36 @@ module.exports = function (test, dependencies) {
               t.strictEqual(actual, Infinity)
 
               return { log: { actual } }
+            },
+            'nest-description': {
+              setup: () => 42,
+              run: (given) => { return given / 0 },
+              'sut-assertion': (t) => (err, actual) => {
+                t.ifError(err)
+                t.strictEqual(actual, Infinity)
+
+                return { log: { actual } }
+              }
+            }
+          },
+          'side-description': {
+            setup: () => 42,
+            run: (given) => { return given / 0 },
+            'sut-assertion': (t) => (err, actual) => {
+              t.ifError(err)
+              t.strictEqual(actual, Infinity)
+
+              return { log: { actual } }
             }
           }
         })
       },
       'it should use the configured synonyms': (t) => (err, actual) => {
         t.ifError(err)
-        t.strictEqual(actual.totals.passed, 1)
+        t.strictEqual(actual.totals.passed, 3)
         t.strictEqual(actual.results[0].log.actual, Infinity)
+        t.strictEqual(actual.results[1].log.actual, Infinity)
+        t.strictEqual(actual.results[2].log.actual, Infinity)
       },
       'and the synonyms include empty strings': {
         when: () => {

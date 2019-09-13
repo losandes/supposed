@@ -167,6 +167,50 @@ module.exports = test('when dividing a number by zero, it should return Infinity
 
 > This DSL is compatible with most test libraries when you don't nest tests within each other, and when you don't nest assertions inside of tests (i.e. describe, it)
 
+### Custom DSLs
+If you don't like the provided syntax... _configure it_! You can add synonyms for given, and when. These do not overwrite the existing synonyms, which can still be used. The givens can be used interchangeably with the when's (there's no order, or pairing).
+
+```JavaScript
+const test = require('supposed').Suite({
+  givenSynonyms: ['cause', 'before', 'setup'],
+  whenSynonyms: ['effect', 'execute', 'run']
+})
+
+module.exports = test('when dividing numbers by 0', {
+  'cause, effect': {
+    cause: () => 42,
+    effect: (number) => { return number / 0 },
+    'it should return Infinity': (assert) => (err, actual) => {
+      assert.ifError(err)
+      assert.strictEqual(actual, Infinity)
+    }
+  },
+  'setup, run': {
+    setup: () => 0,
+    run: (number) => { return number / 0 },
+    'it should return NaN': (assert) => (err, actual) => {
+      assert.ifError(err)
+      assert.strictEqual(isNaN(actual), true)
+    }
+  },
+  'before, run': {
+    before: () => 0,
+    run: (number) => { return number / 0 },
+    'it should return NaN': (assert) => (err, actual) => {
+      assert.ifError(err)
+      assert.strictEqual(isNaN(actual), true)
+    }
+  },
+  'given, execute': {
+    given: () => 0,
+    execute: (number) => { return number / 0 },
+    'it should return NaN': (assert) => (err, actual) => {
+      assert.ifError(err)
+      assert.strictEqual(isNaN(actual), true)
+    }
+  }
+})
+```
 
 ## Discovering Tests and Running Them
 In getting started, we saw how supposed can run tests without a runner. A bear bones test suite might simply `require`, or `import` each test file. However that produces multiple result summaries which can be hard to parse or understand.
@@ -274,6 +318,9 @@ Whether your using `supposed.configure({...})`, or creating a new `supposed.Suit
 * `match` {string|RegExp|`{ test (description: string): boolean; }`} - run only tests whose descriptions/behaviors match the regular expression, or pass this test
 * `useColors` {boolean} - whether or not to use color in the reporter output
 * `inject` {any} - when present this object will be available to tests via `suite.dependencies`. If your test files `module.exports = (suite, dependencies) => {}`, this object will also be passed as the second argument to your exported function.
+* `givenSynonyms` {string[]} - an array of words to be used in place of "given|arrange"
+* `whenSynonyms` {string[]} - an array of words to be used in place of "when|act|topic"
+
 
 > If neither `reporter`, nor `reporters` are present, the `default` reporter will be used
 
@@ -288,7 +335,9 @@ const suite = require('supposed').Suite({
   reporter: (event) => { /* ... */ },
   match: /^ONLY/,
   useColors: false,
-  inject: { databaseConnection }
+  inject: { databaseConnection },
+  givenSynonyms: ['cause'],
+  whenSynonyms: ['effect']
 })
 ```
 
