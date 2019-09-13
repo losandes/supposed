@@ -144,6 +144,68 @@ module.exports = function (test, dependencies) {
         const found = actual.events.find((event) => event.behavior === actual.expectedBehavior)
         t.strictEqual(found.type, 'TEST')
       }
+    },
+    'when a new suite is created with given and when synonyms': {
+      when: () => {
+        const sut = test.Suite({
+          reporter: 'QUIET',
+          match: null,
+          givenSynonyms: ['before'],
+          whenSynonyms: ['execute']
+        })
+
+        return sut('sut', {
+          'sut-description': {
+            before: () => 42,
+            execute: (given) => { return given / 0 },
+            'sut-assertion': (t) => (err, actual) => {
+              t.ifError(err)
+              t.strictEqual(actual, Infinity)
+
+              return { log: { actual } }
+            }
+          }
+        })
+      },
+      'it should use the configured synonyms': (t) => (err, actual) => {
+        t.ifError(err)
+        t.strictEqual(actual.totals.passed, 1)
+        t.strictEqual(actual.results[0].log.actual, Infinity)
+      },
+      'and the synonyms include empty strings': {
+        when: () => {
+          const sut = test.Suite({
+            reporter: 'QUIET',
+            match: null,
+            givenSynonyms: [''],
+            whenSynonyms: ['  ']
+          })
+
+          return sut
+        },
+        'it should NOT use the configured synonyms': (t) => (err, actual) => {
+          t.ifError(err)
+          t.deepStrictEqual(actual.config.givenSynonyms, ['given', 'arrange'])
+          t.deepStrictEqual(actual.config.whenSynonyms, ['when', 'act', 'topic'])
+        }
+      },
+      'and the synonyms include non-strings': {
+        when: () => {
+          const sut = test.Suite({
+            reporter: 'QUIET',
+            match: null,
+            givenSynonyms: [42],
+            whenSynonyms: [() => {}]
+          })
+
+          return sut
+        },
+        'it should NOT use the configured synonyms': (t) => (err, actual) => {
+          t.ifError(err)
+          t.deepStrictEqual(actual.config.givenSynonyms, ['given', 'arrange'])
+          t.deepStrictEqual(actual.config.whenSynonyms, ['when', 'act', 'topic'])
+        }
+      }
     }
   })
 }

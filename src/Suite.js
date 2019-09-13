@@ -9,7 +9,7 @@ module.exports = {
       allSettled,
       AsyncTest,
       findFiles,
-      makeBatch,
+      BatchComposer,
       makeSuiteConfig,
       publish,
       subscribe,
@@ -63,7 +63,7 @@ module.exports = {
       }
     }
 
-    const mapper = (config, byMatcher) => (batch) => {
+    const mapper = (config, makeBatch, byMatcher) => (batch) => {
       const batchId = makeBatchId()
       const processed = makeBatch(batch)
         .filter(byMatcher)
@@ -233,8 +233,9 @@ module.exports = {
         }
 
         const config = makeSuiteConfig(_suiteConfig)
+        const { makeBatch } = new BatchComposer(config)
         const byMatcher = matcher(config)
-        const mapToTests = mapper(config, byMatcher)
+        const mapToTests = mapper(config, makeBatch, byMatcher)
         const test = tester(config, mapToTests)
         const findAndStart = browserRunner(config, test)
         const run = runner(config, test)

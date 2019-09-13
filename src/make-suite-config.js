@@ -12,7 +12,9 @@ module.exports = {
         match: defaults.match,
         name: makeSuiteId(),
         timeout: 2000,
-        reporters: []
+        reporters: [],
+        givenSynonyms: ['given', 'arrange'],
+        whenSynonyms: ['when', 'act', 'topic']
       }
       options = { ...options }
 
@@ -36,6 +38,22 @@ module.exports = {
 
       if (typeof options.useColors === 'boolean') {
         suiteConfig.useColors = options.useColors
+      }
+
+      if (Array.isArray(options.givenSynonyms)) {
+        options.givenSynonyms.forEach((synonym) => {
+          if (typeof synonym === 'string' && synonym.trim().length) {
+            suiteConfig.givenSynonyms.push(synonym)
+          }
+        })
+      }
+
+      if (Array.isArray(options.whenSynonyms)) {
+        options.whenSynonyms.forEach((synonym) => {
+          if (typeof synonym === 'string' && synonym.trim().length) {
+            suiteConfig.whenSynonyms.push(synonym)
+          }
+        })
       }
 
       const makeReporterArray = (input) => {

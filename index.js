@@ -173,7 +173,7 @@ function Supposed (options) {
   }).NyanReporter)
 
   const { AsyncTest } = AsyncTestFactory({ isPromise, publish, TestEvent })
-  const { makeBatch } = makeBatchFactory({})
+  const { BatchComposer } = makeBatchFactory({})
 
   const { makeSuiteConfig } = makeSuiteConfigFactory({
     defaults: envvars,
@@ -182,11 +182,12 @@ function Supposed (options) {
     allSubscriptions,
     reporterFactory
   })
+
   const { Suite } = SuiteFactory({
     allSettled,
     AsyncTest,
     findFiles,
-    makeBatch,
+    BatchComposer,
     makeSuiteConfig,
     publish,
     subscribe,

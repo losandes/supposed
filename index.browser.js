@@ -132,7 +132,7 @@
     })
 
     const { AsyncTest } = module.factories.AsyncTestFactory({ isPromise, publish, TestEvent })
-    const { makeBatch } = module.factories.makeBatchFactory({})
+    const { BatchComposer } = module.factories.makeBatchFactory({})
 
     const { makeSuiteConfig } = module.factories.makeSuiteConfigFactory({
       defaults: envvars,
@@ -144,7 +144,7 @@
     const { Suite } = module.factories.SuiteFactory({
       allSettled,
       AsyncTest,
-      makeBatch,
+      BatchComposer,
       makeSuiteConfig,
       publish,
       subscribe,
