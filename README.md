@@ -2,10 +2,9 @@ Supposed
 ========
 _Supposed_ is a simple test runner for Node.js, TypeScript, and the Browser that:
 
-* Is Promise-friendly
-* Is async-await friendly
+* Is Promise/async-await based
 * Runs tests concurrently
-* Provides BDD, TDD, and xunit Domain Service Languages (DSLs)
+* Provides BDD, TDD, xunit, and custom Domain Service Languages (DSLs)
 * Supports test discovery, and execution
 * Has many reporter (test output) options: concise (default - like mocha, but without nesting), TAP, JSON, nyan cat, block (jest style), brief (summary and errors only), array (no output, but test output is available on reporter output), noop (can be useful with pubsub (see below)), custom (supply your own easily)
 * Supports pubsub - you can subscribe to the events to write your own reporter, or stream test output to a file or other services
@@ -13,23 +12,17 @@ _Supposed_ is a simple test runner for Node.js, TypeScript, and the Browser that
 * Can start a server for browser testing
 * Can easily be used to pipe browser test output into the terminal
 * Does not require a client (simple, functional, async JS/TS config)
-* Supports suite injection, with a composition root
+* Supports dependency injection, with a composition root
 * Draws significant influence from vows, ava, and tape so it is partially compatible with some of their syntaxes
 * Will work with mocha's `describe`, `it` syntax with a little bit of test refactoring (`before` and `after` aren't supported, though - this library uses async-await, `then`, BDD, or TDD syntax to support setup and tear down)
 * Has 0 dependencies (not counting dev-dependencies)
 
 * [Getting Started with Node](#getting-started-with-node)
 * [Getting Started with the Browser](#getting-started-with-the-browser)
-* [Test Syntax and Domain Service Languages (DSLs)](#test-syntax-and-domain-service-languages-dsls))
-  * [The BDD DSL (Given, When, Then)](#the-bdd-dsl-given-when-then)
-  * [The AAA DSL (Arrange, Act, Assert)](#the-aaa-dsl-arrange-act-assert)
-  * [The xunit DSL (atomic)](#the-xunit-dsl-atomic)
-  * [Custom DSLs](#custom-dsls)
+* [Test Syntax and Domain Service Languages (DSLs) (BDD, TDD, xunit, custom)](#test-syntax-and-domain-service-languages-dsls))
 * [Arguments and ENVVARS](#arguments-and-envvars)
-* [Suites](#suites)
-  * [Configuring a Suite](#configuring-a-suite)
-* [Tests](#tests)
-  * [Configuring Tests](#configuring-tests)
+* [Suites, & Configuring Suites](#suites)
+* [Tests, & Configuring Tests](#tests)
 * [Discovering Tests and Running Them](#discovering-tests-and-running-them)
   * [Using the NodeJS Runner](#using-the-nodejs-runner)
   * [Using the Browser Test Server](#using-the-browser-test-server)
@@ -64,7 +57,7 @@ npm install --save-dev supposed
 
 ```JavaScript
 // my-test.js
-var test = require('supposed')
+const test = require('supposed')
 
 test('when dividing a number by zero, it should return Infinity', (t) => {
   t.strictEqual(42 / 0, Infinity)
@@ -91,15 +84,18 @@ npm install --save-dev supposed
     const given = 42
     const actual = given / 0
 
-    if (actual !== Infinity) {
-        throw new Error(`Expected ${given} / 0 to equal Infinity`)
-    }
+    if (actual !== Infinity) throw new Error(`Expected ${given} / 0 to equal Infinity`)
   })
 })(supposed)
 </script>
 ```
 
 ## Test Syntax and Domain Service Languages (DSLs)
+
+* [The BDD DSL (Given, When, Then)](#the-bdd-dsl-given-when-then)
+* [The AAA DSL (Arrange, Act, Assert)](#the-aaa-dsl-arrange-act-assert)
+* [The xunit DSL (atomic)](#the-xunit-dsl-atomic)
+* [Custom DSLs](#custom-dsls)
 
 ### The BDD DSL (Given, When, Then)
 You can use BDD syntax to build your tests, separating the stages of a test into `given`, `when`, and as many assertions as you need:
@@ -218,7 +214,7 @@ module.exports = test('when dividing numbers by 0', {
 ## Arguments and ENVVARS
 Supposed has options that can be set with command-line arguments, or envvars. They are described here, and then the actual arguments, and envvars are listed and shown in examples below.
 
-* **reporters**: choose reporter(s) by name (`tap|json|nyan|brief|summary|array|block|justthedescriptions|noop`) (comma-separated)
+* **reporters**: choose reporter(s) by name (`tap|json|markdown|nyan|brief|summary|array|block|noop`) (comma-separated)
 * **match description**: run only tests whose descriptions/behaviors match the regular expression
 * **match file name**: run only tests whose file names match the regular expression (only used with runner)
 * **no-color**: display all output in black + white
@@ -275,6 +271,9 @@ ok 1 - given... when... then...
 > You can also [register your own reporters](#writing-a-test-reporter), as well as [subscribe to test events](#subscribing-to-test-events) to get the desired effect you're looking for. This is particularly useful for alerting, or sending a messages to Slack when tests fail in continuous-integration.
 
 ## Suites
+
+* [Configuring a Suite](#configuring-a-suite)
+
 The default `supposed` is a Suite, and you can mutate the configuration using `supposed.configure({...})`. Configuring this multiple times will cause unexpected behaviors, since the technique is mutation. If you have reason to have multiple configurations, or are simply uncomfortable with mutability, you can create and configure Suites.
 
 ```JavaScript
@@ -311,8 +310,8 @@ Whether your using `supposed.configure({...})`, or creating a new `supposed.Suit
 * `name` {string} (default is generated) - A name for the suite (suites can be retrieved by name: `require('supposed').suites.mySuite`)
 * `timeout` {number} (default is 2000ms) - The amount of time in milliseconds that _Supposed_ waits, before it cancels a long-running test
 * `assertionLibrary` {object} (default for nodeJS is `assert`; no default for browsers) - The assertion library that will be passed to the tests
-* `reporter` {string|`(event: ITestEvent): Promise<void>`} - The reporter to use for test output (`tap|json|nyan|brief|summary|array|block|justthedescriptions|noop`), or a function
-* `reporters` {string[]} - A comma-separated list of reporters to use (by name) (`tap|json|nyan|brief|summary|array|block|justthedescriptions|noop`)
+* `reporter` {string|`(event: ITestEvent): Promise<void>`} - The reporter to use for test output (`tap|json|markdown|nyan|brief|summary|array|block|noop`), or a function
+* `reporters` {string[]} - A comma-separated list of reporters to use (by name) (`tap|json|markdown|nyan|brief|summary|array|block|noop`)
 * `match` {string|RegExp|`{ test (description: string): boolean; }`} - run only tests whose descriptions/behaviors match the regular expression, or pass this test
 * `useColors` {boolean} - whether or not to use color in the reporter output
 * `inject` {any} - when present this object will be available to tests via `suite.dependencies`. If your test files `module.exports = (suite, dependencies) => {}`, this object will also be passed as the second argument to your exported function.
@@ -344,12 +343,12 @@ const suite = require('supposed').Suite({
 * `default` - a concise reporter with start indication, symbols for pass|fail|skip, error details, and a summary at the end
 * `tap` - a TAP compliant reporter
 * `json` - test events in JSON format
+* `markdown` - the test descriptions in markdown format (does not include error details)
 * `nyan` - rainbows, and flying cats? check
 * `brief` - just the summary, and the output from any failing tests
 * `summary` - just the summary
 * `array` - no output, but you can read the test events from `suite.config.reporters[${indexOfArrayReporter}].events` (it's easier just to `suite.subscribe`, or `suite.runner().run().then((results) => {})` though - you probably don't need this - it's mostly for testing this library)
 * `block` - Colorized blocks with PASS|FAIL|SKIP text (like jest)
-* `justthedescriptions` - the default reporter without error output for failed tests, nor a summary (useful for copy and paste)
 * `noop` - turn reporting off, and do your own thing
 
 ### Suite Setup and Teardown
@@ -371,10 +370,48 @@ setup.then((dependencies) =>
 ```
 
 ## Tests
+
+* [Configuring Tests](#configuring-tests)
+
 At their simplest, tests are just a description, and a function.
 
 ```JavaScript
 require('supposed')('given... when... then...', () => { /*assert something*/ })
+```
+
+Examples in * [Test Syntax and Domain Service Languages (DSLs)](#test-syntax-and-domain-service-languages-dsls)) demonstrate how supposed supports a variety of setup, and execution conventions to support running one test, and deriving many, clearly defined assertions about the expected behaviors our software supports. When using these, we have an opportunity to both test, and document our code at the same time.
+
+```JavaScript
+const test = require('supposed')
+
+module.exports = test('when dividing a number by zero', {
+  given: () => 42,
+  when: (number) => { return number / 0 },
+  'it should return Infinity': (then) => (err, actual) => {
+    then.ifError(err)
+    then.strictEqual(actual, Infinity)
+  },
+  'if the number is zero': {
+    given: () => 0,
+    when: (number) => { return number / 0 },
+    'it should return NaN': (then) => (err, actual) => {
+      then.ifError(err)
+      then.strictEqual(isNaN(actual), true)
+    },
+    'it should not be equal to itself': (then) => (err, actual) => {
+      then.ifError(err)
+      then.notEqual(actual, actual)
+    }
+  }
+})
+```
+
+Using the default reporter, this will print:
+
+```
+✓ when dividing a number by 0, it should return Infinity
+✓ when dividing a number by 0, if the number is zero, it should return NaN
+✓ when dividing a number by 0, if the number is zero, it should not be equal to itself
 ```
 
 ### Configuring Tests

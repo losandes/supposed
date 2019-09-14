@@ -207,6 +207,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       function maybeLog(result) {
         return result && typeof result.log !== 'undefined' ? result.log : undefined;
       }
+
+      function maybeContext(result) {
+        return result && typeof result.context !== 'undefined' ? result.context : undefined;
+      }
       /**
        * Executes one assertion
        * @param {Object} context
@@ -220,7 +224,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             status: TestEvent.status.PASSED,
             batchId: batchId,
             behavior: assertion.behavior,
-            log: maybeLog(result)
+            log: maybeLog(result),
+            context: maybeContext(result)
           });
         };
 
@@ -337,143 +342,239 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     factory: function factory() {
       'use strict';
 
-      var givenSynonyms = ['given', 'arrange'];
-      var whenSynonyms = ['when', 'act', 'topic'];
-      var config = ['timeout', 'assertionLibrary', 'reporter'];
-      var actions = givenSynonyms.concat(whenSynonyms, config);
-      var tapSkipPattern = /^# SKIP /i;
-      var tapSkipOrTodoPattern = /(^# SKIP )|(^# TODO )/i;
+      function BatchComposer(options) {
+        var givenSynonyms = options.givenSynonyms; // ['given', 'arrange']
 
-      function parseOne(behavior, node, given, when, skipped, timeout, assertionLib) {
-        timeout = timeout || node.timeout;
-        assertionLib = assertionLib || node.assertionLibrary;
-        skipped = skipped || node.skipped;
-        var passes = [];
-        var parent = new Pass(behavior, node, given, when, skipped, timeout, assertionLib);
+        var whenSynonyms = options.whenSynonyms; // ['when', 'act', 'topic']
 
-        if (Array.isArray(parent.assertions) && parent.assertions.length) {
-          passes.push(parent);
-        }
+        var config = ['timeout', 'assertionLibrary', 'reporter'];
+        var actions = givenSynonyms.concat(whenSynonyms, config);
+        var tapSkipPattern = /^# SKIP /i;
+        var tapSkipOrTodoPattern = /(^# SKIP )|(^# TODO )/i;
 
-        Object.keys(node).filter(function (childKey) {
-          return _typeof(node[childKey]) === 'object';
-        }).map(function (childKey) {
-          var childBehavior = concatBehavior(behavior, childKey);
-          return parseOne(childBehavior, node[childKey], parent.given, parent.when, // skipping favors the parent over the child
-          parent.skipped || isSkipped(childKey), // timeout and assertion lib favor the child over the parent
-          node[childKey].timeout || parent.timeout, node[childKey].assertionLibrary || parent.assertionLibrary);
-        }).forEach(function (mappedPasses) {
-          mappedPasses.filter(function (mappedPass) {
-            return Array.isArray(mappedPass.assertions) && mappedPass.assertions.length;
-          }).forEach(function (mappedPass) {
-            passes.push(mappedPass);
-          });
-        });
-        return passes;
-      }
-
-      function getGiven(node) {
-        return node.given || node.arrange;
-      }
-
-      function getWhen(node) {
-        return node.when || node.act || node.topic;
-      }
-
-      function getAssertions(behavior, node, skipped) {
-        if (isAssertion(node, behavior)) {
-          return [{
-            behavior: behavior,
-            test: node,
-            skipped: skipped
-          }];
-        }
-
-        return Object.keys(node).filter(function (key) {
-          return isAssertion(node[key], key);
-        }).map(function (key) {
-          return {
-            behavior: concatBehavior(behavior, key),
-            test: node[key],
-            skipped: skipped || isSkipped(key)
+        var getBySynonyms = function getBySynonyms(synonyms) {
+          return function (node) {
+            var key = Object.keys(node).find(function (key) {
+              return synonyms.indexOf(key) > -1;
+            });
+            return key ? node[key] : undefined;
           };
-        });
-      }
+        };
 
-      function isAssertion(node, key) {
-        return typeof node === 'function' && actions.indexOf(key) === -1;
-      }
+        var getGiven = getBySynonyms(givenSynonyms);
+        var getWhen = getBySynonyms(whenSynonyms);
 
-      function isSkipped(behavior) {
-        if (behavior && (isCommentedOut(behavior) || isTapSkipped(behavior))) {
-          return true;
+        var isAssertion = function isAssertion(node, key) {
+          return typeof node === 'function' && actions.indexOf(key) === -1;
+        };
+
+        var getAssertions = function getAssertions(behavior, node, skipped) {
+          if (isAssertion(node, behavior)) {
+            return [{
+              behavior: behavior,
+              test: node,
+              skipped: skipped
+            }];
+          }
+
+          return Object.keys(node).filter(function (key) {
+            return isAssertion(node[key], key);
+          }).map(function (key) {
+            return {
+              behavior: concatBehavior(behavior, key),
+              test: node[key],
+              skipped: skipped || isSkipped(key)
+            };
+          });
+        };
+
+        var isCommentedOut = function isCommentedOut(behavior) {
+          return behavior.length >= 2 && behavior.trim().substring(0, 2) === '//';
+        };
+
+        var isTapSkipped = function isTapSkipped(behavior) {
+          return tapSkipOrTodoPattern.test(behavior);
+        };
+
+        var isSkipped = function isSkipped(behavior) {
+          if (behavior && (isCommentedOut(behavior) || isTapSkipped(behavior))) {
+            return true;
+          }
+
+          return false;
+        };
+
+        var trimBehavior = function trimBehavior(behavior) {
+          if (isCommentedOut(behavior)) {
+            // remove the comments
+            return behavior.substring(2).trim();
+          } else if (tapSkipPattern.test(behavior)) {
+            // remove the directive - it will be replaced in the TAP output
+            return behavior.substring(7).trim();
+          } else {
+            return behavior.trim();
+          }
+        };
+
+        var concatBehavior = function concatBehavior(behavior, key) {
+          if (typeof key === 'string' && key.trim().length) {
+            return "".concat(trimBehavior(behavior), ", ").concat(trimBehavior(key));
+          }
+
+          return trimBehavior(behavior);
+        };
+
+        function Layer(input) {
+          var behavior = input.behavior,
+              node = input.node,
+              timeout = input.timeout,
+              assertionLibrary = input.assertionLibrary;
+          var parentSkipped = input.skipped;
+          var parentGiven = input.given;
+          var parentWhen = input.when;
+          var parentWhenIsInheritedGiven = input.whenIsInheritedGiven;
+          var skipped = parentSkipped || isSkipped(behavior);
+          var assertions = getAssertions(behavior, node, skipped, timeout);
+          var given = getGiven(node) || parentGiven;
+          var when = getWhen(node);
+          var whenIsInheritedGiven = parentWhenIsInheritedGiven || false; // false is the default
+
+          if (when) {
+            // an immediate when is present, so this overrides the parent
+            whenIsInheritedGiven = false;
+          }
+
+          if (!when && parentWhen && !whenIsInheritedGiven) {
+            // an immediate when is NOT present, there is a parent `when`, and
+            // it's not the result if `if (!when && given)` - this when
+            // should be inherited
+
+            /*
+            'when nested assertions have givens (make-batch inline-comments)': {
+              given: () => 42,
+              when: (given) => given * 2,
+              'it should equal 84': (t) => (err, actual) => {
+                t.ifError(err)
+                t.strictEqual(actual, 84)
+              },
+              'and they stem from a parent with a when': {
+                given: () => 1,
+                'it should equal 2': (t) => (err, actual) => {
+                  t.ifError(err)
+                  t.strictEqual(actual, 2)
+                }
+              }
+            }
+            */
+            when = parentWhen;
+          } else if (!when && given) {
+            // There are neither an immediate when, nor a parent when because the parent
+            // when was actually a given (the result of this block)
+
+            /*
+            'when nested assertions have givens (make-batch if (!when && given))': {
+              given: () => 42,
+              'it should equal 42': (t) => (err, actual) => {
+                t.ifError(err)
+                t.strictEqual(actual, 42)
+              },
+              'and they stem from a parent with a when': {
+                given: () => 1,
+                'it should equal 1': (t) => (err, actual) => {
+                  t.ifError(err)
+                  t.strictEqual(actual, 1)
+                }
+              }
+            }
+            */
+            whenIsInheritedGiven = true;
+            when = given;
+          }
+
+          return {
+            behavior: behavior,
+            given: given,
+            when: when,
+            assertions: assertions,
+            skipped: skipped,
+            timeout: timeout,
+            assertionLibrary: assertionLibrary,
+            whenIsInheritedGiven: whenIsInheritedGiven
+          };
         }
 
-        return false;
-      }
+        function FlattenedTests(input) {
+          var behavior = input.behavior,
+              node = input.node,
+              given = input.given,
+              when = input.when,
+              whenIsInheritedGiven = input.whenIsInheritedGiven,
+              skipped = input.skipped,
+              timeout = input.timeout,
+              assertionLibrary = input.assertionLibrary;
+          var layers = [];
+          var parent = new Layer({
+            behavior: behavior,
+            node: node,
+            given: given,
+            when: when,
+            whenIsInheritedGiven: whenIsInheritedGiven,
+            skipped: skipped || node.skipped,
+            timeout: timeout || node.timeout,
+            assertionLibrary: assertionLibrary || node.assertionLibrary
+          });
 
-      function isCommentedOut(behavior) {
-        return behavior.length >= 2 && behavior.trim().substring(0, 2) === '//';
-      }
+          if (Array.isArray(parent.assertions) && parent.assertions.length) {
+            layers.push(parent);
+          }
 
-      function isTapSkipped(behavior) {
-        return tapSkipOrTodoPattern.test(behavior);
-      }
-
-      function trimBehavior(behavior) {
-        if (isCommentedOut(behavior)) {
-          // remove the comments
-          return behavior.substring(2).trim();
-        } else if (tapSkipPattern.test(behavior)) {
-          // remove the directive - it will be replaced in the TAP output
-          return behavior.substring(7).trim();
-        } else {
-          return behavior.trim();
+          Object.keys(node).filter(function (childKey) {
+            return _typeof(node[childKey]) === 'object';
+          }).map(function (childKey) {
+            var childBehavior = concatBehavior(behavior, childKey);
+            return FlattenedTests({
+              behavior: childBehavior,
+              node: node[childKey],
+              given: parent.given,
+              when: parent.when,
+              whenIsInheritedGiven: parent.whenIsInheritedGiven,
+              // skipping favors the parent over the child
+              skipped: parent.skipped || isSkipped(childKey),
+              // timeout and assertion lib favor the child over the parent
+              timeout: node[childKey].timeout || parent.timeout,
+              assertionLibrary: node[childKey].assertionLibrary || parent.assertionLibrary
+            });
+          }).forEach(function (mappedLayers) {
+            mappedLayers.filter(function (mappedLayer) {
+              return Array.isArray(mappedLayer.assertions) && mappedLayer.assertions.length;
+            }).forEach(function (mappedLayer) {
+              layers.push(mappedLayer);
+            });
+          });
+          return layers;
         }
-      }
 
-      function concatBehavior(behavior, key) {
-        if (typeof key === 'string' && key.trim().length) {
-          return "".concat(trimBehavior(behavior), ", ").concat(trimBehavior(key));
-        }
-
-        return trimBehavior(behavior);
-      }
-
-      function Pass(behavior, node, given, when, skipped, timeout, assertionLib) {
-        var skip = skipped || isSkipped(behavior);
-        var assertions = getAssertions(behavior, node, skip, timeout);
-        var arrange = getGiven(node) || given;
-        var act = getWhen(node) || when;
-
-        if (arrange && !act) {
-          act = arrange;
-          arrange = null;
-        }
+        var makeBatch = function makeBatch(tests) {
+          return Object.keys(tests).reduce(function (batch, key) {
+            return batch.concat(new FlattenedTests({
+              behavior: key,
+              node: tests[key]
+            }));
+          }, []);
+        };
 
         return {
-          behavior: behavior,
-          given: arrange,
-          when: act,
-          assertions: assertions,
-          skipped: skip,
-          timeout: timeout,
-          assertionLibrary: assertionLib
+          makeBatch: makeBatch
         };
-      }
+      } // /BatchComposer
 
-      function makeBatch(tests) {
-        var parsed = [];
-        Object.keys(tests).forEach(function (key) {
-          parsed = parsed.concat(parseOne(key, tests[key]));
-        });
-        return parsed;
-      }
 
       return {
-        makeBatch: makeBatch
+        BatchComposer: BatchComposer
       };
-    }
+    } // /factory
+    // /exports
+
   };
   module.exports = {
     name: 'makeSuiteConfig',
@@ -496,14 +597,49 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           match: defaults.match,
           name: makeSuiteId(),
           timeout: 2000,
-          reporters: []
+          reporters: [],
+          givenSynonyms: ['given', 'arrange'],
+          whenSynonyms: ['when', 'act', 'topic']
         };
         options = _objectSpread({}, options);
-        ['assertionLibrary', 'match', 'name', 'timeout'].forEach(function (item) {
-          if (typeof options[item] !== 'undefined') {
-            suiteConfig[item] = options[item];
-          }
-        });
+
+        if (options.assertionLibrary) {
+          suiteConfig.assertionLibrary = options.assertionLibrary;
+        }
+
+        if (typeof options.match === 'string') {
+          suiteConfig.match = new RegExp(options.match);
+        } else if (options.match && typeof options.match.test === 'function') {
+          suiteConfig.match = options.match;
+        }
+
+        if (typeof options.name === 'string' && options.name.trim().length) {
+          suiteConfig.name = options.name.trim();
+        }
+
+        if (typeof options.timeout === 'number' && options.timeout > 0) {
+          suiteConfig.timeout = options.timeout;
+        }
+
+        if (typeof options.useColors === 'boolean') {
+          suiteConfig.useColors = options.useColors;
+        }
+
+        if (Array.isArray(options.givenSynonyms)) {
+          options.givenSynonyms.forEach(function (synonym) {
+            if (typeof synonym === 'string' && synonym.trim().length) {
+              suiteConfig.givenSynonyms.push(synonym);
+            }
+          });
+        }
+
+        if (Array.isArray(options.whenSynonyms)) {
+          options.whenSynonyms.forEach(function (synonym) {
+            if (typeof synonym === 'string' && synonym.trim().length) {
+              suiteConfig.whenSynonyms.push(synonym);
+            }
+          });
+        }
 
         var makeReporterArray = function makeReporterArray(input) {
           return input.split(',').map(function (reporter) {
@@ -524,15 +660,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             reporterFactory.add(nameOrFunc);
             addReporter(nameOrFunc.name);
           }
-        }; // accept strings or functions in the reporter and reporters properties
+        }; // reporters: accept strings, functions, or objects
 
 
         if (typeof options.reporter === 'string') {
           makeReporterArray(options.reporter).forEach(addReporter);
-        } else if (typeof options.reporters === 'string') {
-          makeReporterArray(options.reporters).forEach(addReporter);
-        } else if (Array.isArray(options.reporters)) {
-          options.reporters.forEach(addReporter);
         } else if (typeof options.reporter === 'function') {
           addReporter(function CustomReporter() {
             return {
@@ -540,6 +672,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             };
           });
         } else if (options.reporter && typeof options.reporter.report === 'function') {
+          // legacy
           addReporter(function CustomReporter() {
             return {
               write: options.reporter.report
@@ -551,6 +684,13 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               write: options.reporter.write
             };
           });
+        } // reporters: accept strings, or arrays
+
+
+        if (typeof options.reporters === 'string') {
+          makeReporterArray(options.reporters).forEach(addReporter);
+        } else if (Array.isArray(options.reporters)) {
+          options.reporters.forEach(addReporter);
         }
 
         if (!suiteConfig.reporters.length) {
@@ -636,11 +776,16 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           });
         };
 
+        var reset = function reset() {
+          subscriptions = [];
+        };
+
         return {
           publish: publish,
           subscribe: subscribe,
           subscriptionExists: subscriptionExists,
-          allSubscriptions: allSubscriptions
+          allSubscriptions: allSubscriptions,
+          reset: reset
         };
       }
 
@@ -649,6 +794,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       };
     }
   };
+  var publishStartAndEnd = true;
   module.exports = {
     name: 'Suite',
     factory: function factory(dependencies) {
@@ -657,22 +803,21 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       var allSettled = dependencies.allSettled,
           AsyncTest = dependencies.AsyncTest,
           findFiles = dependencies.findFiles,
-          makeBatch = dependencies.makeBatch,
+          BatchComposer = dependencies.BatchComposer,
           makeSuiteConfig = dependencies.makeSuiteConfig,
           publish = dependencies.publish,
           subscribe = dependencies.subscribe,
+          clearSubscriptions = dependencies.clearSubscriptions,
           reporterFactory = dependencies.reporterFactory,
           resolveTests = dependencies.resolveTests,
           runServer = dependencies.runServer,
-          runTests = dependencies.runTests,
+          _runTests = dependencies.runTests,
           Tally = dependencies.Tally,
           TestEvent = dependencies.TestEvent;
 
       var makeBatchId = function makeBatchId() {
         return "B".concat((Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase());
       };
-
-      var publishStartAndEnd = true;
 
       var makeNormalBatch = function makeNormalBatch(description, assertions) {
         var batch = {};
@@ -721,7 +866,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         };
       };
 
-      var mapper = function mapper(config, byMatcher) {
+      var mapper = function mapper(config, makeBatch, byMatcher) {
         return function (batch) {
           var batchId = makeBatchId();
           var processed = makeBatch(batch).filter(byMatcher);
@@ -911,7 +1056,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       var browserRunner = function browserRunner(config, test) {
         return function (options) {
           return function () {
-            return findFiles(options).then(runServer(test, options));
+            return Array.isArray(options.paths) ? runServer(test, options)(options) : findFiles(options).then(runServer(test, options));
           };
         };
       };
@@ -921,55 +1066,89 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       */
 
 
-      function Suite(suiteConfig) {
-        var config = makeSuiteConfig(suiteConfig);
-        var byMatcher = matcher(config);
-        var mapToTests = mapper(config, byMatcher);
-        var test = tester(config, mapToTests);
-        var findAndStart = browserRunner(config, test);
-        var run = runner(config, test);
-        /**
-        // Make a newly configured suite
-        */
-        // test.Suite = Suite
+      function Suite(suiteConfig, envvars) {
+        var configure = function configure(_suiteConfig) {
+          if (_suiteConfig && suiteConfig) {
+            Object.keys(suiteConfig).forEach(function (key) {
+              _suiteConfig[key] = _suiteConfig[key] || suiteConfig[key];
+            });
+          }
 
-        test.printSummary = function () {
-          return publish(new TestEvent({
-            type: TestEvent.types.END,
-            time: Date.now(),
-            suiteId: config.name,
-            totals: Tally.getSimpleTally()
-          }));
-        };
+          clearSubscriptions();
+          subscribe(reporterFactory.get(Tally.name));
+          var config = makeSuiteConfig(_suiteConfig);
 
-        test.getTotals = function () {
-          return Tally.getSimpleTally();
-        };
+          var _ref2 = new BatchComposer(config),
+              makeBatch = _ref2.makeBatch;
 
-        test.suiteName = config.name;
+          var byMatcher = matcher(config);
+          var mapToTests = mapper(config, makeBatch, byMatcher);
+          var test = tester(config, mapToTests);
+          var findAndStart = browserRunner(config, test);
+          var run = runner(config, test);
+          /**
+          // Make a newly configured suite
+          */
 
-        test.runner = function (options) {
-          return {
-            // find and run (node)
-            run: run(function () {
-              return findFiles(options).then(resolveTests(test)).then(runTests(test));
-            }),
-            // run (browser|node)
-            runTests: run(function () {
-              return runTests(test)(options);
-            }),
-            // start test server (browser)
-            startServer: findAndStart(options)
+          test.id = config.name; // @deprecated
+
+          test.printSummary = function () {
+            return publish(new TestEvent({
+              type: TestEvent.types.END,
+              time: Date.now(),
+              suiteId: config.name,
+              totals: Tally.getSimpleTally()
+            }));
           };
+
+          test.getTotals = function () {
+            return Tally.getSimpleTally();
+          };
+
+          test.suiteName = config.name;
+
+          test.runner = function (options) {
+            options = options || {};
+
+            if (envvars && envvars.file && typeof envvars.file.test === 'function') {
+              options.matchesNamingConvention = envvars.file;
+            }
+
+            return {
+              // find and run (node)
+              run: run(function () {
+                return findFiles(options).then(resolveTests(test)).then(_runTests(test));
+              }),
+              // run (browser|node)
+              runTests: function runTests(tests) {
+                if (Array.isArray(tests)) {
+                  options.tests = tests;
+                }
+
+                return run(function () {
+                  return _runTests(test)(options);
+                })();
+              },
+              // start test server (browser)
+              startServer: findAndStart(options)
+            };
+          };
+
+          test.reporters = config.reporters;
+          test.config = config;
+          test.configure = configure;
+
+          test.subscribe = function (subscription) {
+            subscribe(subscription);
+            return test;
+          };
+
+          test.dependencies = _suiteConfig && _suiteConfig.inject;
+          test.reporterFactory = reporterFactory;
+          return test;
         };
 
-        test.reporters = config.reporters;
-        test.config = config;
-        test.subscribe = subscribe;
-        test.dependencies = suiteConfig && suiteConfig.inject;
-        test.reporterFactory = reporterFactory; // Suite.suites.push(test)
-
-        return test;
+        return configure(suiteConfig);
       } // Suite.suites = []
 
 
@@ -1054,6 +1233,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           self.totals = event.totals;
         }
 
+        if (event.context) {
+          self.context = event.context;
+        }
+
         return Object.freeze(self);
       };
 
@@ -1100,14 +1283,38 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       };
 
       var toPromise = function toPromise(config, suite) {
-        return function (_ref2) {
-          var test = _ref2.test,
-              path = _ref2.path;
+        return function (input) {
+          var err, test, path;
 
           try {
-            if (suite && config.injectSuite !== false && typeof test === 'function') {
+            if (typeof input === 'function') {
+              test = input;
+            } else if (input) {
+              err = input.err;
+              test = input.test;
+              path = input.path;
+            } else {
+              throw new Error("Invalid runTests entry: expected input ".concat(_typeof(input), " to be a {function}, or { err?: Error; test: Function|Promise; path?: string; }"));
+            }
+
+            if (err) {
+              err.filePath = path;
+              return Promise.reject(err);
+            }
+
+            if (hasThen(test)) {
+              // module.exports = test('something', (t) => {...})
+              return test;
+            } else if (suite && config.injectSuite !== false && typeof test === 'function') {
+              // module.exports = function (test) {}
+              // export = function (test) {}
               var maybePromise = test(suite, suite.dependencies);
               return hasThen(maybePromise) ? maybePromise : Promise.resolve(maybePromise);
+            } else if (suite && config.injectSuite !== false && _typeof(test) === 'object' && typeof test.default === 'function') {
+              // export default function (test) {}
+              var _maybePromise = test.default(suite, suite.dependencies);
+
+              return hasThen(_maybePromise) ? _maybePromise : Promise.resolve(_maybePromise);
             }
 
             return Promise.resolve();
@@ -1118,7 +1325,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         };
       };
 
-      var mapToResults = function mapToResults(config, paths) {
+      var mapToResults = function mapToResults(config) {
+        var paths = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
         return function (results) {
           return Object.freeze({
             results: results.filter(function (result) {
@@ -1304,7 +1512,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             BROKEN: consoleStyles.red('!= '),
             // heavy-x '✘',
             SKIPPED: consoleStyles.yellow('⸕ '),
-            INFO: consoleStyles.cyan('→ ')
+            INFO: consoleStyles.cyan('# ')
           }
         }).format;
 
@@ -1446,6 +1654,111 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }
   };
   module.exports = {
+    name: 'MarkdownFormatter',
+    factory: function factory(dependencies) {
+      'use strict';
+
+      var consoleStyles = dependencies.consoleStyles,
+          TestEvent = dependencies.TestEvent;
+      var newLine = consoleStyles.newLine();
+
+      var addToMd = function addToMd(parts, md) {
+        if (!parts.length) {
+          return;
+        }
+
+        var part = parts.shift().trim();
+        md[part] = md[part] || {};
+
+        if (parts.length) {
+          addToMd(parts, md[part]);
+        }
+      };
+
+      var space = '                                                               ';
+
+      var toBullets = function toBullets(md, layer) {
+        if (typeof layer === 'undefined') layer = 0;
+        var output = '';
+        Object.keys(md).forEach(function (key) {
+          var line = key.replace(/\n/g, newLine + space.substring(0, (layer + 1) * 2));
+          output += space.substring(0, layer * 2) + "* ".concat(line).concat(newLine);
+          output += toBullets(md[key], layer + 1);
+        });
+        return output;
+      };
+
+      var totals = function totals(_totals) {
+        return "## Totals".concat(newLine) + "".concat(newLine, "- **total**: ").concat(_totals.total) + "".concat(newLine, "- **passed**: ").concat(_totals.passed) + "".concat(newLine, "- **failed**: ").concat(_totals.failed) + "".concat(newLine, "- **skipped**: ").concat(_totals.skipped) + "".concat(newLine, "- **duration**: ").concat((_totals.endTime - _totals.startTime) / 1000, "s");
+      };
+
+      function MarkdownFormatter() {
+        var title = 'Tests';
+        var md = {};
+
+        var format = function format(event) {
+          if (event.type === TestEvent.types.START) {
+            title = event.suiteId;
+          } else if (event.type === TestEvent.types.END) {
+            return "# ".concat(title).concat(newLine).concat(newLine).concat(toBullets(md)).concat(newLine).concat(totals(event.totals));
+          } else if (event.type === TestEvent.types.INFO) {// should we include info?
+            // return `# ${event.behavior}${formatInfo(event.behavior, event.log, 'comment')}`
+          } else if (event.type === TestEvent.types.TEST) {
+            addToMd(event.behavior.split(','), md);
+          }
+        }; // /format
+
+
+        return {
+          format: format
+        };
+      } // /Formatter
+
+
+      return {
+        MarkdownFormatter: MarkdownFormatter
+      };
+    }
+  };
+  module.exports = {
+    name: 'SummaryFormatter',
+    factory: function factory(dependencies) {
+      'use strict';
+
+      var consoleStyles = dependencies.consoleStyles,
+          DefaultFormatter = dependencies.DefaultFormatter,
+          TestEvent = dependencies.TestEvent;
+
+      function SummaryFormatter() {
+        var defaultFormat = DefaultFormatter({
+          // Other than INFO, these aren't actually used, since this doesn't produce TEST output
+          SYMBOLS: {
+            PASSED: consoleStyles.green('✓ '),
+            FAILED: consoleStyles.red('✗ '),
+            BROKEN: consoleStyles.red('!= '),
+            SKIPPED: consoleStyles.yellow('⸕ '),
+            INFO: consoleStyles.cyan('# ') // the `#` is important for TAP compliance
+
+          }
+        }).format;
+
+        var format = function format(event) {
+          if (event.type === TestEvent.types.END) {
+            return defaultFormat(event);
+          }
+        };
+
+        return {
+          format: format
+        };
+      }
+
+      return {
+        SummaryFormatter: SummaryFormatter
+      };
+    }
+  };
+  module.exports = {
     name: 'SymbolFormatter',
     factory: function factory(dependencies) {
       'use strict';
@@ -1463,7 +1776,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             BROKEN: consoleStyles.red('!= '),
             // heavy-x '✘',
             SKIPPED: consoleStyles.yellow('⸕ '),
-            INFO: consoleStyles.cyan('→ ')
+            INFO: consoleStyles.cyan('# ')
           }
         });
       }
@@ -1834,8 +2147,12 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             var name = event.status.toLowerCase();
             totals[name] += 1;
             totals.total += 1;
-            totals.batches[event.batchId][name] += 1;
-            totals.batches[event.batchId].total += 1;
+
+            if (totals.batches[event.batchId]) {
+              totals.batches[event.batchId][name] += 1;
+              totals.batches[event.batchId].total += 1;
+            }
+
             totals.results.push(event);
           } catch (e) {
             console.log(event);
@@ -1914,6 +2231,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     return input && typeof input.then === 'function';
   }
 
+  var suites = {};
   var supposed = null; // resolve the dependency graph
 
   function Supposed(options) {
@@ -1939,7 +2257,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         publish = _ref3.publish,
         subscribe = _ref3.subscribe,
         subscriptionExists = _ref3.subscriptionExists,
-        allSubscriptions = _ref3.allSubscriptions;
+        allSubscriptions = _ref3.allSubscriptions,
+        reset = _ref3.reset;
 
     var envvars = {
       assertionLibrary: {},
@@ -1973,7 +2292,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     });
     reporterFactory.add(module.factories.NoopReporterFactory({}).NoopReporter);
     reporterFactory.add(Tally);
-    subscribe(reporterFactory.get(Tally.name));
 
     function DefaultFormatter(options) {
       return module.factories.DefaultFormatterFactory({
@@ -2027,6 +2345,15 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           }).JsonFormatter()
         }).write
       };
+    }).add(function MarkdownReporter() {
+      return {
+        write: ConsoleReporter({
+          formatter: module.factories.MarkdownFormatterFactory({
+            consoleStyles: consoleStyles,
+            TestEvent: TestEvent
+          }).MarkdownFormatter()
+        }).write
+      };
     }).add(function JustTheDescriptionsReporter() {
       return {
         write: ConsoleReporter({
@@ -2039,6 +2366,16 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               }
             }
           }
+        }).write
+      };
+    }).add(function SummaryReporter() {
+      return {
+        write: ConsoleReporter({
+          formatter: module.factories.SummaryFormatterFactory({
+            consoleStyles: consoleStyles,
+            DefaultFormatter: DefaultFormatter,
+            TestEvent: TestEvent
+          }).SummaryFormatter()
         }).write
       };
     }).add(function TapReporter() {
@@ -2060,7 +2397,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         AsyncTest = _module$factories$Asy.AsyncTest;
 
     var _module$factories$mak = module.factories.makeBatchFactory({}),
-        makeBatch = _module$factories$mak.makeBatch;
+        BatchComposer = _module$factories$mak.BatchComposer;
 
     var _module$factories$mak2 = module.factories.makeSuiteConfigFactory({
       defaults: envvars,
@@ -2074,10 +2411,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     var _module$factories$Sui = module.factories.SuiteFactory({
       allSettled: allSettled,
       AsyncTest: AsyncTest,
-      makeBatch: makeBatch,
+      BatchComposer: BatchComposer,
       makeSuiteConfig: makeSuiteConfig,
       publish: publish,
       subscribe: subscribe,
+      clearSubscriptions: reset,
       reporterFactory: reporterFactory,
       runTests: runTests,
       Tally: Tally,
@@ -2088,14 +2426,17 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     var suite = new Suite(options);
     suite.Suite = Supposed;
 
-    if (supposed && supposed.suites) {
-      supposed.suites.push(suite);
+    if (!suites[suite.config.name]) {
+      suites[suite.config.name] = suite;
     }
 
     return suite;
   }
 
-  supposed = Supposed();
-  supposed.suites = [supposed];
+  supposed = Supposed({
+    name: 'supposed'
+  });
+  suites.supposed = supposed;
+  supposed.suites = suites;
   window.supposed = supposed;
 })(window);

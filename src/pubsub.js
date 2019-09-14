@@ -8,7 +8,7 @@ module.exports = {
     const makeId = () => `S${(Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase()}`
 
     function Pubsub () {
-      const subscriptions = []
+      let subscriptions = []
 
       const publish = (input) => {
         const event = new TestEvent(input)
@@ -43,7 +43,11 @@ module.exports = {
         return subscriptions.map((subscription) => subscription.name)
       }
 
-      return { publish, subscribe, subscriptionExists, allSubscriptions }
+      const reset = () => {
+        subscriptions = []
+      }
+
+      return { publish, subscribe, subscriptionExists, allSubscriptions, reset }
     }
 
     return { Pubsub }

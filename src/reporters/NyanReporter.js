@@ -11,7 +11,7 @@ module.exports = {
         FAILED: consoleStyles.red('✗ '), // heavy-x '✘',
         BROKEN: consoleStyles.red('!= '), // heavy-x '✘',
         SKIPPED: consoleStyles.yellow('⸕ '),
-        INFO: consoleStyles.cyan('→ ')
+        INFO: consoleStyles.cyan('# ')
       }
     })
     const print = (input, tail) => {

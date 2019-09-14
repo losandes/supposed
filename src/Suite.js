@@ -13,6 +13,7 @@ module.exports = {
       makeSuiteConfig,
       publish,
       subscribe,
+      clearSubscriptions,
       reporterFactory,
       resolveTests,
       runServer,
@@ -234,6 +235,8 @@ module.exports = {
           })
         }
 
+        clearSubscriptions()
+        subscribe(reporterFactory.get(Tally.name))
         const config = makeSuiteConfig(_suiteConfig)
         const { makeBatch } = new BatchComposer(config)
         const byMatcher = matcher(config)

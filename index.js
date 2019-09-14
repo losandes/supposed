@@ -28,6 +28,7 @@ const consoleStylesFactory = require('./src/formatters/console-styles.js').facto
 const consoleUtilsFactory = require('./src/formatters/console-utils.js').factory
 const DefaultFormatterFactory = require('./src/formatters/DefaultFormatter.js').factory
 const JsonFormatterFactory = require('./src/formatters/JsonFormatter.js').factory
+const MarkdownFormatterFactory = require('./src/formatters/MarkdownFormatter.js').factory
 const SummaryFormatterFactory = require('./src/formatters/SummaryFormatter.js').factory
 const SymbolFormatterFactory = require('./src/formatters/SymbolFormatter.js').factory
 const TapFormatterFactory = require('./src/formatters/TapFormatter.js').factory
@@ -57,7 +58,7 @@ function Supposed (options) {
     isPromise,
     TestEvent
   })
-  const { publish, subscribe, subscriptionExists, allSubscriptions } = new Pubsub()
+  const { publish, subscribe, subscriptionExists, allSubscriptions, reset } = new Pubsub()
 
   const envvars = {
     ...{
@@ -98,7 +99,6 @@ function Supposed (options) {
   })
   reporterFactory.add(NoopReporterFactory({}).NoopReporter)
   reporterFactory.add(Tally)
-  subscribe(reporterFactory.get(Tally.name))
 
   function DefaultFormatter (options) {
     return DefaultFormatterFactory({
@@ -137,6 +137,12 @@ function Supposed (options) {
     return {
       write: ConsoleReporter({
         formatter: JsonFormatterFactory({ TestEvent }).JsonFormatter()
+      }).write
+    }
+  }).add(function MarkdownReporter () {
+    return {
+      write: ConsoleReporter({
+        formatter: MarkdownFormatterFactory({ consoleStyles, TestEvent }).MarkdownFormatter()
       }).write
     }
   }).add(function JustTheDescriptionsReporter () {
@@ -191,6 +197,7 @@ function Supposed (options) {
     makeSuiteConfig,
     publish,
     subscribe,
+    clearSubscriptions: reset,
     reporterFactory,
     resolveTests,
     runServer,

@@ -37,7 +37,7 @@
       isPromise,
       TestEvent
     })
-    const { publish, subscribe, subscriptionExists, allSubscriptions } = new Pubsub()
+    const { publish, subscribe, subscriptionExists, allSubscriptions, reset } = new Pubsub()
 
     const envvars = {
       assertionLibrary: {},
@@ -58,7 +58,6 @@
     })
     reporterFactory.add(module.factories.NoopReporterFactory({}).NoopReporter)
     reporterFactory.add(Tally)
-    subscribe(reporterFactory.get(Tally.name))
 
     function DefaultFormatter (options) {
       return module.factories.DefaultFormatterFactory({
@@ -97,6 +96,12 @@
       return {
         write: ConsoleReporter({
           formatter: module.factories.JsonFormatterFactory({ TestEvent }).JsonFormatter()
+        }).write
+      }
+    }).add(function MarkdownReporter () {
+      return {
+        write: ConsoleReporter({
+          formatter: module.factories.MarkdownFormatterFactory({ consoleStyles, TestEvent }).MarkdownFormatter()
         }).write
       }
     }).add(function JustTheDescriptionsReporter () {
@@ -148,6 +153,7 @@
       makeSuiteConfig,
       publish,
       subscribe,
+      clearSubscriptions: reset,
       reporterFactory,
       runTests,
       Tally,
