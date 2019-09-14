@@ -213,7 +213,7 @@ export interface ISuppose {
     // find files, load them, and run the tests
     run (): Promise<INodeRunnerOutput>;
     // run the tests (expects tests to be presented in the INodeRunnerConfigInput)
-    runTests (): Promise<INodeRunnerOutput>;
+    runTests (tests?: [() => IBDD | IBehaviors | IAssert | ICurriedAssert | IPromiseOrFunction]): Promise<INodeRunnerOutput>;
     // find files, load them, and serve them from an HTTP server
     startServer (): Promise<IBrowserRunnerOutput>;
   };
@@ -231,7 +231,7 @@ export function runner (config?: INodeRunnerConfigInput | IBrowserRunnerConfigIn
   // find files, load them, and run the tests
   run (): Promise<INodeRunnerOutput>;
   // run the tests (expects tests to be presented in the INodeRunnerConfigInput)
-  runTests (): Promise<INodeRunnerOutput>;
+  runTests (tests?: [() => IBDD | IBehaviors | IAssert | ICurriedAssert | IPromiseOrFunction]): Promise<INodeRunnerOutput>;
   // find files, load them, and serve them from an HTTP server
   startServer (): Promise<IBrowserRunnerOutput>;
 };

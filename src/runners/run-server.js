@@ -8,11 +8,14 @@ module.exports = {
     'use strict'
 
     const isString = (input) => typeof input === 'string' && input.trim().length
+    const makeIIFE = (script) => {
+      return `;(() => {\n${script}\n})()`
+    }
     const makeTestBundle = ({ paths, template, stringifiedSuiteConfig }) => {
       const beginning = template[0]
       const end = template[1]
       const modules = [beginning]
-      paths.forEach((file) => modules.push(fs.readFileSync(file).toString()))
+      paths.forEach((file) => modules.push(makeIIFE(fs.readFileSync(file).toString())))
       modules.push(end.replace(/\/\*{{suiteConfig}}\*\//, stringifiedSuiteConfig))
 
       return modules.join('\n\n')
@@ -70,7 +73,7 @@ module.exports = {
         self.supposed = fs.readFileSync(config.supposedPath).toString()
       } else {
         self.supposed = fs.readFileSync(
-          path.join(__dirname.split('/src/discovery')[0], 'dist/supposed.min.js')
+          path.join(__dirname.split('/src/runners')[0], 'dist/supposed.min.js')
         ).toString()
       }
 

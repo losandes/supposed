@@ -24,12 +24,15 @@ _Supposed_ is a simple test runner for Node.js, TypeScript, and the Browser that
   * [The BDD DSL (Given, When, Then)](#the-bdd-dsl-given-when-then)
   * [The AAA DSL (Arrange, Act, Assert)](#the-aaa-dsl-arrange-act-assert)
   * [The xunit DSL (atomic)](#the-xunit-dsl-atomic)
+  * [Custom DSLs](#custom-dsls)
 * [Arguments and ENVVARS](#arguments-and-envvars)
+* [Suites](#suites)
+  * [Configuring a Suite](#configuring-a-suite)
+* [Tests](#tests)
+  * [Configuring Tests](#configuring-tests)
 * [Discovering Tests and Running Them](#discovering-tests-and-running-them)
   * [Using the NodeJS Runner](#using-the-nodejs-runner)
   * [Using the Browser Test Server](#using-the-browser-test-server)
-* [Suite Configuration](#suite-configuration)
-* [Test Configuration](#test-configuration)
 * [TypeScript Support](#typescript-support)
 * [Why Supposed](#why-supposed)
 * [Cookbook](#cookbook)
@@ -212,11 +215,6 @@ module.exports = test('when dividing numbers by 0', {
 })
 ```
 
-## Discovering Tests and Running Them
-In getting started, we saw how supposed can run tests without a runner. A bear bones test suite might simply `require`, or `import` each test file. However that produces multiple result summaries which can be hard to parse or understand.
-
-Using a runner, Supposed will group the tests into batches, and summarize the outcomes in a single report. Supposed has multiple runners: one for nodejs tests, one for browser tests, and a third that you can use without the built-in file discovery.
-
 ## Arguments and ENVVARS
 Supposed has options that can be set with command-line arguments, or envvars. They are described here, and then the actual arguments, and envvars are listed and shown in examples below.
 
@@ -354,7 +352,56 @@ const suite = require('supposed').Suite({
 * `justthedescriptions` - the default reporter without error output for failed tests, nor a summary (useful for copy and paste)
 * `noop` - turn reporting off, and do your own thing
 
-## Using the NodeJS Runner
+### Suite Setup and Teardown
+All supposed runners return promises, so we feed them with setup, and tear down afterwards:
+
+```JavaScript
+const supposed = require('supposed')
+
+const setup = Promise.resolve({ some: 'dependencies' })
+const teardown = (context) => { console.log(context) }
+
+setup.then((dependencies) =>
+  supposed.Suite({
+    inject: dependencies
+  }).runner({
+    cwd: __dirname
+  }).run()
+).then(teardown)
+```
+
+## Tests
+At their simplest, tests are just a description, and a function.
+
+```JavaScript
+require('supposed')('given... when... then...', () => { /*assert something*/ })
+```
+
+### Configuring Tests
+
+TODO
+
+### Test Setup and Teardown, and Running Tests Serially
+All supposed tests are promises, so we can chain them together, feed them with setup, and tear down afterwards:
+
+```JavaScript
+const test = require('supposed')
+
+const setup = Promise.resolve(42)
+const teardown = (context) => { console.log(context) }
+
+setup()
+.then((given) => test('given... when... then...', () => { /*assert something*/ }))
+.then((given) => test('given... when... then...', () => { /*assert something*/ }))
+.then(teardown)
+```
+
+## Discovering Tests and Running Them
+In getting started, we saw how supposed can run tests without a runner. A bear bones test suite might simply `require`, or `import` each test file. However that produces multiple result summaries which can be hard to parse or understand.
+
+Using a runner, Supposed will group the tests into batches, and summarize the outcomes in a single report. Supposed has [a runner for nodejs tests](using-the-nodejs-runner), [an a server runner for browser tests](#using-the-browser-test-server).
+
+### Using the NodeJS Runner
 The following example has two test files, and a runner file (test.js). In this example, the default Suite is used, and is configured in test.js. The runner is not configured, so default configurations are used.
 
 ```JavaScript
@@ -379,7 +426,7 @@ module.exports = require('supposed')
   .run()
 ```
 
-### Configuring the NodeJS Runner
+#### Configuring the NodeJS Runner
 The runner can be configured to look in specific directories, ignore others, and to match the naming conventions of your choice.
 
 * `cwd` {string} (default: `process.cwd()`) - The current working directory that the file-tree walker should start from
@@ -421,58 +468,15 @@ const runner = supposed.runner({
 })
 ```
 
----
-TODO
+#### Skipping File Discovery With the NodeJS Runner
+You can use the runner's `runTests` function to run an array of tests, if you prefer that. It expects an array of functions that execute the tests:
 
-### Skipping File Discovery
 ```TypeScript
-suite.runner(options: {
-  tests: IBDD | IBehaviors | IAssert | ICurriedAssert | IPromiseOrFunction;
-  config?: {
-    injectSuite?: boolean;
-  };
-  paths?: string[];
-}).runTests(): Promise<INodeRunnerOutput>;
-```
-
-## Using the Browser Test Server
-
-### Configuring the Browser Test Server
-
-
-
-
-
-
-
----
-
-
-### Test Discovery & the Runner
-As you can see above, it's not necessary to write, or use a runner. A bear bones test suite might simply `require`, or `import` each test file. However that produces multiple result summaries which can be hard to parse or understand.
-
-Using a runner, Supposed will group the tests into batches, and summarize the outcomes in a single report. In the following example, we see 2 test files, and a test runner file.
-
-
-We can execute this, using node:
-
-```Shell
-$ node tests
-```
-
-
-#### Injecting dependencies
-The file where you configure your runner is a composition root, which can be used to share dependencies across tests. You might use this to pass around a composed System Under Test (SUT), additional assertion libraries, ENVVARS, etc.
-
-> NOTE that doing this will make your tests unable to run when called directly (i.e. `node ./first-module/first-spec.js`), so there are benefits and drawbacks. You can alway use `-m` to single out which tests get execute by the runner, though.
-
-```JavaScript
 // ./first-module/first-spec.js
 const test = require('supposed')
-const { expect } = test.dependencies
 
 module.exports = test('given first-module, when... it...', (t) => {
-  expect(42 / 0).to.equal(Infinity)
+  t.strictEqual(42 / 0, Infinity)
 })
 
 // ./second-module/second-spec.js
@@ -483,18 +487,146 @@ module.exports = test('given second-module, when... it...', (t) => {
 })
 
 // ./tests.js
-const { expect } = require('chai')
 module.exports = require('supposed')
-  .configure({
-    name: 'foo',
-    inject: {
-      expect,
-      env: process.env,
-      argv: process.argv
-    } }) // optional
   .runner()
-  .run()
+  .runTests([
+    () => require('./first-spec'),
+    () => require('./second-spec')
+  ])
 ```
+
+### Using the Browser Test Server
+Using the runner's `startServer` function, supposed will find test files in your project, concatenate them, and host a test page on a NodeJS HTTP server.
+
+> When concatenating, all modules are wrapped in an IIFE, so they remain encapsulated. However, no additional libraries, nor manipulation is performed, so you can't just `require` things without doing some additional work.
+>
+> If you use `module.exports` to export a factory supposed will be injected into that factory, unless you set `injectSuite: false`
+
+The following example has two test files, and a runner file (test.js). In this example, the default Suite is used, and is configured in test.js. The runner is not configured, so default configurations are used.
+
+```JavaScript
+// ./first-module/first-spec.js
+module.exports = (test) => test('given first-module, when...', {
+  given: () => 42,
+  when: (given) => given / 0,
+  'it...': () => (err, actual) => {
+    if (err) {
+      throw err
+    }
+
+    if (actual !== Infinity) {
+      throw new Error(`Expected ${actual} === Infinity`)
+    }
+  }
+})
+
+// ./second-module/second-spec.js
+module.exports = (test) => test('given second-module, when...', {
+  given: () => 4200,
+  when: (given) => given / 0,
+  'it...': () => (err, actual) => {
+    if (err) {
+      throw err
+    }
+
+    if (actual !== Infinity) {
+      throw new Error(`Expected ${actual} === Infinity`)
+    }
+  }
+})
+
+// ./tests.js
+module.exports = require('supposed')
+  .configure({ name: 'foo', inject: { foo: 'bar' } }) // optional
+  .runner({ cwd: __dirname })
+  .startServer()
+
+// prints server is listening on 42001
+```
+
+#### Configuring the Browser Test Server
+Unless you provide a `paths` property on the runner config, the browser test server will use the runner configurations from [Configuring the NodeJS Runner](#configuring-the-nodejs-runner) to find the test files, and pass them to the runner. So in addition to all of the configurations in [Configuring the NodeJS Runner](#configuring-the-nodejs-runner), the browser server supports the following configurations, all of which are optional:
+
+* `title` {string} (default: "supposed") - the HTML <title> and <h1> for the test page
+* `port` {number} (default: 42001) - the port number to host the server on
+* `dependencies` {string[]} - an array of paths to scripts that your library depends on - these precede the tests in the resulting web page
+* `paths` {string[]} - an array of file paths to the files you want the server to concatenate - this will [Skip File Discovery With the Browser Test Server](skipping-file-discovery-with-the-browser-test-server). There's no need to set both `dependencies` _and_ `paths`
+* `styles` {string} - CSS to customize the test view
+* `supposed` {string} - the path to this library, if you have it somewhere special
+* `template` {string} - your own [test-browser-template](src/runners/test-browser-template.js) if the default one doesn't meet your needs. Note that `// {{TEST_MODULES}}` is where the tests get injected, so if you omit, or change that line, no tests will be printed to the page
+* `stringifiedSuiteConfig` {string} - the config for supposed _in_ the browser (you have one to run everything, but our browser tests can have their own configuration) i.e. `{ reporter: 'tap' }`
+* `page` {string} - full control over the page and generation of it - if you're using this, you might be better off just writing your own browser test runner
+
+#### Skipping File Discovery With the Browser Test Server
+If you pass an array of `paths` to the runner, `startServer` will skip file discovery, and load all of the paths:
+
+```JavaScript
+// ./setup.js
+module.exports = (test) => {
+  test.dependencies = test.dependencies || {}
+  test.dependencies.foo = 'bar'
+}
+
+// ./first-module/first-spec.js
+module.exports = (test) => test('given first-module', {
+  'when...': {
+    given: () => 42,
+    when: (given) => given / 0,
+    'it...': () => (err, actual) => {
+      if (err) {
+        throw err
+      }
+
+      if (actual !== Infinity) {
+        throw new Error(`Expected ${actual} === Infinity`)
+      }
+    }
+  },
+  'foo should be available from setup.js': () => {
+    if (test.dependencies.foo !== 'bar') { // eslint-disable-line no-undef
+      throw new Error(`Expected foo ${typeof test.dependencies.foo} to be {string}`)
+    }
+  }
+})
+
+// ./second-module/second-spec.js
+module.exports = (test) => test('given second-module, when...', {
+  given: () => 4200,
+  when: (given) => given / 0,
+  'it...': () => (err, actual) => {
+    if (err) {
+      throw err
+    }
+
+    if (actual !== Infinity) {
+      throw new Error(`Expected ${actual} === Infinity`)
+    }
+  }
+})
+
+// ./tests.js
+const path = require('path')
+
+module.exports = require('supposed')
+  .configure({ name: 'foo', inject: { foo: 'bar' } }) // optional
+  .runner({
+    paths: [
+      path.join(__dirname, 'setup.js'),
+      path.join(__dirname, 'first-spec.js'),
+      path.join(__dirname, 'second-spec.js')
+    ]
+  })
+  .startServer()
+
+// prints server is listening on 42001
+```
+
+
+
+
+
+
+---
 
 ##### Global Setup and Teardown
 The runner returns a Promise, which returns the context: the results of each test file, the test file paths, the configuration that was used to execute the tests, and the suite. If you want to run an operation (i.e. teardown) after all tests pass, your tests have to both accept suite injection, and return a promise that resolves after all assertions in that file are complete. This can be accomplished by nesting all of your tests under one grouping, and returning that (e.g. like _describe_ in mocha, jasmine, etc.).

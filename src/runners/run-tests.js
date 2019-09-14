@@ -9,8 +9,20 @@ module.exports = {
       return obj && typeof obj.then === 'function'
     }
 
-    const toPromise = (config, suite) => ({ err, test, path }) => {
+    const toPromise = (config, suite) => (input) => {
+      let err, test, path
+
       try {
+        if (typeof input === 'function') {
+          test = input
+        } else if (input) {
+          err = input.err
+          test = input.test
+          path = input.path
+        } else {
+          throw new Error(`Invalid runTests entry: expected input ${typeof input} to be a {function}, or { err?: Error; test: Function|Promise; path?: string; }`)
+        }
+
         if (err) {
           err.filePath = path
           return Promise.reject(err)

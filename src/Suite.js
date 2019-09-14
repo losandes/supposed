@@ -217,7 +217,9 @@ module.exports = {
     }
 
     const browserRunner = (config, test) => (options) => () => {
-      return findFiles(options).then(runServer(test, options))
+      return Array.isArray(options.paths)
+        ? runServer(test, options)(options)
+        : findFiles(options).then(runServer(test, options))
     }
 
     /**
@@ -260,6 +262,7 @@ module.exports = {
         }
         test.suiteName = config.name
         test.runner = (options) => {
+          options = options || {}
           if (envvars && envvars.file && typeof envvars.file.test === 'function') {
             options.matchesNamingConvention = envvars.file
           }
@@ -271,7 +274,13 @@ module.exports = {
               .then(runTests(test))
             ),
             // run (browser|node)
-            runTests: run(() => runTests(test)(options)),
+            runTests: (tests) => {
+              if (Array.isArray(tests)) {
+                options.tests = tests
+              }
+
+              return run(() => runTests(test)(options))()
+            },
             // start test server (browser)
             startServer: findAndStart(options)
           }
