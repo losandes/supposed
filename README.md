@@ -17,6 +17,8 @@ _Supposed_ is a simple test runner for Node.js, TypeScript, and the Browser that
 * Will work with mocha's `describe`, `it` syntax with a little bit of test refactoring (`before` and `after` aren't supported, though - this library uses async-await, `then`, BDD, or TDD syntax to support setup and tear down)
 * Has 0 dependencies (not counting dev-dependencies)
 
+## TOC
+
 * [Getting Started with Node](#getting-started-with-node)
 * [Getting Started with the Browser](#getting-started-with-the-browser)
 * [Test Syntax and Domain Service Languages (DSLs) (BDD, TDD, xunit, custom)](#test-syntax-and-domain-service-languages-dsls))
@@ -24,30 +26,8 @@ _Supposed_ is a simple test runner for Node.js, TypeScript, and the Browser that
 * [Suites, & Configuring Suites](#suites)
 * [Tests, & Configuring Tests](#tests)
 * [Discovering Tests and Running Them](#discovering-tests-and-running-them)
-  * [Using the NodeJS Runner](#using-the-nodejs-runner)
-  * [Using the Browser Test Server](#using-the-browser-test-server)
 * [TypeScript Support](#typescript-support)
-* [Why Supposed](#why-supposed)
 * [Cookbook](#cookbook)
-  * [Global Setup and Teardown](#global-setup-and-teardown)
-  * [Test Setup and Teardown](#test-setup-and-teardown)
-  * [Injecting Dependencies](#injecting-dependencies)
-  * [Naming Suites](#naming-suites)
-  * [Running Multiple Suites](#running-multiple-suites)
-  * [Using Promises in Tests](#using-promises-in-tests)
-  * [Using async-await in Tests](#using-async---await-in-tests)
-  * [Running Tests Serially](#running-tests-serially)
-  * [Writing a Test Reporter](#writing-a-test-reporter)
-  * [Subscribing to Test Events](#subscribing-to-test-events)
-  * [Streaming Output to a File](#streaming-output-to-a-file)
-  * [Adding Information to Report Output (event.log)](#adding-information-to-report-output-event.log)
-  * [Adding Context to Test Events (event.context)](#adding-context-to-test-events-event.context)
-  * [Skipping Tests](#skipping-tests)
-  * [Marking Tests as TODO](#marking-tests-as-todo)
-  * [Running Specific Tests (only)](#running-specific-tests-only)
-  * [Piping Browser Test Output to the Terminal](#piping-browser-test-output-to-the-terminal)
-  * [Nest/Branch Inheritance](#nest-branch-inheritance)
-  * [Roll Your Own Browser Template](#roll-your-own-browser-template)
 
 ## Getting Started With Node
 
@@ -167,12 +147,12 @@ module.exports = test('when dividing a number by zero, it should return Infinity
 > This DSL is compatible with most test libraries when you don't nest tests within each other, and when you don't nest assertions inside of tests (i.e. describe, it)
 
 ### Custom DSLs
-If you don't like the provided syntax... _configure it_! You can add synonyms for given, and when. These do not overwrite the existing synonyms, which can still be used. The givens can be used interchangeably with the when's (there's no order, or pairing).
+If you don't like the provided syntax... _configure it_! You can set/replace the synonyms for given, and when. The given synonyms can be used interchangeably with the when synonyms (there's no order, or pairing).
 
 ```JavaScript
 const test = require('supposed').Suite({
   givenSynonyms: ['cause', 'before', 'setup'],
-  whenSynonyms: ['effect', 'execute', 'run']
+  whenSynonyms: ['effect', 'run']
 })
 
 module.exports = test('when dividing numbers by 0', {
@@ -195,14 +175,6 @@ module.exports = test('when dividing numbers by 0', {
   'before, run': {
     before: () => 0,
     run: (number) => { return number / 0 },
-    'it should return NaN': (assert) => (err, actual) => {
-      assert.ifError(err)
-      assert.strictEqual(isNaN(actual), true)
-    }
-  },
-  'given, execute': {
-    given: () => 0,
-    execute: (number) => { return number / 0 },
     'it should return NaN': (assert) => (err, actual) => {
       assert.ifError(err)
       assert.strictEqual(isNaN(actual), true)
@@ -254,6 +226,19 @@ $ node tests | npx tap-parser -j | jq
 ```
 
 > In that example, we run tests that have the word "continuous-integration" in their descriptions, using TAP output. We pipe the output of the tests into another package, [tap-parser](https://www.npmjs.com/package/tap-parser), and then pipe the output of that package into [jq](https://stedolan.github.io/jq/).
+
+### Built-in Reporters
+
+* `default` - a concise reporter with start indication, symbols for pass|fail|skip, error details, and a summary at the end
+* `tap` - a TAP compliant reporter, which can also be piped into [other TAP reporters](https://github.com/sindresorhus/awesome-tap#reporters)
+* `json` - test events in JSON format
+* `markdown` - the test descriptions in markdown format (does not include error details)
+* `nyan` - rainbows, and flying cats? check
+* `brief` - just the summary, and the output from any failing tests
+* `summary` - just the summary
+* `array` - no output, but you can read the test events from `suite.config.reporters[${indexOfArrayReporter}].events` (it's easier just to `suite.subscribe`, or `suite.runner().run().then((results) => {})` though - you probably don't need this - it's mostly for testing this library)
+* `block` - Colorized blocks with PASS|FAIL|SKIP text (like jest)
+* `noop` - turn reporting off, and do your own thing
 
 ### Using Multiple Reporters
 Supposed uses pubsub to report, so there's no limit on the number of reporters that can be used. Some reporters when used in combination can cause problems (nyan isn't really compatible with anything else), but others can be helpful. Let's say you like the TAP output, but you want a summary:
@@ -338,37 +323,6 @@ const suite = require('supposed').Suite({
 })
 ```
 
-#### Built-in Reporters
-
-* `default` - a concise reporter with start indication, symbols for pass|fail|skip, error details, and a summary at the end
-* `tap` - a TAP compliant reporter
-* `json` - test events in JSON format
-* `markdown` - the test descriptions in markdown format (does not include error details)
-* `nyan` - rainbows, and flying cats? check
-* `brief` - just the summary, and the output from any failing tests
-* `summary` - just the summary
-* `array` - no output, but you can read the test events from `suite.config.reporters[${indexOfArrayReporter}].events` (it's easier just to `suite.subscribe`, or `suite.runner().run().then((results) => {})` though - you probably don't need this - it's mostly for testing this library)
-* `block` - Colorized blocks with PASS|FAIL|SKIP text (like jest)
-* `noop` - turn reporting off, and do your own thing
-
-### Suite Setup and Teardown
-All supposed runners return promises, so we feed them with setup, and tear down afterwards:
-
-```JavaScript
-const supposed = require('supposed')
-
-const setup = Promise.resolve({ some: 'dependencies' })
-const teardown = (context) => { console.log(context) }
-
-setup.then((dependencies) =>
-  supposed.Suite({
-    inject: dependencies
-  }).runner({
-    cwd: __dirname
-  }).run()
-).then(teardown)
-```
-
 ## Tests
 
 * [Configuring Tests](#configuring-tests)
@@ -416,24 +370,30 @@ Using the default reporter, this will print:
 
 ### Configuring Tests
 
-TODO
-
-### Test Setup and Teardown, and Running Tests Serially
-All supposed tests are promises, so we can chain them together, feed them with setup, and tear down afterwards:
+* `timeout` {number} (default is 2000ms) - The amount of time that _supposed_ waits, before it cancels a long-running test
 
 ```JavaScript
-const test = require('supposed')
+const expect = require('chai').expect
 
-const setup = Promise.resolve(42)
-const teardown = (context) => { console.log(context) }
-
-setup()
-.then((given) => test('given... when... then...', () => { /*assert something*/ }))
-.then((given) => test('given... when... then...', () => { /*assert something*/ }))
-.then(teardown)
+test('when dividing a number by zero', {
+  timeout: 10000, // 10 seconds
+  when: () => {
+    return 42 / 0
+  },
+  'it should return Infinity': () => (err, actual) => {
+    expect(err).to.equal(null)
+    expect(actual).to.equal(Infinity)
+  }
+})
 ```
 
+> NOTE that test configurations behave the same as everything else with respect to nest inheritance (i.e. the timeout can be set at the top of a tree and used for all tests that don't override it)
+
 ## Discovering Tests and Running Them
+
+* [Using the NodeJS Runner](#using-the-nodejs-runner)
+* [Using the Browser Test Server](#using-the-browser-test-server)
+
 In getting started, we saw how supposed can run tests without a runner. A bear bones test suite might simply `require`, or `import` each test file. However that produces multiple result summaries which can be hard to parse or understand.
 
 Using a runner, Supposed will group the tests into batches, and summarize the outcomes in a single report. Supposed has [a runner for nodejs tests](using-the-nodejs-runner), [an a server runner for browser tests](#using-the-browser-test-server).
@@ -658,20 +618,37 @@ module.exports = require('supposed')
 // prints server is listening on 42001
 ```
 
+## Cookbook
 
+* [Global Setup and Teardown](#global-setup-and-teardown)
+* [Test Setup and Teardown](#test-setup-and-teardown)
+* [Injecting Dependencies](#injecting-dependencies)
+* [Naming Suites](#naming-suites)
+* [Running Multiple Suites](#running-multiple-suites)
+* [Using Promises in Tests](#using-promises-in-tests)
+* [Using async-await in Tests](#using-async---await-in-tests)
+* [Running Tests Serially](#running-tests-serially)
+* [Skipping Tests](#skipping-tests)
+* [Marking Tests as TODO](#skipping-tests)
+* [Running Specific Tests (only)](#running-specific-tests-only)
+* [Nest/Branch Inheritance](#nest-branch-inheritance)
+- [] [Writing a Test Reporter](#writing-a-test-reporter)
+- [] [Subscribing to Test Events](#subscribing-to-test-events)
+* [Streaming Output to a File](#streaming-output-to-a-file)
+- [] [Adding Information to Report Output (event.log)](#adding-information-to-report-output-event.log)
+- [] [Adding Context to Test Events (event.context)](#adding-context-to-test-events-event.context)
+- [] [Piping Browser Test Output to the Terminal](#piping-browser-test-output-to-the-terminal)
+- [] [Roll Your Own Browser Template](#roll-your-own-browser-template)
+* [Writing Your Own Test Runner](#writing-your-own-test-runner)
 
-
-
-
----
-
-##### Global Setup and Teardown
+### Global Setup and Teardown
 The runner returns a Promise, which returns the context: the results of each test file, the test file paths, the configuration that was used to execute the tests, and the suite. If you want to run an operation (i.e. teardown) after all tests pass, your tests have to both accept suite injection, and return a promise that resolves after all assertions in that file are complete. This can be accomplished by nesting all of your tests under one grouping, and returning that (e.g. like _describe_ in mocha, jasmine, etc.).
 
 > Also see [Setup and Teardown](#setup-and-teardown)
 
 ```JavaScript
 // ./first-module/first-spec.js
+// exports a factory that accepts the suite
 module.exports = (describe) => {
   return describe('first-module', {
     'when... it...': expect => {
@@ -681,134 +658,266 @@ module.exports = (describe) => {
 }
 
 // ./second-module/second-spec.js
-module.exports = (describe) => {
-  return describe('second-module', {
-    'when... it...': expect => {
-      expect(42 / 0).to.equal(Infinity)
-    })
+// uses the suite by name
+// this allows this file to be run directly (`node second-spec`) without
+// the suite _if_ it doesn't depend on the suite as a composition root (DI)
+const describe = require('supposed').suites['my-suite']
+
+return describe('second-module', {
+  'when... it...': expect => {
+    expect(42 / 0).to.equal(Infinity)
+  })
+})
+
+// ./tests.js
+const suite = require('supposed')
+const setup = Promise.resolve({ some: 'dependencies' })
+const teardown = (context) => { console.log(context) }
+
+module.exports = setup.then((dependencies) =>
+  supposed.Suite({
+    name: 'my-suite'
+    inject: dependencies
+  }).runner({
+    cwd: __dirname
+  }).run()
+).then(teardown)
+```
+
+> NOTE if any of your test files don't return a promise, or resolve a promise before they are complete, `then` will execute before your tests finish running. Whether or not they show upin the context/results depends on a race condition.
+
+### Test Setup and Teardown
+All supposed tests are promises, so we can chain them together, feed them with setup, and tear down afterwards:
+
+```JavaScript
+const test = require('supposed')
+
+const setup = Promise.resolve(42)
+const teardown = (context) => { console.log(context) }
+
+module.exports = setup()
+.then((given) => test('given... when... then...', () => { /*assert something*/ }))
+.then(() => test('given... when... then...', () => { /*assert something*/ }))
+.then(teardown)
+```
+
+### Injecting Dependencies
+Suites will include a `dependencies` property, if you provide an `inject` object when configuring them.
+
+```JavaScript
+// ./first-module/first-spec.js
+const test = require('supposed').suites['injecting-dependencies']
+const { foo } = test.dependencies
+
+module.exports = test('given first-module, when... it...', (expect) => {
+  expect(foo).to.equal('bar')
+})
+
+// ./tests.js
+const { expect } = require('chai')
+const supposed = require('supposed')
+
+supposed.Suite({
+  name: 'injecting-dependencies',
+  assertionLibrary: expect,
+  inject: { foo: 'bar' }
+}).runner()
+  .run()
+```
+
+If you're ok with not running the tests directly (i.e. `node first-spec.js`), you can also export a factory that receives the suite, and dependencies.
+
+> Notice that the modules don't need to `require` supposed, or any assertion libraries when using this convention.
+
+```JavaScript
+// ./first-module/first-spec.js
+module.exports = (test, dependencies) => {
+  const { foo } = dependencies
+
+  test('given first-module, when... it...', (expect) => {
+    expect(foo).to.equal('bar')
   })
 }
 
 // ./tests.js
-const test = require('supposed')
+const { expect } = require('chai')
+const supposed = require('supposed')
 
-test.runner()
+supposed.Suite({
+  name: 'injecting-dependencies',
+  assertionLibrary: expect,
+  inject: { foo: 'bar' }
+}).runner()
   .run()
-  .then((context) => {
-    console.log(`The following files were executed: ${context.files.join(',')}`)
-  })
 ```
 
-> NOTE if any of your test files don't return a promise, or resolve a promise before they are complete, `then` will execute before your tests finish running. It will still have the
-
-#### Writing Your Own Test Runner
-If you want to roll your own, perhaps to perform some custom test injection, here's a simple example:
+### Naming Suites
+By giving your suite a name, other files can find the suite by name, via the `suites` property.
 
 ```JavaScript
-const fs = require('fs')
-const path = require('path')
-const fileNameExpression = /.([-.]test(s?)\.js)|([-.]spec(s?)\.js)$/i
-const ignoreExpression = /node_modules/i
-const walkSync = (dir) =>
-  fs.readdirSync(dir).reduce((files, file) => {
-    if (ignoreExpression.test(file)) {
-      return files
-    }
+// ./tests.js
+const { expect } = require('chai')
+const supposed = require('supposed')
 
-    const name = path.join(dir, file)
-    const isDirectory = fs.statSync(name).isDirectory()
-    return isDirectory ? [...files, ...walkSync(name)] : [...files, name]
-  }, [])
+supposed.Suite({
+  name: 'injecting-dependencies',
+  assertionLibrary: expect,
+  inject: { foo: 'bar' }
+}).runner()
+  .run()
 
-walkSync('.')
-  .filter(file => fileNameExpression.test(file))
-  .forEach(file => {
-    require(`../${file}`)
-  })
-```
+// ./first-module/first-spec.js
+const test = require('supposed').suites['injecting-dependencies']
+const { foo } = test.dependencies
 
-#### Programmatic Report Consumption
-If you're using this as part of continuous integration, and you don't want the output to be written to `stdout`, you can use the `-q` switch and programmatically handle the results:
-
-```JavaScript
-const suite = require('supposed').Suite()
-
-suite.runner().run().then((context) => {
-  // do something with the results here
-  console.log(context.results)
+module.exports = test('given first-module, when... it...', (expect) => {
+  expect(foo).to.equal('bar')
 })
 ```
 
-### TAP reporter
-Supposed supports the TAP format and thus is compatible with [any TAP reporter](https://github.com/sindresorhus/awesome-tap#reporters). Use the `--tap` flag to enable TAP output.
-
-```Shell
-$ node test/my-test --tap | tap-nyan
-```
-
-## Writing Tests
-
-### Promise Support
-Each test function can run asyncronously by returning a `Promise`:
+### Running Multiple Suites
 
 ```JavaScript
-test('when dividing a number by zero', {
-  given: () => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        resolve(42)
-      }, 0)
-    })
-  },
-  when: (number) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        resolve(number / 0)
-      }, 0)
-    })
-  },
-  'it should return Infinity': (then) => (err, actual) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        // some async process
-        resolve()
-      }, 0)
-    }).then(result => {
-      then.ifError(err)
-      then.strictEqual(actual, Infinity)
-    })
+// ./first-module/first-spec.js
+const test = require('supposed').suites['supposed-tests.first-module']
+const { expect } = test.dependencies
+
+module.exports = test('given first-module, when... it...', (t) => {
+  expect(42 / 0).to.equal(Infinity)
+})
+
+// ./first-module/first-suite.js
+const { expect } = require('chai')
+const suite = require('supposed').Suite({
+  name: 'supposed-tests.first-module',
+  inject: { expect },
+  reporter: 'noop'
+})
+
+module.exports = {
+  suite,
+  runner: suite.runner({
+    cwd: __dirname
+  })
+}
+
+// ./second-module/second-spec.js
+const test = require('supposed').suites['supposed-tests.second-module']
+
+module.exports = test('given second-module, when... it...', (t) => {
+  t.strictEqual(42 / 0, Infinity)
+})
+
+// ./second-module/second-suite.js
+const suite = require('supposed').Suite({
+  name: 'supposed-tests.second-module',
+  reporter: 'noop'
+})
+
+module.exports = {
+  suite,
+  runner: suite.runner({
+    cwd: __dirname
+  })
+}
+
+// ./tests.js
+const supposed = require('supposed')
+const s1 = require('./first-module/first-suite.js')
+const s2 = require('./second-module/second-suite.js')
+const suite = supposed.Suite({ name: 'multiple-suites' })
+const reporter = suite.reporters[0]
+const subscription = (event) => {
+  if (event.type === 'TEST') {
+    reporter.write(event)
   }
+}
+s1.suite.subscribe(subscription)
+s2.suite.subscribe(subscription)
+
+const startTime = Date.now()
+reporter.write({ type: 'START', time: startTime, suiteId: suite.config.name })
+
+Promise.all([s1.runner.run(), s2.runner.run()])
+  .then((results) => {
+    reporter.write({
+      type: 'END',
+      time: Date.now(),
+      suiteId: suite.config.name,
+      totals: results.reduce((tally, current) => {
+        tally.total += current.totals.total
+        tally.passed += current.totals.passed
+        tally.skipped += current.totals.skipped
+        tally.failed += current.totals.failed
+        tally.broken += current.totals.broken
+
+        return tally
+      }, {
+        total: 0,
+        passed: 0,
+        skipped: 0,
+        failed: 0,
+        broken: 0,
+        startTime: startTime,
+        endTime: Date.now()
+      })
+    })
+  })
+```
+
+### Using Promises in Tests
+Each test function can run asyncronously by using `Promise`:
+
+```JavaScript
+const test = require('supposed')
+
+test('when dividing a number by zero', {
+  given: () => new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve(42)
+    }, 0)
+  }),
+  when: (number) => new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve(number / 0)
+    }, 0)
+  }),
+  'it should return Infinity': (then) => (err, actual) => new Promise((resolve, reject) => {
+    then.ifError(err)
+    then.strictEqual(actual, Infinity)
+    resolve()
+  })
 })
 ```
 
 or:
 ```JavaScript
-test('divide by zero equals infinity', t => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve(42 / 0)
-    }, 0)
-  }).then(actual => {
-    t.strictEqual(actual, Infinity)
-  })
-})
+const test = require('supposed')
+
+test('divide by zero equals infinity', (t) => new Promise((resolve, reject) => {
+  setTimeout(() => {
+    resolve(42 / 0)
+  }, 0)
+}).then((actual) => {
+  t.strictEqual(actual, Infinity)
+}))
 ```
 
-> NOTE that assertions that are made asynchronously cannot be caught, so you need to catch them and reject in order for the output to be consumed, or simply move the assertions into a then block, as in the examples above.
-
-### Async Support
+### Using async-await in Tests
 Each test function can run asyncronously by using `async/await`:
 
 ```JavaScript
+const test = require('supposed')
+
 test('when dividing a number by zero', {
   given: async () => {
-    const actual = await new Promise((resolve, reject) => {
+    const given = await new Promise((resolve, reject) => {
       setTimeout(() => {
         resolve(42)
       }, 0)
     })
 
-    return actual
+    return given
   },
   when: async (number) => {
     const actual = await new Promise((resolve, reject) => {
@@ -828,7 +937,9 @@ test('when dividing a number by zero', {
 
 or:
 ```JavaScript
-test('divide by zero equals infinity', async t => {
+const test = require('supposed')
+
+test('divide by zero equals infinity', async (t) => {
   const actual = await new Promise((resolve, reject) => {
     setTimeout(() => {
       resolve(42 / 0)
@@ -853,41 +964,6 @@ const updateSpec = () => test('when that user is updated', t => {
 
 insertSpec()
   .then(updateSpec())
-```
-
-### Setup and Teardown
-If you want/need to setup services before running your tests, and then tear them down afterwards, run the tests in a Promise chain, and make sure to return the `test`.
-
-> Also see [Global Setup and Teardown](#global-setup-and-teardown)
-
-```JavaScript
-const setup = new Promise((resolve, reject) => {
-  setTimeout(() => {
-    // prepare for running the tests
-    resolve()
-  }, 0)
-})
-
-const teardown = () => new Promise((resolve, reject) => {
-  setTimeout(() => {
-    // tear down your setup
-    resolve()
-  }, 0)
-})
-
-setup.then(() => {
-  return test('divide by zero equals infinity', t => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        resolve(42 / 0)
-      }, 0)
-    }).then(actual => {
-      t.strictEqual(actual, Infinity)
-    })
-  })
-}).then(() => {
-  teardown()
-})
 ```
 
 ### Skipping Tests
@@ -952,9 +1028,9 @@ Some test libraries like mocha have `describe.only`. Supposed doesn't have that 
 // test.js
 const test = require('supposed')
 
-// notice we threw `only!` in this description
+// notice we threw `ONLY` in this description
 // it can be whatever you want, though, as long as it's unique
-test('only! when dividing a number by zero', {
+test('ONLY when dividing a number by zero', {
   'it should return Infinity': (t) => {
     t.strictEqual(42 / 0, Infinity)
   }
@@ -962,7 +1038,7 @@ test('only! when dividing a number by zero', {
 ```
 
 ```Shell
-$ node test -m 'only!'
+$ node test -m 'ONLY'
 ```
 
 > The argument you pass to `-m` is used to create an instance of `RegExp`, which is then used to test the test assertions/descriptions.
@@ -996,69 +1072,47 @@ test('when dividing a number by zero', {
 })
 ```
 
-## Configuring Tests
-Supposed allows configuration at two levels: suite level, and test level. The folliwng configurations are supported:
+### Streaming Output to a File
+The following examples assumes you have a `./tests.js` file that executes your tests:
 
-### Suite Configuration
+```Shell
+$ node tests -r tap > tests.log
+```
 
-* **timeout** {number} (default is 2000ms) : The amount of time that _Supposed_ waits, before it cancels a long-running test
-* **assertionLibrary** {object} (default is `assert`) : The assertion library that will be passed to the tests
-* **reporter** {string or object} (default is "DEFAULT") : The reporter to use for test output (DEFAULT|TAP|BRIEF|QUIET|QUIET_TAP|or a custom reporter)
+### Writing Your Own Test Runner
+If you want to roll your own, perhaps to perform some custom test injection, here's a simple example:
 
 ```JavaScript
-const events = []
-const test = require('supposed').Suite({
-  timeout: 10000, // 10 seconds
-  assertionLibrary: require('chai').expect,
-  reporter: {
-    reporter: {
-      report: function (event) {
-        // each test produces an event
-        events.push(event)
-      },
-      getTotals: () => {
-        return {
-          total: 0,
-          passed: 0,
-          skipped: 0,
-          failed: 0,
-          broken: 0,
-          startTime: new Date(),
-          endTime: new Date()
-        }
-      },
-      getResults: () => {
-        // an array of all of the test events
-        return events
-      }
+const fs = require('fs')
+const path = require('path')
+const fileNameExpression = /.([-.]test(s?)\.js)|([-.]spec(s?)\.js)$/i
+const ignoreExpression = /node_modules/i
+const walkSync = (dir) =>
+  fs.readdirSync(dir).reduce((files, file) => {
+    if (ignoreExpression.test(file)) {
+      return files
     }
-  }
-})
 
-test('when dividing a number by zero, it should return Infinity', t => {
-  t.strictEqual(42 / 0, Infinity)
-})
+    const name = path.join(dir, file)
+    const isDirectory = fs.statSync(name).isDirectory()
+    return isDirectory ? [...files, ...walkSync(name)] : [...files, name]
+  }, [])
+
+walkSync('.')
+  .filter(file => fileNameExpression.test(file))
+  .forEach(file => {
+    require(`../${file}`)
+  })
 ```
 
-### Test Configuration
-
-* **timeout** {number} (default is 2000ms) : The amount of time that _Supposed_ waits, before it cancels a long-running test
-* **assertionLibrary** {object} (default is `assert`) : The assertion library that will be passed to the tests
+### Programmatic Report Consumption
+If you're using this as part of continuous integration, and you don't want the output to be written to `stdout`, you can use the `-q` switch and programmatically handle the results:
 
 ```JavaScript
-const expect = require('chai').expect
+const suite = require('supposed').Suite()
 
-test('when dividing a number by zero', {
-  timeout: 10000, // 10 seconds
-  assertionLibrary: expect,
-  when: () => {
-    return 42 / 0
-  },
-  'it should return Infinity': (expect) => (err, actual) => {
-    expect(err).to.equal(null)
-    expect(actual).to.equal(Infinity)
-  }
+suite.runner().run().then((context) => {
+  // do something with the results here
+  console.log(context.results)
 })
 ```
-
-> NOTE that test configurations behave the same as everything else with respect to nest inerhitance (i.e. the timeout can be set at the top of a tree and used for all tests that don't override it)

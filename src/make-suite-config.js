@@ -41,19 +41,23 @@ module.exports = {
       }
 
       if (Array.isArray(options.givenSynonyms)) {
-        options.givenSynonyms.forEach((synonym) => {
-          if (typeof synonym === 'string' && synonym.trim().length) {
-            suiteConfig.givenSynonyms.push(synonym)
-          }
-        })
+        const synonyms = options.givenSynonyms
+          .filter((synonym) => typeof synonym === 'string' && synonym.trim().length)
+          .map((synonym) => synonym.trim())
+
+        if (synonyms.length) {
+          suiteConfig.givenSynonyms = synonyms
+        }
       }
 
       if (Array.isArray(options.whenSynonyms)) {
-        options.whenSynonyms.forEach((synonym) => {
-          if (typeof synonym === 'string' && synonym.trim().length) {
-            suiteConfig.whenSynonyms.push(synonym)
-          }
-        })
+        const synonyms = options.whenSynonyms
+          .filter((synonym) => typeof synonym === 'string' && synonym.trim().length)
+          .map((synonym) => synonym.trim())
+
+        if (synonyms.length) {
+          suiteConfig.whenSynonyms = synonyms
+        }
       }
 
       const makeReporterArray = (input) => {
