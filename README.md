@@ -751,6 +751,15 @@ supposed.Suite({
   .run()
 ```
 
+You can turn off the behavior demonstrated in "./first-module/first-spec.js" by passing `injectSuite: false` to the runner configuration:
+
+```JavaScript
+const supposed = require('supposed')
+const runner = supposed.runner({
+  injectSuite: false
+})
+```
+
 ### Naming Suites
 By giving your suite a name, other files can find the suite by name, via the `suites` property.
 
