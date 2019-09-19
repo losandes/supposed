@@ -223,6 +223,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             type: TestEvent.types.TEST,
             status: TestEvent.status.PASSED,
             batchId: batchId,
+            testId: assertion.id,
             behavior: assertion.behavior,
             log: maybeLog(result),
             context: maybeContext(result)
@@ -234,6 +235,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             type: TestEvent.types.TEST,
             status: TestEvent.status.FAILED,
             batchId: batchId,
+            testId: assertion.id,
             behavior: assertion.behavior,
             error: e
           });
@@ -245,12 +247,28 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               type: TestEvent.types.TEST,
               status: TestEvent.status.SKIPPED,
               batchId: batchId,
+              testId: assertion.id,
               behavior: assertion.behavior
             });
           }
 
-          var result = test();
-          return isPromise(result) ? result.then(pass).catch(fail) : pass(result);
+          return publish({
+            type: TestEvent.types.START_TEST,
+            batchId: batchId,
+            testId: assertion.id,
+            behavior: assertion.behavior
+          }).then(function () {
+            return test();
+          }).then(pass).catch(fail).finally(function (context) {
+            return publish({
+              type: TestEvent.types.END_TEST,
+              batchId: batchId,
+              testId: assertion.id,
+              behavior: assertion.behavior
+            }).then(function () {
+              return context;
+            });
+          });
         } catch (e) {
           return fail(e);
         }
@@ -334,13 +352,111 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         AsyncTest: AsyncTest
       };
     } // /factory
-    // /module
 
+  }; // /module
+
+  module.exports = {
+    name: 'hash',
+    factory: function factory() {
+      var createBuffer = function createBuffer(input) {
+        if (typeof input !== 'string') {
+          throw new Error('I only know how to hash strings');
+        }
+
+        var _arrBuffer = new ArrayBuffer(input.length * 2); // 2 bytes per char
+
+
+        var _intBuffer = new Uint8Array(_arrBuffer);
+
+        for (var i = 0; i < input.length; i += 1) {
+          _intBuffer[i] = input.charCodeAt(i);
+        }
+
+        return _intBuffer;
+      };
+
+      var isBuffer = function isBuffer(input) {
+        return input instanceof Uint8Array;
+      };
+      /**
+       * JS Implementation of MurmurHash3 (r136) (as of May 20, 2011)
+       *
+       * @author Derek Perez
+       * @see https://github.com/perezd/node-murmurhash
+       * @author <a href="mailto:gary.court@gmail.com">Gary Court</a>
+       * @see http://github.com/garycourt/murmurhash-js
+       * @author <a href="mailto:aappleby@gmail.com">Austin Appleby</a>
+       * @see http://sites.google.com/site/murmurhash/
+       *
+       * @param {Buffer} key ASCII only
+       * @param {number} seed Positive integer only
+       * @return {number} 32-bit positive integer hash
+       */
+
+
+      function MurmurHashV3(key, seed) {
+        if (!isBuffer(key)) key = createBuffer(key);
+        var remainder, bytes, h1, h1b, c1, c2, k1, i;
+        remainder = key.length & 3; // key.length % 4
+
+        bytes = key.length - remainder;
+        h1 = seed;
+        c1 = 0xcc9e2d51;
+        c2 = 0x1b873593;
+        i = 0;
+
+        while (i < bytes) {
+          k1 = key[i] & 0xff | (key[++i] & 0xff) << 8 | (key[++i] & 0xff) << 16 | (key[++i] & 0xff) << 24;
+          ++i;
+          k1 = (k1 & 0xffff) * c1 + (((k1 >>> 16) * c1 & 0xffff) << 16) & 0xffffffff;
+          k1 = k1 << 15 | k1 >>> 17;
+          k1 = (k1 & 0xffff) * c2 + (((k1 >>> 16) * c2 & 0xffff) << 16) & 0xffffffff;
+          h1 ^= k1;
+          h1 = h1 << 13 | h1 >>> 19;
+          h1b = (h1 & 0xffff) * 5 + (((h1 >>> 16) * 5 & 0xffff) << 16) & 0xffffffff;
+          h1 = (h1b & 0xffff) + 0x6b64 + (((h1b >>> 16) + 0xe654 & 0xffff) << 16);
+        }
+
+        k1 = 0;
+        /* eslint-disable no-fallthrough */
+
+        switch (remainder) {
+          case 3:
+            k1 ^= (key[i + 2] & 0xff) << 16;
+
+          case 2:
+            k1 ^= (key[i + 1] & 0xff) << 8;
+
+          case 1:
+            k1 ^= key[i] & 0xff;
+            k1 = (k1 & 0xffff) * c1 + (((k1 >>> 16) * c1 & 0xffff) << 16) & 0xffffffff;
+            k1 = k1 << 15 | k1 >>> 17;
+            k1 = (k1 & 0xffff) * c2 + (((k1 >>> 16) * c2 & 0xffff) << 16) & 0xffffffff;
+            h1 ^= k1;
+        }
+        /* eslint-enable no-fallthrough */
+
+
+        h1 ^= key.length;
+        h1 ^= h1 >>> 16;
+        h1 = (h1 & 0xffff) * 0x85ebca6b + (((h1 >>> 16) * 0x85ebca6b & 0xffff) << 16) & 0xffffffff;
+        h1 ^= h1 >>> 13;
+        h1 = (h1 & 0xffff) * 0xc2b2ae35 + (((h1 >>> 16) * 0xc2b2ae35 & 0xffff) << 16) & 0xffffffff;
+        h1 ^= h1 >>> 16;
+        return h1 >>> 0;
+      }
+
+      return {
+        hash: MurmurHashV3
+      };
+    }
   };
   module.exports = {
     name: 'makeBatch',
-    factory: function factory() {
+    factory: function factory(dependencies) {
       'use strict';
+
+      var hash = dependencies.hash;
 
       function BatchComposer(options) {
         var givenSynonyms = options.givenSynonyms; // ['given', 'arrange']
@@ -371,6 +487,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         var getAssertions = function getAssertions(behavior, node, skipped) {
           if (isAssertion(node, behavior)) {
             return [{
+              id: hash(behavior),
               behavior: behavior,
               test: node,
               skipped: skipped
@@ -380,8 +497,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           return Object.keys(node).filter(function (key) {
             return isAssertion(node[key], key);
           }).map(function (key) {
+            var _behavior = concatBehavior(behavior, key);
+
             return {
-              behavior: concatBehavior(behavior, key),
+              id: hash(_behavior),
+              behavior: _behavior,
               test: node[key],
               skipped: skipped || isSkipped(key)
             };
@@ -492,6 +612,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           }
 
           return {
+            id: hash(behavior),
             behavior: behavior,
             given: given,
             when: when,
@@ -573,9 +694,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         BatchComposer: BatchComposer
       };
     } // /factory
-    // /exports
 
-  };
+  }; // /exports
+
   module.exports = {
     name: 'makeSuiteConfig',
     factory: function factory(dependencies) {
@@ -626,19 +747,27 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         }
 
         if (Array.isArray(options.givenSynonyms)) {
-          options.givenSynonyms.forEach(function (synonym) {
-            if (typeof synonym === 'string' && synonym.trim().length) {
-              suiteConfig.givenSynonyms.push(synonym);
-            }
+          var synonyms = options.givenSynonyms.filter(function (synonym) {
+            return typeof synonym === 'string' && synonym.trim().length;
+          }).map(function (synonym) {
+            return synonym.trim();
           });
+
+          if (synonyms.length) {
+            suiteConfig.givenSynonyms = synonyms;
+          }
         }
 
         if (Array.isArray(options.whenSynonyms)) {
-          options.whenSynonyms.forEach(function (synonym) {
-            if (typeof synonym === 'string' && synonym.trim().length) {
-              suiteConfig.whenSynonyms.push(synonym);
-            }
+          var _synonyms = options.whenSynonyms.filter(function (synonym) {
+            return typeof synonym === 'string' && synonym.trim().length;
+          }).map(function (synonym) {
+            return synonym.trim();
           });
+
+          if (_synonyms.length) {
+            suiteConfig.whenSynonyms = _synonyms;
+          }
         }
 
         var makeReporterArray = function makeReporterArray(input) {
@@ -715,9 +844,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         makeSuiteConfig: makeSuiteConfig
       };
     } // /factory
-    // /module
 
-  };
+  }; // /module
+
   module.exports = {
     name: 'pubsub',
     factory: function factory(dependencies) {
@@ -900,7 +1029,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             if (publishStartAndEnd) {
               return publish({
                 type: TestEvent.types.START,
-                time: Date.now(),
                 suiteId: config.name
               }).then(function () {
                 return context;
@@ -914,7 +1042,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             return publish({
               type: TestEvent.types.START_BATCH,
               batchId: batchId,
-              time: Date.now(),
               suiteId: config.name,
               plan: plan
             }).then(function () {
@@ -937,7 +1064,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             return publish({
               type: TestEvent.types.END_BATCH,
               batchId: batchId,
-              time: Date.now(),
               suiteId: config.name,
               plan: {
                 count: plan.count,
@@ -964,7 +1090,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               })).then(function () {
                 return publish(new TestEvent({
                   type: TestEvent.types.END,
-                  time: Date.now(),
                   suiteId: config.name,
                   totals: batchTotals
                 }));
@@ -993,7 +1118,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             publishStartAndEnd = false;
             return publish({
               type: TestEvent.types.START,
-              time: Date.now(),
               suiteId: config.name
             }).then(function () {
               return findAndRun();
@@ -1023,6 +1147,14 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
                 return output;
               });
             }).then(function (output) {
+              return publish(new TestEvent({
+                type: TestEvent.types.FINAL_TALLY,
+                suiteId: config.name,
+                totals: Tally.getTally()
+              })).then(function () {
+                return output;
+              });
+            }).then(function (output) {
               // only get the tally _after_ END_TALLY was emitted
               return {
                 output: output,
@@ -1031,7 +1163,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             }).then(function (context) {
               return publish(new TestEvent({
                 type: TestEvent.types.END,
-                time: Date.now(),
                 suiteId: config.name,
                 totals: context.tally
               })).then(function () {
@@ -1095,7 +1226,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           test.printSummary = function () {
             return publish(new TestEvent({
               type: TestEvent.types.END,
-              time: Date.now(),
               suiteId: config.name,
               totals: Tally.getSimpleTally()
             }));
@@ -1156,15 +1286,17 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         Suite: Suite
       };
     } // /factory
-    // /module
 
-  };
+  }; // /module
+
   module.exports = {
     name: 'TestEvent',
-    factory: function factory() {
+    factory: function factory(dependencies) {
       'use strict';
 
-      var TYPE_EXPRESSION = /(^START$)|(^START_BATCH$)|(^TEST$)|(^INFO$)|(^END_BATCH$)|(^END_TALLY$)|(^END$)/;
+      var clock = dependencies.clock,
+          timeUnits = dependencies.timeUnits;
+      var TYPE_EXPRESSION = /(^START$)|(^START_BATCH$)|(^START_TEST$)|(^TEST$)|(^END_TEST$)|(^INFO$)|(^END_BATCH$)|(^END_TALLY$)|(^FINAL_TALLY$)|(^END$)/;
       var STATUS_EXPRESSION = /(^PASSED$)|(^SKIPPED$)|(^FAILED$)|(^BROKEN$)/;
       var testCount = 0;
 
@@ -1189,6 +1321,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         var self = {};
         event = Object.assign({}, event);
         self.type = getType(event.type);
+        self.time = clock(timeUnits);
 
         if (self.type === TestEvent.types.TEST) {
           testCount += 1;
@@ -1213,6 +1346,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           self.batchId = event.batchId;
         }
 
+        if (event.testId) {
+          self.testId = event.testId;
+        }
+
         if (event.suiteId) {
           self.suiteId = event.suiteId;
         }
@@ -1225,8 +1362,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           self.log = event.log;
         }
 
-        if (event.time) {
-          self.time = event.time;
+        if (event.tally) {
+          self.tally = event.tally;
         }
 
         if (event.totals) {
@@ -1243,10 +1380,13 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       TestEvent.types = {
         START: 'START',
         START_BATCH: 'START_BATCH',
+        START_TEST: 'START_TEST',
         TEST: 'TEST',
+        END_TEST: 'END_TEST',
         INFO: 'INFO',
         END_BATCH: 'END_BATCH',
         END_TALLY: 'END_TALLY',
+        FINAL_TALLY: 'FINAL_TALLY',
         END: 'END'
       };
       TestEvent.status = {
@@ -1268,8 +1408,100 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         TestEvent: TestEvent
       };
     } // /factory
-    // /module
 
+  }; // /module
+
+  module.exports = {
+    name: 'time',
+    factory: function factory() {
+      'use strict';
+
+      var UNITS = {
+        SECONDS: 's',
+        MILLISECONDS: 'ms',
+        MICROSECONDS: 'us',
+        NANOSECONDS: 'ns'
+      };
+      var UNITS_ARRAY = Object.keys(UNITS).map(function (key) {
+        return UNITS[key];
+      });
+
+      var isValidUnit = function isValidUnit(unit) {
+        return UNITS_ARRAY.includes(unit);
+      };
+
+      var makeClock = function makeClock(MULTIPLIERS, makeTime) {
+        var clock = function clock(option) {
+          switch (option) {
+            case 's':
+              return makeTime(MULTIPLIERS.SECONDS);
+
+            case 'ms':
+              return makeTime(MULTIPLIERS.MILLISECONDS);
+
+            case 'us':
+              return makeTime(MULTIPLIERS.MICROSECONDS);
+
+            case 'ns':
+              return makeTime(MULTIPLIERS.NANOSECONDS);
+
+            default:
+              return {
+                seconds: makeTime(MULTIPLIERS.SECONDS),
+                milliseconds: makeTime(MULTIPLIERS.MILLISECONDS),
+                microseconds: makeTime(MULTIPLIERS.MICROSECONDS),
+                nanoseconds: makeTime(MULTIPLIERS.NANOSECONDS)
+              };
+          }
+        };
+
+        clock.seconds = function () {
+          return clock(UNITS.SECONDS);
+        };
+
+        clock.milliseconds = function () {
+          return clock(UNITS.MILLISECONDS);
+        };
+
+        clock.microseconds = function () {
+          return clock(UNITS.MICROSECONDS);
+        };
+
+        clock.nanoseconds = function () {
+          return clock(UNITS.NANOSECONDS);
+        };
+
+        return clock;
+      };
+
+      var NODE_MULTIPLIERS = {
+        SECONDS: [1, 1e-9],
+        MILLISECONDS: [1e3, 1e-6],
+        MICROSECONDS: [1e6, 1e-3],
+        NANOSECONDS: [1e9, 1]
+      };
+      var BROWSER_MULTIPLIERS = {
+        SECONDS: 0.001,
+        MILLISECONDS: 1,
+        MICROSECONDS: 1000,
+        NANOSECONDS: 1000000
+      };
+
+      var nodeClock = function nodeClock(multipliers, hrtime) {
+        var time = Array.isArray(hrtime) ? process.hrtime(hrtime) : process.hrtime();
+        return time[0] * multipliers[0] + time[1] * multipliers[1];
+      };
+
+      var browserClock = function browserClock(multiplier, hrtime) {
+        return window.performance.now() * multiplier;
+      };
+
+      var clock = typeof process !== 'undefined' && typeof process.hrtime === 'function' ? makeClock(NODE_MULTIPLIERS, nodeClock) : makeClock(BROWSER_MULTIPLIERS, browserClock);
+      return {
+        clock: clock,
+        isValidUnit: isValidUnit
+      };
+    }
   };
   module.exports = {
     name: 'runTests',
@@ -1365,9 +1597,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         runTests: runTests
       };
     } // /factory
-    // /module
 
-  };
+  }; // /module
+
   module.exports = {
     name: 'consoleStyles',
     factory: function factory() {
@@ -2223,14 +2455,14 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       return {
         TallyFactory: TallyFactory
       };
-    } // resolve the dependency graph
-
-  };
+    }
+  }; // resolve the dependency graph
 
   function isPromise(input) {
     return input && typeof input.then === 'function';
   }
 
+  var time = module.factories.timeFactory();
   var suites = {};
   var supposed = null; // resolve the dependency graph
 
@@ -2243,7 +2475,17 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }),
         runTests = _module$factories$run.runTests;
 
-    var _module$factories$Tes = module.factories.TestEventFactory({}),
+    var envvars = {
+      assertionLibrary: {},
+      reporters: ['DEFAULT'],
+      useColors: true,
+      timeUnits: 'us'
+    };
+
+    var _module$factories$Tes = module.factories.TestEventFactory({
+      clock: time.clock,
+      timeUnits: envvars.timeUnits
+    }),
         TestEvent = _module$factories$Tes.TestEvent;
 
     var _module$factories$pub = module.factories.pubsubFactory({
@@ -2260,11 +2502,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         allSubscriptions = _ref3.allSubscriptions,
         reset = _ref3.reset;
 
-    var envvars = {
-      assertionLibrary: {},
-      reporters: ['DEFAULT'],
-      useColors: true
-    };
     var consoleStyles = module.factories.consoleStylesFactory({
       envvars: envvars
     }).consoleStyles;
@@ -2396,7 +2633,12 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }),
         AsyncTest = _module$factories$Asy.AsyncTest;
 
-    var _module$factories$mak = module.factories.makeBatchFactory({}),
+    var _module$factories$has = module.factories.hashFactory(),
+        hash = _module$factories$has.hash;
+
+    var _module$factories$mak = module.factories.makeBatchFactory({
+      hash: hash
+    }),
         BatchComposer = _module$factories$mak.BatchComposer;
 
     var _module$factories$mak2 = module.factories.makeSuiteConfigFactory({
@@ -2438,5 +2680,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
   });
   suites.supposed = supposed;
   supposed.suites = suites;
+  supposed.time = time;
   window.supposed = supposed;
 })(window);

@@ -1,9 +1,10 @@
 module.exports = {
   name: 'TestEvent',
-  factory: () => {
+  factory: (dependencies) => {
     'use strict'
 
-    const TYPE_EXPRESSION = /(^START$)|(^START_BATCH$)|(^TEST$)|(^INFO$)|(^END_BATCH$)|(^END_TALLY$)|(^END$)/
+    const { clock } = dependencies
+    const TYPE_EXPRESSION = /(^START$)|(^START_BATCH$)|(^START_TEST$)|(^TEST$)|(^INFO$)|(^END_BATCH$)|(^END_TALLY$)|(^FINAL_TALLY$)|(^END$)/
     const STATUS_EXPRESSION = /(^PASSED$)|(^SKIPPED$)|(^FAILED$)|(^BROKEN$)/
     let testCount = 0
 
@@ -32,6 +33,16 @@ module.exports = {
 
       self.type = getType(event.type)
 
+      if (typeof event.time === 'number' || typeof event.time === 'bigint') {
+        self.time = event.time
+      } else {
+        self.time = clock()
+      }
+
+      if (event.duration) {
+        self.duration = event.duration
+      }
+
       if (self.type === TestEvent.types.TEST) {
         testCount += 1
         self.count = testCount
@@ -55,6 +66,10 @@ module.exports = {
         self.batchId = event.batchId
       }
 
+      if (event.testId) {
+        self.testId = event.testId
+      }
+
       if (event.suiteId) {
         self.suiteId = event.suiteId
       }
@@ -67,8 +82,8 @@ module.exports = {
         self.log = event.log
       }
 
-      if (event.time) {
-        self.time = event.time
+      if (event.tally) {
+        self.tally = event.tally
       }
 
       if (event.totals) {
@@ -85,10 +100,12 @@ module.exports = {
     TestEvent.types = {
       START: 'START',
       START_BATCH: 'START_BATCH',
+      START_TEST: 'START_TEST',
       TEST: 'TEST',
       INFO: 'INFO',
       END_BATCH: 'END_BATCH',
       END_TALLY: 'END_TALLY',
+      FINAL_TALLY: 'FINAL_TALLY',
       END: 'END'
     }
 

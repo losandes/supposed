@@ -65,9 +65,9 @@ module.exports = {
     }
 
     const mapper = (config, makeBatch, byMatcher) => (batch) => {
-      const batchId = makeBatchId()
       const processed = makeBatch(batch)
         .filter(byMatcher)
+      const batchId = processed.length ? processed[0].id : makeBatchId()
 
       return {
         batchId,
@@ -96,7 +96,7 @@ module.exports = {
           return context
         }).then((context) => {
           if (publishStartAndEnd) {
-            return publish({ type: TestEvent.types.START, time: Date.now(), suiteId: config.name })
+            return publish({ type: TestEvent.types.START, suiteId: config.name })
               .then(() => context)
           }
 
@@ -106,7 +106,6 @@ module.exports = {
           return publish({
             type: TestEvent.types.START_BATCH,
             batchId: batchId,
-            time: Date.now(),
             suiteId: config.name,
             plan
           }).then(() => context)
@@ -125,7 +124,6 @@ module.exports = {
           return publish({
             type: TestEvent.types.END_BATCH,
             batchId: batchId,
-            time: Date.now(),
             suiteId: config.name,
             plan: {
               count: plan.count,
@@ -145,7 +143,6 @@ module.exports = {
             return publish(new TestEvent({ type: TestEvent.types.END_TALLY, suiteId: config.name }))
               .then(() => publish(new TestEvent({
                 type: TestEvent.types.END,
-                time: Date.now(),
                 suiteId: config.name,
                 totals: batchTotals
               })))
@@ -168,7 +165,7 @@ module.exports = {
     const runner = (config, test) => (findAndRun) => () => {
       publishStartAndEnd = false
 
-      return publish({ type: TestEvent.types.START, time: Date.now(), suiteId: config.name })
+      return publish({ type: TestEvent.types.START, suiteId: config.name })
         .then(() => findAndRun())
         .then((output) => {
           if (output.broken.length) {
@@ -193,6 +190,14 @@ module.exports = {
             .then(() => output)
         })
         .then((output) => {
+          return publish(new TestEvent({
+            type: TestEvent.types.FINAL_TALLY,
+            suiteId: config.name,
+            totals: Tally.getTally()
+          }))
+            .then(() => output)
+        })
+        .then((output) => {
           // only get the tally _after_ END_TALLY was emitted
           return {
             output,
@@ -201,7 +206,6 @@ module.exports = {
         }).then((context) => {
           return publish(new TestEvent({
             type: TestEvent.types.END,
-            time: Date.now(),
             suiteId: config.name,
             totals: context.tally
           })).then(() => context)
@@ -255,7 +259,6 @@ module.exports = {
         test.printSummary = () => {
           return publish(new TestEvent({
             type: TestEvent.types.END,
-            time: Date.now(),
             suiteId: config.name,
             totals: Tally.getSimpleTally()
           }))

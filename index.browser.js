@@ -24,6 +24,7 @@
     return input && typeof input.then === 'function'
   }
 
+  const time = module.factories.timeFactory()
   const suites = {}
   let supposed = null
 
@@ -31,7 +32,17 @@
   function Supposed (options) {
     const { allSettled } = module.factories.allSettledFactory({})
     const { runTests } = module.factories.runTestsFactory({ allSettled })
-    const { TestEvent } = module.factories.TestEventFactory({})
+
+    const envvars = {
+      assertionLibrary: {},
+      reporters: ['DEFAULT'],
+      useColors: true,
+      timeUnits: 'us'
+    }
+
+    const clock = () => time.clock(envvars.timeUnits)
+    const duration = (start, end) => time.duration(start, end, envvars.timeUnits)
+    const { TestEvent } = module.factories.TestEventFactory({ clock })
     const { Pubsub } = module.factories.pubsubFactory({
       allSettled,
       isPromise,
@@ -39,16 +50,10 @@
     })
     const { publish, subscribe, subscriptionExists, allSubscriptions, reset } = new Pubsub()
 
-    const envvars = {
-      assertionLibrary: {},
-      reporters: ['DEFAULT'],
-      useColors: true
-    }
-
     const consoleStyles = module.factories.consoleStylesFactory({ envvars }).consoleStyles
 
     const { TallyFactory } = module.factories.TallyFactory({ publish, TestEvent })
-    const { Tally } = TallyFactory()
+    const { Tally } = TallyFactory({ clock, duration })
     const { ReporterFactory } = module.factories.reporterFactoryFactory({})
     const reporterFactory = new ReporterFactory()
     const ArrayReporter = module.factories.ArrayReporterFactory({}).ArrayReporter
@@ -136,8 +141,15 @@
       }
     })
 
-    const { AsyncTest } = module.factories.AsyncTestFactory({ isPromise, publish, TestEvent })
-    const { BatchComposer } = module.factories.makeBatchFactory({})
+    const { AsyncTest } = module.factories.AsyncTestFactory({
+      isPromise,
+      publish,
+      TestEvent,
+      clock,
+      duration
+    })
+    const { hash } = module.factories.hashFactory()
+    const { BatchComposer } = module.factories.makeBatchFactory({ hash })
 
     const { makeSuiteConfig } = module.factories.makeSuiteConfigFactory({
       defaults: envvars,
@@ -172,6 +184,7 @@
   supposed = Supposed({ name: 'supposed' })
   suites.supposed = supposed
   supposed.suites = suites
+  supposed.time = time
 
   window.supposed = supposed
 }(window))

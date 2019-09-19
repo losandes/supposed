@@ -1,7 +1,9 @@
 module.exports = {
   name: 'readEnvvars',
-  factory: () => {
+  factory: (dependencies) => {
     'use strict'
+
+    const { isValidUnit } = dependencies
 
     function Switch (lowercaseLetter) { // eslint-disable-line no-unused-vars
       return { switch: `-${lowercaseLetter}`.toUpperCase() }
@@ -54,6 +56,9 @@ module.exports = {
           process.env.SUPPOSED_NO_COLOR === 'true' ||
             process.env.SUPPOSED_NO_COLOR === '1'
         ) ? false
+          : undefined,
+        timeUnits: process.env.SUPPOSED_TIME_UNITS && isValidUnit(process.env.SUPPOSED_TIME_UNITS.trim().toLowerCase())
+          ? process.env.SUPPOSED_TIME_UNITS.trim().toLowerCase()
           : undefined
       }
 
@@ -66,6 +71,7 @@ module.exports = {
         const match = findMatch(Option('m', 'match'), value, idx, args)
         const file = findMatch(Option('f', 'file'), value, idx, args)
         const noColor = findMatch(Swatch('no-color'), value, idx, args)
+        const timeUnits = findMatch(Option('u', 'time-units'), value, idx, args)
 
         if (reporters) {
           output.reporters = reporters.split(',').map((reporter) => reporter.trim().toUpperCase())
@@ -81,6 +87,10 @@ module.exports = {
 
         if (noColor) {
           output.useColors = false
+        }
+
+        if (timeUnits && isValidUnit(timeUnits.trim().toLowerCase())) {
+          output.timeUnits = timeUnits.trim().toLowerCase()
         }
       }) // /forEach
 

@@ -7,6 +7,7 @@ _Supposed_ is a simple test runner for Node.js, TypeScript, and the Browser that
 * Provides BDD, TDD, xunit, and custom Domain Service Languages (DSLs)
 * Supports test discovery, and execution
 * Has many reporter (test output) options: concise (default - like mocha, but without nesting), TAP, JSON, nyan cat, block (jest style), brief (summary and errors only), array (no output, but test output is available on reporter output), noop (can be useful with pubsub (see below)), custom (supply your own easily)
+* Includes test start, and end times with durations accurate to the microsecond
 * Supports pubsub - you can subscribe to the events to write your own reporter, or stream test output to a file or other services
 * Can run in the terminal/console
 * Can start a server for browser testing
@@ -190,21 +191,25 @@ Supposed has options that can be set with command-line arguments, or envvars. Th
 * **match description**: run only tests whose descriptions/behaviors match the regular expression
 * **match file name**: run only tests whose file names match the regular expression (only used with runner)
 * **no-color**: display all output in black + white
+* **time-units**: the units to use for event timestamps (`s|ms|us|ns`) (default is `us`)
+
+> NOTE that timestamps use numeric representations of hrtime in nodejs, and performance.now in the browser. Changing the time-unit doesn't necessarily change the reporter output - it sets the units that are used for event times.
 
 ### Arguments
 
 * `-r` or `--reporter` (reporters)
 * `-m` or `--match` (matches description)
 * `-f` or `--file` (matches file name)
+* `-u` or `--time-units` (the units to use for timestamps)
 * `--no-color` (b+w terminal output)
 
 
 ```Shell
 $ npm install --save-dev tap-parser
-$ node tests -m foo -r tap | npx tap-parser -j | jq
+$ node tests -m foo -r tap -u ms | npx tap-parser -j | jq
 ```
 
-> In that example, we run tests that have the word "foo" in their descriptions, using TAP output. We pipe the output of the tests into another package, [tap-parser](https://www.npmjs.com/package/tap-parser), and then pipe the output of that package into [jq](https://stedolan.github.io/jq/).
+> In that example, we run tests that have the word "foo" in their descriptions, using TAP output, and milliseconds for timestamps. We pipe the output of the tests into another package, [tap-parser](https://www.npmjs.com/package/tap-parser), and then pipe the output of that package into [jq](https://stedolan.github.io/jq/).
 
 ```Shell
 $ node tests --no-color
@@ -215,12 +220,14 @@ $ node tests --no-color
 * `SUPPOSED_REPORTERS` (reporters)
 * `SUPPOSED_MATCH` (matches description)
 * `SUPPOSED_FILE` (matches file name)
+* `SUPPOSED_TIME_UNITS` (the units to use for timestamps)
 * `SUPPOSED_NO_COLOR` (b+w terminal output)
 
 ```Shell
 $ npm install --save-dev tap-parser
 $ export SUPPOSED_REPORTERS=tap
 $ export SUPPOSED_MATCH=continuous-integration
+$ export SUPPOSED_TIME_UNITS=ms
 $ export SUPPOSED_NO_COLOR=true
 $ node tests | npx tap-parser -j | jq
 ```
@@ -632,8 +639,8 @@ module.exports = require('supposed')
 * [Marking Tests as TODO](#skipping-tests)
 * [Running Specific Tests (only)](#running-specific-tests-only)
 * [Nest/Branch Inheritance](#nest-branch-inheritance)
-- [] [Writing a Test Reporter](#writing-a-test-reporter)
-- [] [Subscribing to Test Events](#subscribing-to-test-events)
+* [Writing a Test Reporter](#subscribing-to-test-events)
+* [Subscribing to Test Events](#subscribing-to-test-events)
 * [Streaming Output to a File](#streaming-output-to-a-file)
 - [] [Adding Information to Report Output (event.log)](#adding-information-to-report-output-event.log)
 - [] [Adding Context to Test Events (event.context)](#adding-context-to-test-events-event.context)
@@ -1080,6 +1087,49 @@ test('when dividing a number by zero', {
   }
 })
 ```
+
+### Subscribing to Test Events
+Supposed uses a simple event system (pubsub) to report. You can subscribe to these events in two different ways. Before demonstrating that, let's look at the types of events you can expect. The interface has properties for many different types of events. Not all events produce all of these properties.
+
+```TypeScript
+interface ITestEvent {
+  type: string;
+  status?: string;  // only when type === 'TEST'
+  time?: number;
+  behavior?: string;
+  error?: Error;
+  suiteId?: string;
+  batchId?: string;
+  testId?: string;
+  plan?: {
+    count: number;
+    completed: number;
+  };
+  log?: any;      // only when type === 'TEST'
+  context?: any;  // only when type === 'TEST'
+  tally?: {
+    total: number;
+    passed: number;
+    skipped: number;
+    failed: number;
+    broken: number;
+    startTime: number;
+    endTime: number;
+    results: ITestEvent[];
+    batches: { [batchId: string]: ITally };
+  };
+  totals?: {
+    total: number;
+    passed: number;
+    skipped: number;
+    failed: number;
+    broken: number;
+    startTime: number;
+    endTime: number;
+  };
+}
+```
+
 
 ### Streaming Output to a File
 The following examples assumes you have a `./tests.js` file that executes your tests:

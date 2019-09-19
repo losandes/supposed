@@ -53,8 +53,8 @@ module.exports = function (test, dependencies) {
       },
       'it should use the configured reporter': (t) => (err, actual) => {
         t.ifError(err)
-        const found = actual.events.find((event) => event.behavior === actual.expectedBehavior)
-        t.strictEqual(found.type, 'TEST')
+        const found = actual.events.filter((event) => event.behavior === actual.expectedBehavior)
+        t.strictEqual(found[1].type, 'TEST')
       },
       // SOMEDAY - this test would cause confusing output for this suite
       '# TODO and the reporter is unknown, it should use the default reporter': (t) => {}
@@ -77,11 +77,11 @@ module.exports = function (test, dependencies) {
       },
       'it should use all configured reporters': (t) => (err, actual) => {
         t.ifError(err)
-        const found1 = actual.events1.find((event) => event.behavior === actual.expectedBehavior)
-        const found2 = actual.events1.find((event) => event.behavior === actual.expectedBehavior)
+        const found1 = actual.events1.filter((event) => event.behavior === actual.expectedBehavior)
+        const found2 = actual.events1.filter((event) => event.behavior === actual.expectedBehavior)
 
-        t.strictEqual(found1.type, 'TEST')
-        t.strictEqual(found2.type, 'TEST')
+        t.strictEqual(found1[1].type, 'TEST')
+        t.strictEqual(found2[1].type, 'TEST')
       }
     },
     'when a new suite is created with a reporter (legacy: `{ report (event: ITestEvent): Promise<void> }`)': {
@@ -101,8 +101,8 @@ module.exports = function (test, dependencies) {
       },
       'it should use the configured reporter': (t) => (err, actual) => {
         t.ifError(err)
-        const found = actual.events.find((event) => event.behavior === actual.expectedBehavior)
-        t.strictEqual(found.type, 'TEST')
+        const found = actual.events.filter((event) => event.behavior === actual.expectedBehavior)
+        t.strictEqual(found[1].type, 'TEST')
       }
     },
     'when a new suite is created with a reporter (`{ write (event: ITestEvent): Promise<void> }`)': {
@@ -122,8 +122,8 @@ module.exports = function (test, dependencies) {
       },
       'it should use the configured reporter': (t) => (err, actual) => {
         t.ifError(err)
-        const found = actual.events.find((event) => event.behavior === actual.expectedBehavior)
-        t.strictEqual(found.type, 'TEST')
+        const found = actual.events.filter((event) => event.behavior === actual.expectedBehavior)
+        t.strictEqual(found[1].type, 'TEST')
       }
     },
     'when a new suite is created with a reporter (`(event: ITestEvent): Promise<void>`)': {
@@ -141,8 +141,8 @@ module.exports = function (test, dependencies) {
       },
       'it should use the configured reporter': (t) => (err, actual) => {
         t.ifError(err)
-        const found = actual.events.find((event) => event.behavior === actual.expectedBehavior)
-        t.strictEqual(found.type, 'TEST')
+        const found = actual.events.filter((event) => event.behavior === actual.expectedBehavior)
+        t.strictEqual(found[1].type, 'TEST')
       }
     },
     'when a new suite is created with given and when synonyms': {

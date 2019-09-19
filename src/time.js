@@ -3,85 +3,108 @@ module.exports = {
   factory: () => {
     'use strict'
 
-    if (typeof process !== 'undefined' && typeof process.hrtime === 'function') {
-      const MULTIPLIERS = {
-        SECONDS: [1, 1e-9],
-        MILLISECONDS: [1e3, 1e-6],
-        MICROSECONDS: [1e6, 1e-3],
-        NANOSECONDS: [1e9, 1]
-      }
-
-      const _hrtime = (multipliers, hrtime) => {
-        const time = Array.isArray(hrtime) ? process.hrtime(hrtime) : process.hrtime()
-        return (time[0] * multipliers[0]) + (time[1] * multipliers[1])
-      }
-
-      const now = {
-        in: {
-          seconds: () => _hrtime(MULTIPLIERS.SECONDS),
-          milliseconds: () => _hrtime(MULTIPLIERS.MILLISECONDS),
-          microseconds: () => _hrtime(MULTIPLIERS.MICROSECONDS),
-          nanoseconds: () => _hrtime(MULTIPLIERS.NANOSECONDS)
-        }
-      }
-
-      const diff = {
-        in: {
-          seconds: (hrtime) => _hrtime(MULTIPLIERS.SECONDS, hrtime),
-          milliseconds: (hrtime) => _hrtime(MULTIPLIERS.MILLISECONDS, hrtime),
-          microseconds: (hrtime) => _hrtime(MULTIPLIERS.MICROSECONDS, hrtime),
-          nanoseconds: (hrtime) => _hrtime(MULTIPLIERS.NANOSECONDS, hrtime)
-        }
-      }
-
-      return { now, diff }
-    }
-
-    const OPTIONS = {
+    const UNITS = {
       SECONDS: 's',
       MILLISECONDS: 'ms',
       MICROSECONDS: 'us',
       NANOSECONDS: 'ns'
     }
+    const UNITS_ARRAY = Object.keys(UNITS).map((key) => UNITS[key])
+    const isValidUnit = (unit) => UNITS_ARRAY.includes(unit)
 
-    // TODO: look at the performance API for this
-    const _hrtime = (option /* 's' | 'ms' | 'us' | 'ns' */, timeSinceEpoch) => {
-      const time = typeof timeSinceEpoch === 'number'
-        ? timeSinceEpoch
-        : Date.now()
+    const makeClock = (MULTIPLIERS, makeTime) => {
+      const clock = function (option) {
+        switch (option) {
+          case 's':
+            return makeTime(MULTIPLIERS.SECONDS)
+          case 'ms':
+            return makeTime(MULTIPLIERS.MILLISECONDS)
+          case 'us':
+            return makeTime(MULTIPLIERS.MICROSECONDS)
+          case 'ns':
+            return makeTime(MULTIPLIERS.NANOSECONDS)
+          default:
+            return {
+              seconds: makeTime(MULTIPLIERS.SECONDS),
+              milliseconds: makeTime(MULTIPLIERS.MILLISECONDS),
+              microseconds: makeTime(MULTIPLIERS.MICROSECONDS),
+              nanoseconds: makeTime(MULTIPLIERS.NANOSECONDS)
+            }
+        }
+      }
 
-      switch (option) {
-        case 's':
-          return time / 1000
-        case 'ms':
-          return time
-        case 'us':
-          return time * 1000
-        case 'ns':
-          return time * 1000000
-        default:
-          return time
+      clock.seconds = () => clock(UNITS.SECONDS)
+      clock.milliseconds = () => clock(UNITS.MILLISECONDS)
+      clock.microseconds = () => clock(UNITS.MICROSECONDS)
+      clock.nanoseconds = () => clock(UNITS.NANOSECONDS)
+
+      return clock
+    }
+
+    const CONVERSIONS = {
+      s: {
+        SECONDS: 1,
+        MILLISECONDS: 1000,
+        MICROSECONDS: 1000000,
+        NANOSECONDS: 1000000000
+      },
+      ms: {
+        SECONDS: 0.001,
+        MILLISECONDS: 1,
+        MICROSECONDS: 1000,
+        NANOSECONDS: 1000000
+      },
+      us: {
+        SECONDS: 0.000001,
+        MILLISECONDS: 0.001,
+        MICROSECONDS: 1,
+        NANOSECONDS: 1000
+      },
+      ns: {
+        SECONDS: 1e9,
+        MILLISECONDS: 0.000001,
+        MICROSECONDS: 0.001,
+        NANOSECONDS: 1
       }
     }
 
-    const now = {
-      in: {
-        seconds: () => _hrtime(OPTIONS.SECONDS),
-        milliseconds: () => _hrtime(OPTIONS.MILLISECONDS),
-        microseconds: () => _hrtime(OPTIONS.MICROSECONDS),
-        nanoseconds: () => _hrtime(OPTIONS.NANOSECONDS)
+    const duration = (start, end, timeUnits) => {
+      const conversions = CONVERSIONS[timeUnits]
+
+      return {
+        seconds: (end - start) * conversions.SECONDS,
+        milliseconds: (end - start) * conversions.MILLISECONDS,
+        microseconds: (end - start) * conversions.MICROSECONDS,
+        nanoseconds: (end - start) * conversions.NANOSECONDS
       }
     }
 
-    const diff = {
-      in: {
-        seconds: (hrtime) => _hrtime(OPTIONS.SECONDS, hrtime),
-        milliseconds: (hrtime) => _hrtime(OPTIONS.MILLISECONDS, hrtime),
-        microseconds: (hrtime) => _hrtime(OPTIONS.MICROSECONDS, hrtime),
-        nanoseconds: (hrtime) => _hrtime(OPTIONS.NANOSECONDS, hrtime)
-      }
+    const NODE_MULTIPLIERS = {
+      SECONDS: [1, 1e-9],
+      MILLISECONDS: [1e3, 1e-6],
+      MICROSECONDS: [1e6, 1e-3],
+      NANOSECONDS: [1e9, 1]
+    }
+    const BROWSER_MULTIPLIERS = {
+      SECONDS: 0.001,
+      MILLISECONDS: 1,
+      MICROSECONDS: 1000,
+      NANOSECONDS: 1000000
     }
 
-    return { now, diff }
+    const nodeClock = (multipliers, hrtime) => {
+      const time = Array.isArray(hrtime) ? process.hrtime(hrtime) : process.hrtime()
+      return (time[0] * multipliers[0]) + (time[1] * multipliers[1])
+    }
+
+    const browserClock = (multiplier, hrtime) => {
+      return window.performance.now() * multiplier
+    }
+
+    const clock = typeof process !== 'undefined' && typeof process.hrtime === 'function'
+      ? makeClock(NODE_MULTIPLIERS, nodeClock)
+      : makeClock(BROWSER_MULTIPLIERS, browserClock)
+
+    return { clock, isValidUnit, duration }
   }
 }

@@ -12,11 +12,13 @@ const modules = [beginning]
 // src
 modules.push(fs.readFileSync('./src/all-settled.js'))
 modules.push(fs.readFileSync('./src/AsyncTest.js'))
+modules.push(fs.readFileSync('./src/hash.js'))
 modules.push(fs.readFileSync('./src/make-batch.js'))
 modules.push(fs.readFileSync('./src/make-suite-config.js'))
 modules.push(fs.readFileSync('./src/pubsub.js'))
 modules.push(fs.readFileSync('./src/Suite.js'))
 modules.push(fs.readFileSync('./src/TestEvent.js'))
+modules.push(fs.readFileSync('./src/time.js'))
 
 // runners
 modules.push(fs.readFileSync('./src/runners/run-tests.js'))

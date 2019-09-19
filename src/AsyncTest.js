@@ -3,7 +3,7 @@ module.exports = {
   factory: (dependencies) => {
     'use strict'
 
-    const { isPromise, publish, TestEvent } = dependencies
+    const { isPromise, publish, TestEvent, clock, duration } = dependencies
 
     function noop () { }
 
@@ -147,18 +147,26 @@ module.exports = {
      * @param {Object} context
      */
     function assertOne (batchId, assertion, test) {
-      const pass = (result) => publish({
-        type: TestEvent.types.TEST,
-        status: TestEvent.status.PASSED,
-        batchId,
-        behavior: assertion.behavior,
-        log: maybeLog(result),
-        context: maybeContext(result)
-      })
+      const pass = (startTime) => (result) => {
+        const endTime = clock()
+
+        return publish({
+          type: TestEvent.types.TEST,
+          status: TestEvent.status.PASSED,
+          batchId,
+          testId: assertion.id,
+          behavior: assertion.behavior,
+          time: endTime,
+          duration: duration(startTime, endTime),
+          log: maybeLog(result),
+          context: maybeContext(result)
+        })
+      }
       const fail = (e) => publish({
         type: TestEvent.types.TEST,
         status: TestEvent.status.FAILED,
         batchId,
+        testId: assertion.id,
         behavior: assertion.behavior,
         error: e
       })
@@ -169,15 +177,23 @@ module.exports = {
             type: TestEvent.types.TEST,
             status: TestEvent.status.SKIPPED,
             batchId,
+            testId: assertion.id,
             behavior: assertion.behavior
           })
         }
 
-        const result = test()
+        let startTime
 
-        return isPromise(result)
-          ? result.then(pass).catch(fail)
-          : pass(result)
+        return publish({
+          type: TestEvent.types.START_TEST,
+          batchId,
+          testId: assertion.id,
+          behavior: assertion.behavior
+        }).then(() => {
+          startTime = clock()
+        }).then(() => test())
+          .then((result) => pass(startTime)(result))
+          .catch(fail)
       } catch (e) {
         return fail(e)
       }

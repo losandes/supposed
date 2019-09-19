@@ -15,10 +15,10 @@ module.exports = (describe) => {
       },
       'it should include the context in the event': (t) => (err, actual) => {
         t.ifError(err)
-        const found = actual.events.find((event) => event.behavior === actual.expectedBehavior)
-        t.strictEqual(found.type, 'TEST')
-        t.strictEqual(found.status, 'PASSED')
-        t.strictEqual(found.context, expectedContext.context)
+        const found = actual.events.filter((event) => event.behavior === actual.expectedBehavior)
+        t.strictEqual(found[1].type, 'TEST')
+        t.strictEqual(found[1].status, 'PASSED')
+        t.strictEqual(found[1].context, expectedContext.context)
       }
     },
     'when an assertion passes, and returns a Promise with a `context` property': {
@@ -30,10 +30,10 @@ module.exports = (describe) => {
       },
       'it should include the context in the event': (t) => (err, actual) => {
         t.ifError(err)
-        const found = actual.events.find((event) => event.behavior === actual.expectedBehavior)
-        t.strictEqual(found.type, 'TEST')
-        t.strictEqual(found.status, 'PASSED')
-        t.strictEqual(found.context, expectedContext.context)
+        const found = actual.events.filter((event) => event.behavior === actual.expectedBehavior)
+        t.strictEqual(found[1].type, 'TEST')
+        t.strictEqual(found[1].status, 'PASSED')
+        t.strictEqual(found[1].context, expectedContext.context)
       }
     }
   })

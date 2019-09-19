@@ -8,12 +8,14 @@ const path = require('path')
 // src
 const allSettledFactory = require('./src/all-settled.js').factory
 const AsyncTestFactory = require('./src/AsyncTest.js').factory
+const HashFactory = require('./src/hash.js').factory
 const makeBatchFactory = require('./src/make-batch.js').factory
 const makeSuiteConfigFactory = require('./src/make-suite-config.js').factory
 const pubsubFactory = require('./src/pubsub.js').factory
 const readEnvvarsFactory = require('./src/read-envvars.js').factory
 const SuiteFactory = require('./src/Suite.js').factory
 const TestEventFactory = require('./src/TestEvent.js').factory
+const TimeFactory = require('./src/time.js').factory
 
 // runners
 const findFilesFactory = require('./src/runners/find-files.js').factory
@@ -45,26 +47,21 @@ function isPromise (input) {
   return input && typeof input.then === 'function'
 }
 
+const time = TimeFactory()
 const suites = {}
 let supposed = null
 
 // resolve the dependency graph
 function Supposed (options) {
   const { allSettled } = allSettledFactory({})
-  const { readEnvvars } = readEnvvarsFactory({})
-  const { TestEvent } = TestEventFactory({})
-  const { Pubsub } = pubsubFactory({
-    allSettled,
-    isPromise,
-    TestEvent
-  })
-  const { publish, subscribe, subscriptionExists, allSubscriptions, reset } = new Pubsub()
+  const { readEnvvars } = readEnvvarsFactory({ isValidUnit: time.isValidUnit })
 
   const envvars = {
     ...{
       assertionLibrary: assert,
       reporters: ['DEFAULT'],
-      useColors: true
+      useColors: true,
+      timeUnits: 'us'
     },
     ...(() => {
       const output = {}
@@ -80,6 +77,16 @@ function Supposed (options) {
     })()
   }
 
+  const clock = () => time.clock(envvars.timeUnits)
+  const duration = (start, end) => time.duration(start, end, envvars.timeUnits)
+  const { TestEvent } = TestEventFactory({ clock })
+  const { Pubsub } = pubsubFactory({
+    allSettled,
+    isPromise,
+    TestEvent
+  })
+  const { publish, subscribe, subscriptionExists, allSubscriptions, reset } = new Pubsub()
+
   const { findFiles } = findFilesFactory({ fs, path })
   const { resolveTests } = resolveTestsFactory({})
   const { runServer } = runServerFactory({})
@@ -88,8 +95,8 @@ function Supposed (options) {
   const consoleStyles = consoleStylesFactory({ envvars }).consoleStyles
   const consoleUtils = consoleUtilsFactory({}).consoleUtils
 
-  const { TallyFactory } = TallyFactoryFactory({ publish, TestEvent })
-  const { Tally } = TallyFactory()
+  const { TallyFactory } = TallyFactoryFactory({ publish, TestEvent, clock, duration })
+  const { Tally } = TallyFactory({})
   const { ReporterFactory } = ReporterFactoryFactory({})
   const reporterFactory = new ReporterFactory()
   const ArrayReporter = ArrayReporterFactory({}).ArrayReporter
@@ -178,8 +185,15 @@ function Supposed (options) {
     TestEvent
   }).NyanReporter)
 
-  const { AsyncTest } = AsyncTestFactory({ isPromise, publish, TestEvent })
-  const { BatchComposer } = makeBatchFactory({})
+  const { AsyncTest } = AsyncTestFactory({
+    isPromise,
+    publish,
+    TestEvent,
+    clock,
+    duration
+  })
+  const { hash } = HashFactory()
+  const { BatchComposer } = makeBatchFactory({ hash })
 
   const { makeSuiteConfig } = makeSuiteConfigFactory({
     defaults: envvars,
@@ -218,5 +232,6 @@ function Supposed (options) {
 supposed = Supposed({ name: 'supposed' })
 suites.supposed = supposed
 supposed.suites = suites
+supposed.time = time
 
 module.exports = supposed

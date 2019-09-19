@@ -44,6 +44,24 @@ interface ITally {
   broken: number;
   startTime: number;
   endTime: number;
+  duration: {
+    seconds: number;
+    milliseconds: number;
+    microseconds: number;
+    nanoseconds: number;
+  }
+}
+
+interface IFinalTally {
+  total: number;
+  passed: number;
+  skipped: number;
+  failed: number;
+  broken: number;
+  startTime: number;
+  endTime: number;
+  results: ITestEvent[];
+  batches: { [batchId: string]: ITally };
 }
 
 // different events have different properties - this has all-possibilities (nullable)
@@ -55,12 +73,14 @@ export interface ITestEvent {
   error?: Error;
   suiteId?: string;
   batchId?: string;
+  testId?: string;
   plan?: {
     count: number;
     completed: number;
   };
   log?: any;      // only when type === 'TEST'
   context?: any;  // only when type === 'TEST'
+  tally?: IFinalTally;
   totals?: ITally;
 }
 

@@ -52,6 +52,22 @@ module.exports = {
         : `${newLine}${stack}${newLine}`
     }
 
+    const formatDuration = (duration) => {
+      if (!duration) {
+        return ''
+      }
+
+      if (duration.seconds > 1) {
+        return `${Math.round(duration.seconds)}s`
+      } else if (duration.milliseconds > 1) {
+        return `${Math.round(duration.milliseconds)}ms`
+      } else if (duration.microseconds > 1) {
+        return `${Math.round(duration.microseconds)}µs`
+      } else if (duration.nanoseconds > 1) {
+        return `${Math.round(duration.nanoseconds)}ns`
+      }
+    }
+
     function DefaultFormatter () {
       const format = (event) => {
         if (event.type === TestEvent.types.START) {
@@ -62,12 +78,12 @@ module.exports = {
             `  passed: ${consoleStyles.green(totals.passed)}` +
             `  failed: ${consoleStyles.red(totals.failed + totals.broken)}` +
             `  skipped: ${consoleStyles.yellow(totals.skipped)}` +
-            `  duration: ${(totals.endTime - totals.startTime) / 1000}${newLine}`
+            `  duration: ${formatDuration(totals.duration)}${newLine}`
         } else if (event.type === TestEvent.types.INFO) {
           return `${SYMBOLS[event.type]}${event.behavior}${formatInfo(event.log)}`
         } else if (event.type === TestEvent.types.TEST) {
           if (!event.error) {
-            return `${SYMBOLS[event.status]}${event.behavior}${formatInfo(event.log)}`
+            return `${SYMBOLS[event.status]}${event.behavior} (${formatDuration(event.duration)})${formatInfo(event.log)}`
           } else if (event.error.expected && event.error.actual) {
             return `${SYMBOLS[event.status]}${event.behavior}${newLine}${newLine}` +
               formatExpectedAndActual(event.error) +

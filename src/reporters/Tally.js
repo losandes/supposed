@@ -3,10 +3,10 @@ module.exports = {
   factory: (dependencies) => {
     'use strict'
 
-    const { publish, TestEvent } = dependencies
+    const { publish, TestEvent, clock, duration } = dependencies
 
     function TallyFactory () {
-      const now = () => Date.now()
+      const now = () => clock()
       const makeTally = () => {
         return {
           total: 0,
@@ -15,7 +15,8 @@ module.exports = {
           failed: 0,
           broken: 0,
           startTime: -1,
-          endTime: -1
+          endTime: -1,
+          duration: undefined
         }
       }
       // there's only 1 tally per require
@@ -27,6 +28,7 @@ module.exports = {
         broken: 0,
         startTime: -1,
         endTime: -1,
+        duration: undefined,
         results: [],
         batches: {}
       }
@@ -86,9 +88,17 @@ module.exports = {
               return Promise.resolve()
             case TestEvent.types.END_BATCH:
               totals.batches[event.batchId].endTime = now()
+              totals.batches[event.batchId].duration = duration(
+                totals.batches[event.batchId].startTime,
+                totals.batches[event.batchId].endTime
+              )
               return Promise.resolve()
             case TestEvent.types.END_TALLY:
               totals.endTime = now()
+              totals.duration = duration(
+                totals.startTime,
+                totals.endTime
+              )
               return Promise.resolve()
           } // /switch
         } // /write
@@ -110,7 +120,8 @@ module.exports = {
           failed: tally.failed,
           broken: tally.broken,
           startTime: tally.startTime,
-          endTime: tally.endTime
+          endTime: tally.endTime,
+          duration: tally.duration
         }
       }
 

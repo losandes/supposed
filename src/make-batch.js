@@ -1,7 +1,9 @@
 module.exports = {
   name: 'makeBatch',
-  factory: () => {
+  factory: (dependencies) => {
     'use strict'
+
+    const { hash } = dependencies
 
     function BatchComposer (options) {
       const givenSynonyms = options.givenSynonyms // ['given', 'arrange']
@@ -23,9 +25,13 @@ module.exports = {
         return typeof node === 'function' && actions.indexOf(key) === -1
       }
 
+      const makeBatchId = (behavior) => `B${hash(behavior)}`
+      const makeTestId = (behavior) => `T${hash(behavior)}`
+
       const getAssertions = (behavior, node, skipped) => {
         if (isAssertion(node, behavior)) {
           return [{
+            id: makeTestId(behavior),
             behavior: behavior,
             test: node,
             skipped: skipped
@@ -35,8 +41,10 @@ module.exports = {
         return Object.keys(node)
           .filter(key => isAssertion(node[key], key))
           .map(key => {
+            const _behavior = concatBehavior(behavior, key)
             return {
-              behavior: concatBehavior(behavior, key),
+              id: makeTestId(_behavior),
+              behavior: _behavior,
               test: node[key],
               skipped: skipped || isSkipped(key)
             }
@@ -80,7 +88,7 @@ module.exports = {
       }
 
       function Layer (input) {
-        const { behavior, node, timeout, assertionLibrary } = input
+        const { id, behavior, node, timeout, assertionLibrary } = input
         const parentSkipped = input.skipped
         const parentGiven = input.given
         const parentWhen = input.when
@@ -141,6 +149,7 @@ module.exports = {
         }
 
         return {
+          id: id || makeTestId(behavior),
           behavior,
           given,
           when,
@@ -156,6 +165,7 @@ module.exports = {
         const { behavior, node, given, when, whenIsInheritedGiven, skipped, timeout, assertionLibrary } = input
         const layers = []
         const parent = new Layer({
+          id: makeBatchId(behavior),
           behavior,
           node,
           given,
