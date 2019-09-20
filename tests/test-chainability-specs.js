@@ -1,10 +1,8 @@
 module.exports = function (describe) {
-  const sut = describe.Suite({ reporter: 'QUIET', match: null })
-
   return describe('chainability', {
     'when then is used as an `after` hook for tests (i.e. for cleanup)': {
       when: () => {
-        return sut('sut', {
+        return describe.Suite({ name: 'then-as-after', reporter: 'QUIET', match: null })('sut', {
           'sut-description': {
             when: () => { return 42 },
             'sut-assertion': (t) => (err, actual) => {
@@ -27,7 +25,7 @@ module.exports = function (describe) {
     },
     'when then is used to run tests in a series': {
       when: () => {
-        return sut('sut', {
+        return describe.Suite({ name: 'then-as-series-1', reporter: 'QUIET', match: null })('sut', {
           'sut-description': {
             when: () => { return 42 },
             'sut-assertion': (t) => (err, actual) => {
@@ -36,7 +34,7 @@ module.exports = function (describe) {
             }
           }
         }).then(results => {
-          return sut('sut', {
+          return describe.Suite({ name: 'then-as-series-2', reporter: 'QUIET', match: null })('sut', {
             'sut-description': {
               when: () => { return 42 },
               'sut-assertion': (t) => (err, actual) => {

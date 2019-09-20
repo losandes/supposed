@@ -40,6 +40,7 @@ module.exports = {
     }, {})
 
     consoleStyles.newLine = () => '\n'
+    consoleStyles.space = () => ' '
 
     return { consoleStyles }
   }

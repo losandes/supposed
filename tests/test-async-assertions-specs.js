@@ -1,6 +1,4 @@
 module.exports = function (describe) {
-  const sut = describe.Suite({ reporter: 'QUIET', match: null })
-
   return describe('async tests', {
     'when given returns a promise': {
       given: () => Promise.resolve(42),
@@ -36,7 +34,7 @@ module.exports = function (describe) {
       when: () => {
         var promiseFinished = false
 
-        return sut({
+        return describe.Suite({ name: 'assertion-promise', reporter: 'QUIET', match: null })({
           t1: (t) => {
             return new Promise((resolve, reject) => {
               setTimeout(() => {
@@ -64,7 +62,7 @@ module.exports = function (describe) {
       when: () => {
         var promiseFinished = false
 
-        return sut({
+        return describe.Suite({ name: 'assertion-async-await', reporter: 'QUIET', match: null })({
           t1: async t => {
             const actual = await new Promise((resolve, reject) => {
               setTimeout(() => {

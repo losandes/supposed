@@ -19,7 +19,7 @@ module.exports = suite.runner({
   directories: ['./tests.browser'],
   title: 'supposed-browser-tests',
   port: 42002,
-  stringifiedSuiteConfig: `{ reporter: '${suite.config.reporters[0].name || 'default'}', assertionLibrary: browserTestAssert }`,
+  stringifiedSuiteConfig: `{ reporter: '${suite.config.reporters[0].name || 'spec'}', assertionLibrary: browserTestAssert }`,
   dependencies: ['/tests.browser/assert.js'],
   supposedPath: path.join(__projectdir, 'dist/supposed.js')
   // styles: 'body { color: #2eb815; }' // #b0c9dc

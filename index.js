@@ -31,8 +31,9 @@ const consoleUtilsFactory = require('./src/formatters/console-utils.js').factory
 const DefaultFormatterFactory = require('./src/formatters/DefaultFormatter.js').factory
 const JsonFormatterFactory = require('./src/formatters/JsonFormatter.js').factory
 const MarkdownFormatterFactory = require('./src/formatters/MarkdownFormatter.js').factory
+const SpecFormatterFactory = require('./src/formatters/SpecFormatter.js').factory
 const SummaryFormatterFactory = require('./src/formatters/SummaryFormatter.js').factory
-const SymbolFormatterFactory = require('./src/formatters/SymbolFormatter.js').factory
+const ListFormatterFactory = require('./src/formatters/ListFormatter.js').factory
 const TapFormatterFactory = require('./src/formatters/TapFormatter.js').factory
 
 // reporters
@@ -59,7 +60,7 @@ function Supposed (options) {
   const envvars = {
     ...{
       assertionLibrary: assert,
-      reporters: ['DEFAULT'],
+      reporters: ['LIST'],
       useColors: true,
       timeUnits: 'us'
     },
@@ -111,7 +112,13 @@ function Supposed (options) {
     return DefaultFormatterFactory({
       consoleStyles,
       TestEvent,
-      SYMBOLS: options.SYMBOLS
+      SYMBOLS: (options && options.SYMBOLS) || {
+        PASSED: ' PASS ',
+        FAILED: ' FAIL ',
+        BROKEN: ' !!!! ',
+        SKIPPED: ' SKIP ',
+        INFO: ' INFO '
+      }
     }).DefaultFormatter()
   }
 
@@ -122,11 +129,12 @@ function Supposed (options) {
     }).ConsoleReporter()
   }
 
-  const symbolFormatter = SymbolFormatterFactory({ consoleStyles, DefaultFormatter }).SymbolFormatter()
+  const listFormatter = ListFormatterFactory({ consoleStyles, DefaultFormatter }).ListFormatter()
+  const SpecFormatter = SpecFormatterFactory({ consoleStyles, DefaultFormatter, TestEvent }).SpecFormatter
 
-  reporterFactory.add(function DefaultReporter () {
+  reporterFactory.add(function ListReporter () {
     return {
-      write: ConsoleReporter({ formatter: symbolFormatter }).write
+      write: ConsoleReporter({ formatter: listFormatter }).write
     }
   }).add(function BlockReporter () {
     return {
@@ -149,7 +157,13 @@ function Supposed (options) {
   }).add(function MarkdownReporter () {
     return {
       write: ConsoleReporter({
-        formatter: MarkdownFormatterFactory({ consoleStyles, TestEvent }).MarkdownFormatter()
+        formatter: MarkdownFormatterFactory({ consoleStyles, TestEvent, SpecFormatter, DefaultFormatter }).MarkdownFormatter()
+      }).write
+    }
+  }).add(function MdReporter () {
+    return {
+      write: ConsoleReporter({
+        formatter: MarkdownFormatterFactory({ consoleStyles, TestEvent, SpecFormatter, DefaultFormatter }).MarkdownFormatter()
       }).write
     }
   }).add(function JustTheDescriptionsReporter () {
@@ -158,12 +172,18 @@ function Supposed (options) {
         formatter: {
           format: (event) => {
             if (event.type === TestEvent.types.TEST) {
-              return symbolFormatter.format(event).split('\n')[0]
+              return listFormatter.format(event).split('\n')[0]
             } else {
-              return symbolFormatter.format(event)
+              return listFormatter.format(event)
             }
           }
         }
+      }).write
+    }
+  }).add(function SpecReporter () {
+    return {
+      write: ConsoleReporter({
+        formatter: new SpecFormatter()
       }).write
     }
   }).add(function SummaryReporter () {

@@ -140,12 +140,12 @@ module.exports = {
           }
 
           if (publishStartAndEnd) {
-            return publish(new TestEvent({ type: TestEvent.types.END_TALLY, suiteId: config.name }))
-              .then(() => publish(new TestEvent({
+            return publish({ type: TestEvent.types.END_TALLY, suiteId: config.name })
+              .then(() => publish({
                 type: TestEvent.types.END,
                 suiteId: config.name,
                 totals: batchTotals
-              })))
+              }))
               .then(() => output)
           }
 
@@ -186,15 +186,15 @@ module.exports = {
           return Promise.resolve(output)
         })
         .then((output) => {
-          return publish(new TestEvent({ type: TestEvent.types.END_TALLY, suiteId: config.name }))
+          return publish({ type: TestEvent.types.END_TALLY, suiteId: config.name })
             .then(() => output)
         })
         .then((output) => {
-          return publish(new TestEvent({
+          return publish({
             type: TestEvent.types.FINAL_TALLY,
             suiteId: config.name,
             totals: Tally.getTally()
-          }))
+          })
             .then(() => output)
         })
         .then((output) => {
@@ -204,11 +204,11 @@ module.exports = {
             tally: Tally.getSimpleTally()
           }
         }).then((context) => {
-          return publish(new TestEvent({
+          return publish({
             type: TestEvent.types.END,
             suiteId: config.name,
             totals: context.tally
-          })).then(() => context)
+          }).then(() => context)
         }).then(({ output, tally }) => {
           return {
             files: output.files,
@@ -257,11 +257,11 @@ module.exports = {
 
         // @deprecated
         test.printSummary = () => {
-          return publish(new TestEvent({
+          return publish({
             type: TestEvent.types.END,
             suiteId: config.name,
             totals: Tally.getSimpleTally()
-          }))
+          })
         }
         test.getTotals = () => {
           return Tally.getSimpleTally()

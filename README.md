@@ -1,36 +1,25 @@
 Supposed
 ========
-_Supposed_ is a simple test runner for Node.js, TypeScript, and the Browser that:
+Supposed is a test framework for Node.js, TypeScript, and the Browser. Supposed runs tests concurrently, so test suites complete as quickly as possible. It has 0 dependencies (not counting dev-dependencies), and supports many Domain Service Languages DSLs: BDD, TDD, xunit, custom.
 
-* Is Promise/async-await based
-* Runs tests concurrently
-* Provides BDD, TDD, xunit, and custom Domain Service Languages (DSLs)
-* Supports test discovery, and execution
-* Has many reporter (test output) options: concise (default - like mocha, but without nesting), TAP, JSON, nyan cat, block (jest style), brief (summary and errors only), array (no output, but test output is available on reporter output), noop (can be useful with pubsub (see below)), custom (supply your own easily)
-* Includes test start, and end times with durations accurate to the microsecond
-* Supports pubsub - you can subscribe to the events to write your own reporter, or stream test output to a file or other services
-* Can run in the terminal/console
-* Can start a server for browser testing
-* Can easily be used to pipe browser test output into the terminal
-* Does not require a client (simple, functional, async JS/TS config)
-* Supports dependency injection, with a composition root
-* Draws significant influence from vows, ava, and tape so it is partially compatible with some of their syntaxes
-* Will work with mocha's `describe`, `it` syntax with a little bit of test refactoring (`before` and `after` aren't supported, though - this library uses async-await, `then`, BDD, or TDD syntax to support setup and tear down)
-* Has 0 dependencies (not counting dev-dependencies)
-
-## TOC
-
-* [Getting Started with Node](#getting-started-with-node)
-* [Getting Started with the Browser](#getting-started-with-the-browser)
-* [Test Syntax and Domain Service Languages (DSLs) (BDD, TDD, xunit, custom)](#test-syntax-and-domain-service-languages-dsls))
-* [Arguments and ENVVARS](#arguments-and-envvars)
+* [Get Started with Node](#get-started-with-node)
+* [Get Started with the Browser](#get-started-with-the-browser)
+* [Get Started with TypeScript](#typescript-support)
+* [Test Syntax and DSLs](#test-syntax-and-domain-service-languages-dsls))
+* [Built in Reporters](#built-in-reporters): list|tap|json|spec|markdown|md|nyan|brief|summary|array|block|noop
 * [Suites, & Configuring Suites](#suites)
 * [Tests, & Configuring Tests](#tests)
-* [Discovering Tests and Running Them](#discovering-tests-and-running-them)
-* [TypeScript Support](#typescript-support)
+* [Discovering and Running NodeJS Tests](#using-the-nodejs-runner)
+* [Discovering and Running Browser Tests](#using-the-browser-test-server)
+* [Running in the Terminal](#arguments-and-envvars) (Arguments and ENVVARS)
+* [Running Specific Tests](#arguments-and-envvars)
+* [Running Specific Files With The Runner](#arguments-and-envvars)
+* [Using Promises in Tests](#using-promises-in-tests)
+* [Using async-await in Tests](#using-async---await-in-tests)
+* [Measure Performance]()
 * [Cookbook](#cookbook)
 
-## Getting Started With Node
+## Get Started With Node
 
 ```Shell
 npm install --save-dev supposed
@@ -49,7 +38,7 @@ test('when dividing a number by zero, it should return Infinity', (t) => {
 $ node my-test.js
 ```
 
-## Getting Started With the Browser
+## Get Started With the Browser
 
 ```Shell
 npm install --save-dev supposed
@@ -187,7 +176,7 @@ module.exports = test('when dividing numbers by 0', {
 ## Arguments and ENVVARS
 Supposed has options that can be set with command-line arguments, or envvars. They are described here, and then the actual arguments, and envvars are listed and shown in examples below.
 
-* **reporters**: choose reporter(s) by name (`tap|json|markdown|nyan|brief|summary|array|block|noop`) (comma-separated)
+* **reporters**: choose reporter(s) by name (`list|tap|json|spec|markdown|md|nyan|brief|summary|array|block|noop`) (comma-separated)
 * **match description**: run only tests whose descriptions/behaviors match the regular expression
 * **match file name**: run only tests whose file names match the regular expression (only used with runner)
 * **no-color**: display all output in black + white
@@ -234,18 +223,22 @@ $ node tests | npx tap-parser -j | jq
 
 > In that example, we run tests that have the word "continuous-integration" in their descriptions, using TAP output. We pipe the output of the tests into another package, [tap-parser](https://www.npmjs.com/package/tap-parser), and then pipe the output of that package into [jq](https://stedolan.github.io/jq/).
 
-### Built-in Reporters
+### Built in Reporters
 
-* `default` - a concise reporter with start indication, symbols for pass|fail|skip, error details, and a summary at the end
-* `tap` - a TAP compliant reporter, which can also be piped into [other TAP reporters](https://github.com/sindresorhus/awesome-tap#reporters)
-* `json` - test events in JSON format
-* `markdown` - the test descriptions in markdown format (does not include error details)
+* `list` (default) - a concise reporter with start indication, symbols for pass|fail|skip, error details, and a summary at the end (order is based on completion)
+* `tap` - a TAP compliant reporter, which can also be piped into [other TAP reporters](https://github.com/sindresorhus/awesome-tap#reporters) (order is based on completion)
+* `json` - test events in JSON format (order is based on completion)
+* `spec` - the test descriptions in markdown format (order is preserved)
+* `markdown` - the test descriptions in markdown format (order is preserved)
+* `md` - (alias for markdown)
 * `nyan` - rainbows, and flying cats? check
 * `brief` - just the summary, and the output from any failing tests
 * `summary` - just the summary
 * `array` - no output, but you can read the test events from `suite.config.reporters[${indexOfArrayReporter}].events` (it's easier just to `suite.subscribe`, or `suite.runner().run().then((results) => {})` though - you probably don't need this - it's mostly for testing this library)
-* `block` - Colorized blocks with PASS|FAIL|SKIP text (like jest)
+* `block` - Colorized blocks with PASS|FAIL|SKIP text (like jest) (order is based on completion)
 * `noop` - turn reporting off, and do your own thing
+
+> Note that most reporters are optimized for efficiency, and report tests as they complete, rather than in the order that they start. Reporters that suggest _order is preserved_ report the results after all tests complete, and print in the order in which they were discovered.
 
 ### Using Multiple Reporters
 Supposed uses pubsub to report, so there's no limit on the number of reporters that can be used. Some reporters when used in combination can cause problems (nyan isn't really compatible with anything else), but others can be helpful. Let's say you like the TAP output, but you want a summary:
@@ -302,8 +295,8 @@ Whether your using `supposed.configure({...})`, or creating a new `supposed.Suit
 * `name` {string} (default is generated) - A name for the suite (suites can be retrieved by name: `require('supposed').suites.mySuite`)
 * `timeout` {number} (default is 2000ms) - The amount of time in milliseconds that _Supposed_ waits, before it cancels a long-running test
 * `assertionLibrary` {object} (default for nodeJS is `assert`; no default for browsers) - The assertion library that will be passed to the tests
-* `reporter` {string|`(event: ITestEvent): Promise<void>`} - The reporter to use for test output (`tap|json|markdown|nyan|brief|summary|array|block|noop`), or a function
-* `reporters` {string[]} - A comma-separated list of reporters to use (by name) (`tap|json|markdown|nyan|brief|summary|array|block|noop`)
+* `reporter` {string|`(event: ITestEvent): Promise<void>`} - The reporter to use for test output (`list|tap|json|spec|markdown|md|nyan|brief|summary|array|block|noop`), or a function
+* `reporters` {string[]} - A comma-separated list of reporters to use (by name) (`list|tap|json|spec|markdown|md|nyan|brief|summary|array|block|noop`)
 * `match` {string|RegExp|`{ test (description: string): boolean; }`} - run only tests whose descriptions/behaviors match the regular expression, or pass this test
 * `useColors` {boolean} - whether or not to use color in the reporter output
 * `inject` {any} - when present this object will be available to tests via `suite.dependencies`. If your test files `module.exports = (suite, dependencies) => {}`, this object will also be passed as the second argument to your exported function.
@@ -475,7 +468,7 @@ const runner = supposed.runner({
 #### Skipping File Discovery With the NodeJS Runner
 You can use the runner's `runTests` function to run an array of tests, if you prefer that. It expects an array of functions that execute the tests:
 
-```TypeScript
+```JavaScript
 // ./first-module/first-spec.js
 const test = require('supposed')
 

@@ -26,6 +26,9 @@ module.exports = {
         suiteConfig.match = new RegExp(options.match)
       } else if (options.match && typeof options.match.test === 'function') {
         suiteConfig.match = options.match
+      } else if (options.match === null) {
+        // let hard coded options override (I use this in the tests)
+        suiteConfig.match = options.match
       }
 
       if (typeof options.name === 'string' && options.name.trim().length) {

@@ -35,7 +35,7 @@
 
     const envvars = {
       assertionLibrary: {},
-      reporters: ['DEFAULT'],
+      reporters: ['LIST'],
       useColors: true,
       timeUnits: 'us'
     }
@@ -52,8 +52,8 @@
 
     const consoleStyles = module.factories.consoleStylesFactory({ envvars }).consoleStyles
 
-    const { TallyFactory } = module.factories.TallyFactory({ publish, TestEvent })
-    const { Tally } = TallyFactory({ clock, duration })
+    const { TallyFactory } = module.factories.TallyFactory({ publish, TestEvent, clock, duration })
+    const { Tally } = TallyFactory({})
     const { ReporterFactory } = module.factories.reporterFactoryFactory({})
     const reporterFactory = new ReporterFactory()
     const ArrayReporter = module.factories.ArrayReporterFactory({}).ArrayReporter
@@ -68,7 +68,13 @@
       return module.factories.DefaultFormatterFactory({
         consoleStyles,
         TestEvent,
-        SYMBOLS: options.SYMBOLS
+        SYMBOLS: (options && options.SYMBOLS) || {
+          PASSED: ' PASS ',
+          FAILED: ' FAIL ',
+          BROKEN: ' !!!! ',
+          SKIPPED: ' SKIP ',
+          INFO: ' INFO '
+        }
       }).DefaultFormatter()
     }
 
@@ -79,11 +85,12 @@
       }).DomReporter()
     }
 
-    const symbolFormatter = module.factories.SymbolFormatterFactory({ consoleStyles, DefaultFormatter }).SymbolFormatter()
+    const listFormatter = module.factories.ListFormatterFactory({ consoleStyles, DefaultFormatter }).ListFormatter()
+    const SpecFormatter = module.factories.SpecFormatterFactory({ consoleStyles, DefaultFormatter, TestEvent }).SpecFormatter
 
-    reporterFactory.add(function DefaultReporter () {
+    reporterFactory.add(function ListReporter () {
       return {
-        write: ConsoleReporter({ formatter: symbolFormatter }).write
+        write: ConsoleReporter({ formatter: listFormatter }).write
       }
     }).add(function BlockReporter () {
       return {
@@ -106,7 +113,13 @@
     }).add(function MarkdownReporter () {
       return {
         write: ConsoleReporter({
-          formatter: module.factories.MarkdownFormatterFactory({ consoleStyles, TestEvent }).MarkdownFormatter()
+          formatter: module.factories.MarkdownFormatterFactory({ consoleStyles, TestEvent, SpecFormatter, DefaultFormatter }).MarkdownFormatter()
+        }).write
+      }
+    }).add(function MdReporter () {
+      return {
+        write: ConsoleReporter({
+          formatter: module.factories.MarkdownFormatterFactory({ consoleStyles, TestEvent, SpecFormatter, DefaultFormatter }).MarkdownFormatter()
         }).write
       }
     }).add(function JustTheDescriptionsReporter () {
@@ -115,12 +128,18 @@
           formatter: {
             format: (event) => {
               if (event.type === TestEvent.types.TEST) {
-                return symbolFormatter.format(event).split('\n')[0]
+                return listFormatter.format(event).split('\n')[0]
               } else {
-                return symbolFormatter.format(event)
+                return listFormatter.format(event)
               }
             }
           }
+        }).write
+      }
+    }).add(function SpecReporter () {
+      return {
+        write: ConsoleReporter({
+          formatter: SpecFormatter()
         }).write
       }
     }).add(function SummaryReporter () {

@@ -11,7 +11,12 @@ module.exports = {
           return `[${JSON.stringify({ event }, null, 2)},`
         } else if (event.type === TestEvent.types.END) {
           return `${JSON.stringify({ event }, null, 2)}]`
-        } else if ([TestEvent.types.END_TALLY].indexOf(event.type) === -1) {
+        } else if (
+          [
+            TestEvent.types.START_TEST,
+            TestEvent.types.END_TALLY
+          ].indexOf(event.type) === -1
+        ) {
           return `${JSON.stringify({ event }, null, 2)},`
         }
       }

@@ -95,7 +95,7 @@ module.exports = {
         }
       } // /format
 
-      return { format }
+      return { format, formatDuration, formatInfo, formatExpectedAndActual, formatStack }
     } // /Formatter
 
     return { DefaultFormatter }

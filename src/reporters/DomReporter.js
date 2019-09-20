@@ -45,6 +45,7 @@ module.exports = {
         // write to the console
         if ([
           TestEvent.types.START,
+          TestEvent.types.START_TEST,
           TestEvent.types.TEST,
           TestEvent.types.INFO,
           TestEvent.types.END

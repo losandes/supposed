@@ -1,6 +1,4 @@
 module.exports = function (describe) {
-  const sut = describe.Suite({ reporter: 'QUIET', match: null })
-
   return describe('supposed', {
     'when descriptions are deeply nested': {
       when: descriptionsAreDeeplyNested,
@@ -137,7 +135,7 @@ module.exports = function (describe) {
   }) // /describe
 
   function descriptionsAreDeeplyNested () {
-    return sut({
+    return describe.Suite({ name: 'deep-nest', reporter: 'QUIET', match: null })({
       'when we keep nesting (1)': {
         'and nesting (2)': {
           when: () => { return 42 / 0 },
@@ -169,7 +167,7 @@ module.exports = function (describe) {
   }
 
   function nestsInheritWhens () {
-    return sut({
+    return describe.Suite({ name: 'nest-inheritance-whens', reporter: 'QUIET', match: null })({
       'when we keep nesting (1)': {
         'and nesting (2)': {
           when: () => { return 42 / 0 },
@@ -191,7 +189,7 @@ module.exports = function (describe) {
   }
 
   function whenIsAsync () {
-    return sut({
+    return describe.Suite({ name: 'when-is-async', reporter: 'QUIET', match: null })({
       'when the `when` is asynchronous': {
         when: () => {
           return new Promise((resolve) => {

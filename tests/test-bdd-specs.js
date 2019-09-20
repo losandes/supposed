@@ -1,6 +1,4 @@
 module.exports = function (describe) {
-  const sut = describe.Suite({ reporter: 'QUIET', match: null })
-
   return describe('given different styles', {
     AAA: {
       'when arrange, act, and assert(s) exist': {
@@ -61,7 +59,7 @@ module.exports = function (describe) {
         })
       }
 
-      return sut('test-bdd-specs.whenGivenWhenAndThen', test)
+      return describe.Suite({ name: 'bdd-gwt', reporter: 'QUIET', match: null })('test-bdd-specs.whenGivenWhenAndThen', test)
     }
   }
 
@@ -87,7 +85,7 @@ module.exports = function (describe) {
         })
       }
 
-      return sut('test-bdd-specs.whenGivenThenAndNoWhen', test)
+      return describe.Suite({ name: 'bdd-gt', reporter: 'QUIET', match: null })('test-bdd-specs.whenGivenThenAndNoWhen', test)
     }
   }
 }

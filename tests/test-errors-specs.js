@@ -1,10 +1,8 @@
 module.exports = function (describe) {
-  const sut = describe.Suite({ reporter: 'QUIET', timeout: 10, match: null })
-
   return describe('errors', {
     'when the `given` throws an error': {
       when: () => {
-        return sut({
+        return describe.Suite({ name: 'given-throws', reporter: 'QUIET', timeout: 10, match: null })({
           'when the `given` throws an error': {
             given: () => { throw new Error('GIVEN!') },
             when: (given) => { return 42 },
@@ -22,7 +20,7 @@ module.exports = function (describe) {
     },
     'when the `when` throws an error': {
       when: () => {
-        return sut({
+        return describe.Suite({ name: 'when-throws', reporter: 'QUIET', timeout: 10, match: null })({
           'when the `when` throws an error': {
             when: () => { throw new Error('BOOM!') },
             'it should pass the error to the assertions': (t, err) => {
@@ -39,7 +37,7 @@ module.exports = function (describe) {
     },
     'when the `given` rejects': {
       when: () => {
-        return sut({
+        return describe.Suite({ name: 'given-rejects', reporter: 'QUIET', timeout: 10, match: null })({
           'when the `given` rejects': {
             given: () => {
               return Promise.reject(new Error('GIVEN!'))
@@ -61,7 +59,7 @@ module.exports = function (describe) {
     },
     'when the `when` rejects': {
       when: () => {
-        return sut({
+        return describe.Suite({ name: 'when-rejects', reporter: 'QUIET', timeout: 10, match: null })({
           'when the `when` rejects': {
             when: () => {
               return Promise.reject(new Error('Boom!'))
@@ -80,7 +78,7 @@ module.exports = function (describe) {
     },
     'when the assertion throws an error': {
       when: () => {
-        return sut({
+        return describe.Suite({ name: 'assertion-throws', reporter: 'QUIET', timeout: 10, match: null })({
           'when the assertion throws an error': {
             'the test should fail': () => {
               throw new Error('assertion ERROR!')
@@ -96,7 +94,7 @@ module.exports = function (describe) {
     },
     'when `given` is never resolved': {
       when: () => {
-        return sut({
+        return describe.Suite({ name: 'given-never-resolves', reporter: 'QUIET', timeout: 10, match: null })({
           'when `given` is never resolved': {
             given: () => { return new Promise(() => { /* should timeout */ }) },
             when: (resolve) => (given) => { resolve() },
@@ -114,7 +112,7 @@ module.exports = function (describe) {
     },
     'when `when` is never resolved': {
       when: () => {
-        return sut({
+        return describe.Suite({ name: 'when-never-resolves', reporter: 'QUIET', timeout: 10, match: null })({
           'when `when` is never resolved': {
             when: () => { return new Promise(() => { /* should timeout */ }) },
             'it should throw a timeout exception': t => {
@@ -131,7 +129,7 @@ module.exports = function (describe) {
     },
     'when async assertions never return': {
       when: () => {
-        return sut({
+        return describe.Suite({ name: 'async-assertions-never-return', reporter: 'QUIET', timeout: 10, match: null })({
           'when `when` is never resolved': {
             'it should throw a timeout exception': async t => {
               await new Promise(() => { /* should timeout */ })
@@ -147,7 +145,7 @@ module.exports = function (describe) {
     },
     'when promised assertions never return': {
       when: () => {
-        return sut({
+        return describe.Suite({ name: 'promised-assertions-never-return', reporter: 'QUIET', timeout: 10, match: null })({
           'when `when` is never resolved': {
             'it should throw a timeout exception': t => {
               return new Promise(() => { /* should timeout */ })

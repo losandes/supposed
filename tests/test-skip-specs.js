@@ -1,5 +1,5 @@
 module.exports = function (describe) {
-  const sut = describe.Suite({ reporter: 'QUIET', match: null })
+  // const sut = describe.Suite({ reporter: 'QUIET', match: null })
 
   return describe('skipping tests', {
     'when a behavior is skipped': {
@@ -140,7 +140,7 @@ module.exports = function (describe) {
     var assertion1Ran = false
     var assertion2Ran = false
 
-    return sut({
+    return describe.Suite({ name: 'behavior-is-skipped', reporter: 'QUIET', match: null })({
       '// when behavior': {
         when: () => {
           behaviorRan = true
@@ -167,7 +167,7 @@ module.exports = function (describe) {
     var assertion1Ran = false
     var assertion2Ran = false
 
-    return sut('named', {
+    return describe.Suite({ name: 'named-behavior-is-skipped', reporter: 'QUIET', match: null })('named', {
       '// when behavior': {
         when: () => {
           behaviorRan = true
@@ -194,7 +194,7 @@ module.exports = function (describe) {
     var assertion1Ran = false
     var assertion2Ran = false
 
-    return sut({
+    return describe.Suite({ name: 'assertion-is-skipped', reporter: 'QUIET', match: null })({
       'when behavior': {
         when: () => {
           behaviorRan = true
@@ -221,7 +221,7 @@ module.exports = function (describe) {
     var assertion1Ran = false
     var assertion2Ran = false
 
-    return sut({
+    return describe.Suite({ name: 'tap-skip-directive', reporter: 'QUIET', match: null })({
       'when behavior': {
         when: () => {
           behaviorRan = true
@@ -248,7 +248,7 @@ module.exports = function (describe) {
     var assertion1Ran = false
     var assertion2Ran = false
 
-    return sut({
+    return describe.Suite({ name: 'tap-todo-directive', reporter: 'QUIET', match: null })({
       'when behavior': {
         when: () => {
           behaviorRan = true

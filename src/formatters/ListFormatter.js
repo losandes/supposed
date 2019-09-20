@@ -1,11 +1,11 @@
 module.exports = {
-  name: 'SymbolFormatter',
+  name: 'ListFormatter',
   factory: (dependencies) => {
     'use strict'
 
     const { consoleStyles, DefaultFormatter } = dependencies
 
-    function SymbolFormatter () {
+    function ListFormatter () {
       return DefaultFormatter({
         SYMBOLS: {
           PASSED: consoleStyles.green('✓ '), // heavy-check: '✔',
@@ -17,6 +17,6 @@ module.exports = {
       })
     }
 
-    return { SymbolFormatter }
+    return { ListFormatter }
   }
 }

@@ -10,6 +10,7 @@ module.exports = {
       const write = (event) => {
         if ([
           TestEvent.types.START,
+          TestEvent.types.START_TEST,
           TestEvent.types.TEST,
           TestEvent.types.INFO,
           TestEvent.types.END

@@ -1,5 +1,13 @@
 "use strict";
 
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
@@ -73,7 +81,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
       var isPromise = dependencies.isPromise,
           publish = dependencies.publish,
-          TestEvent = dependencies.TestEvent;
+          TestEvent = dependencies.TestEvent,
+          clock = dependencies.clock,
+          duration = dependencies.duration;
 
       function noop() {}
       /**
@@ -218,16 +228,21 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
 
       function assertOne(batchId, assertion, test) {
-        var pass = function pass(result) {
-          return publish({
-            type: TestEvent.types.TEST,
-            status: TestEvent.status.PASSED,
-            batchId: batchId,
-            testId: assertion.id,
-            behavior: assertion.behavior,
-            log: maybeLog(result),
-            context: maybeContext(result)
-          });
+        var pass = function pass(startTime) {
+          return function (result) {
+            var endTime = clock();
+            return publish({
+              type: TestEvent.types.TEST,
+              status: TestEvent.status.PASSED,
+              batchId: batchId,
+              testId: assertion.id,
+              behavior: assertion.behavior,
+              time: endTime,
+              duration: duration(startTime, endTime),
+              log: maybeLog(result),
+              context: maybeContext(result)
+            });
+          };
         };
 
         var fail = function fail(e) {
@@ -252,23 +267,19 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             });
           }
 
+          var startTime;
           return publish({
             type: TestEvent.types.START_TEST,
             batchId: batchId,
             testId: assertion.id,
             behavior: assertion.behavior
           }).then(function () {
+            startTime = clock();
+          }).then(function () {
             return test();
-          }).then(pass).catch(fail).finally(function (context) {
-            return publish({
-              type: TestEvent.types.END_TEST,
-              batchId: batchId,
-              testId: assertion.id,
-              behavior: assertion.behavior
-            }).then(function () {
-              return context;
-            });
-          });
+          }).then(function (result) {
+            return pass(startTime)(result);
+          }).catch(fail);
         } catch (e) {
           return fail(e);
         }
@@ -484,10 +495,18 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           return typeof node === 'function' && actions.indexOf(key) === -1;
         };
 
+        var makeBatchId = function makeBatchId(behavior) {
+          return "B".concat(hash(behavior));
+        };
+
+        var makeTestId = function makeTestId(behavior) {
+          return "T".concat(hash(behavior));
+        };
+
         var getAssertions = function getAssertions(behavior, node, skipped) {
           if (isAssertion(node, behavior)) {
             return [{
-              id: hash(behavior),
+              id: makeTestId(behavior),
               behavior: behavior,
               test: node,
               skipped: skipped
@@ -500,7 +519,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             var _behavior = concatBehavior(behavior, key);
 
             return {
-              id: hash(_behavior),
+              id: makeTestId(_behavior),
               behavior: _behavior,
               test: node[key],
               skipped: skipped || isSkipped(key)
@@ -545,7 +564,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         };
 
         function Layer(input) {
-          var behavior = input.behavior,
+          var id = input.id,
+              behavior = input.behavior,
               node = input.node,
               timeout = input.timeout,
               assertionLibrary = input.assertionLibrary;
@@ -612,7 +632,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           }
 
           return {
-            id: hash(behavior),
+            id: id || makeTestId(behavior),
             behavior: behavior,
             given: given,
             when: when,
@@ -635,6 +655,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               assertionLibrary = input.assertionLibrary;
           var layers = [];
           var parent = new Layer({
+            id: makeBatchId(behavior),
             behavior: behavior,
             node: node,
             given: given,
@@ -731,6 +752,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         if (typeof options.match === 'string') {
           suiteConfig.match = new RegExp(options.match);
         } else if (options.match && typeof options.match.test === 'function') {
+          suiteConfig.match = options.match;
+        } else if (options.match === null) {
+          // let hard coded options override (I use this in the tests)
           suiteConfig.match = options.match;
         }
 
@@ -997,8 +1021,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
       var mapper = function mapper(config, makeBatch, byMatcher) {
         return function (batch) {
-          var batchId = makeBatchId();
           var processed = makeBatch(batch).filter(byMatcher);
+          var batchId = processed.length ? processed[0].id : makeBatchId();
           return {
             batchId: batchId,
             batch: processed,
@@ -1084,15 +1108,15 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             };
 
             if (publishStartAndEnd) {
-              return publish(new TestEvent({
+              return publish({
                 type: TestEvent.types.END_TALLY,
                 suiteId: config.name
-              })).then(function () {
-                return publish(new TestEvent({
+              }).then(function () {
+                return publish({
                   type: TestEvent.types.END,
                   suiteId: config.name,
                   totals: batchTotals
-                }));
+                });
               }).then(function () {
                 return output;
               });
@@ -1140,18 +1164,18 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
               return Promise.resolve(output);
             }).then(function (output) {
-              return publish(new TestEvent({
+              return publish({
                 type: TestEvent.types.END_TALLY,
                 suiteId: config.name
-              })).then(function () {
+              }).then(function () {
                 return output;
               });
             }).then(function (output) {
-              return publish(new TestEvent({
+              return publish({
                 type: TestEvent.types.FINAL_TALLY,
                 suiteId: config.name,
                 totals: Tally.getTally()
-              })).then(function () {
+              }).then(function () {
                 return output;
               });
             }).then(function (output) {
@@ -1161,11 +1185,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
                 tally: Tally.getSimpleTally()
               };
             }).then(function (context) {
-              return publish(new TestEvent({
+              return publish({
                 type: TestEvent.types.END,
                 suiteId: config.name,
                 totals: context.tally
-              })).then(function () {
+              }).then(function () {
                 return context;
               });
             }).then(function (_ref) {
@@ -1224,11 +1248,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           test.id = config.name; // @deprecated
 
           test.printSummary = function () {
-            return publish(new TestEvent({
+            return publish({
               type: TestEvent.types.END,
               suiteId: config.name,
               totals: Tally.getSimpleTally()
-            }));
+            });
           };
 
           test.getTotals = function () {
@@ -1294,9 +1318,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     factory: function factory(dependencies) {
       'use strict';
 
-      var clock = dependencies.clock,
-          timeUnits = dependencies.timeUnits;
-      var TYPE_EXPRESSION = /(^START$)|(^START_BATCH$)|(^START_TEST$)|(^TEST$)|(^END_TEST$)|(^INFO$)|(^END_BATCH$)|(^END_TALLY$)|(^FINAL_TALLY$)|(^END$)/;
+      var clock = dependencies.clock;
+      var TYPE_EXPRESSION = /(^START$)|(^START_BATCH$)|(^START_TEST$)|(^TEST$)|(^INFO$)|(^END_BATCH$)|(^END_TALLY$)|(^FINAL_TALLY$)|(^END$)/;
       var STATUS_EXPRESSION = /(^PASSED$)|(^SKIPPED$)|(^FAILED$)|(^BROKEN$)/;
       var testCount = 0;
 
@@ -1321,7 +1344,16 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         var self = {};
         event = Object.assign({}, event);
         self.type = getType(event.type);
-        self.time = clock(timeUnits);
+
+        if (typeof event.time === 'number' || typeof event.time === 'bigint') {
+          self.time = event.time;
+        } else {
+          self.time = clock();
+        }
+
+        if (event.duration) {
+          self.duration = event.duration;
+        }
 
         if (self.type === TestEvent.types.TEST) {
           testCount += 1;
@@ -1382,7 +1414,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         START_BATCH: 'START_BATCH',
         START_TEST: 'START_TEST',
         TEST: 'TEST',
-        END_TEST: 'END_TEST',
         INFO: 'INFO',
         END_BATCH: 'END_BATCH',
         END_TALLY: 'END_TALLY',
@@ -1474,6 +1505,43 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         return clock;
       };
 
+      var CONVERSIONS = {
+        s: {
+          SECONDS: 1,
+          MILLISECONDS: 1000,
+          MICROSECONDS: 1000000,
+          NANOSECONDS: 1000000000
+        },
+        ms: {
+          SECONDS: 0.001,
+          MILLISECONDS: 1,
+          MICROSECONDS: 1000,
+          NANOSECONDS: 1000000
+        },
+        us: {
+          SECONDS: 0.000001,
+          MILLISECONDS: 0.001,
+          MICROSECONDS: 1,
+          NANOSECONDS: 1000
+        },
+        ns: {
+          SECONDS: 1e9,
+          MILLISECONDS: 0.000001,
+          MICROSECONDS: 0.001,
+          NANOSECONDS: 1
+        }
+      };
+
+      var duration = function duration(start, end, timeUnits) {
+        var conversions = CONVERSIONS[timeUnits];
+        return {
+          seconds: (end - start) * conversions.SECONDS,
+          milliseconds: (end - start) * conversions.MILLISECONDS,
+          microseconds: (end - start) * conversions.MICROSECONDS,
+          nanoseconds: (end - start) * conversions.NANOSECONDS
+        };
+      };
+
       var NODE_MULTIPLIERS = {
         SECONDS: [1, 1e-9],
         MILLISECONDS: [1e3, 1e-6],
@@ -1499,7 +1567,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       var clock = typeof process !== 'undefined' && typeof process.hrtime === 'function' ? makeClock(NODE_MULTIPLIERS, nodeClock) : makeClock(BROWSER_MULTIPLIERS, browserClock);
       return {
         clock: clock,
-        isValidUnit: isValidUnit
+        isValidUnit: isValidUnit,
+        duration: duration
       };
     }
   };
@@ -1695,6 +1764,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         return '\n';
       };
 
+      consoleStyles.space = function () {
+        return ' ';
+      };
+
       return {
         consoleStyles: consoleStyles
       };
@@ -1817,6 +1890,22 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         return error.expected && error.actual ? "".concat(newLine).concat(newLine).concat(stack).concat(newLine) : "".concat(newLine).concat(stack).concat(newLine);
       };
 
+      var formatDuration = function formatDuration(duration) {
+        if (!duration) {
+          return '';
+        }
+
+        if (duration.seconds > 1) {
+          return "".concat(Math.round(duration.seconds), "s");
+        } else if (duration.milliseconds > 1) {
+          return "".concat(Math.round(duration.milliseconds), "ms");
+        } else if (duration.microseconds > 1) {
+          return "".concat(Math.round(duration.microseconds), "\xB5s");
+        } else if (duration.nanoseconds > 1) {
+          return "".concat(Math.round(duration.nanoseconds), "ns");
+        }
+      };
+
       function DefaultFormatter() {
         var format = function format(event) {
           if (event.type === TestEvent.types.START) {
@@ -1825,12 +1914,12 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
           if (event.type === TestEvent.types.END) {
             var totals = event.totals;
-            return "".concat(newLine).concat(SYMBOLS.INFO, "total: ").concat(consoleStyles.cyan(totals.total)) + "  passed: ".concat(consoleStyles.green(totals.passed)) + "  failed: ".concat(consoleStyles.red(totals.failed + totals.broken)) + "  skipped: ".concat(consoleStyles.yellow(totals.skipped)) + "  duration: ".concat((totals.endTime - totals.startTime) / 1000).concat(newLine);
+            return "".concat(newLine).concat(SYMBOLS.INFO, "total: ").concat(consoleStyles.cyan(totals.total)) + "  passed: ".concat(consoleStyles.green(totals.passed)) + "  failed: ".concat(consoleStyles.red(totals.failed + totals.broken)) + "  skipped: ".concat(consoleStyles.yellow(totals.skipped)) + "  duration: ".concat(formatDuration(totals.duration)).concat(newLine);
           } else if (event.type === TestEvent.types.INFO) {
             return "".concat(SYMBOLS[event.type]).concat(event.behavior).concat(formatInfo(event.log));
           } else if (event.type === TestEvent.types.TEST) {
             if (!event.error) {
-              return "".concat(SYMBOLS[event.status]).concat(event.behavior).concat(formatInfo(event.log));
+              return "".concat(SYMBOLS[event.status]).concat(event.behavior, " (").concat(formatDuration(event.duration), ")").concat(formatInfo(event.log));
             } else if (event.error.expected && event.error.actual) {
               return "".concat(SYMBOLS[event.status]).concat(event.behavior).concat(newLine).concat(newLine) + formatExpectedAndActual(event.error) + formatStack(event.error);
             } else {
@@ -1841,7 +1930,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
 
         return {
-          format: format
+          format: format,
+          formatDuration: formatDuration,
+          formatInfo: formatInfo,
+          formatExpectedAndActual: formatExpectedAndActual,
+          formatStack: formatStack
         };
       } // /Formatter
 
@@ -1868,7 +1961,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             return "".concat(JSON.stringify({
               event: event
             }, null, 2), "]");
-          } else if ([TestEvent.types.END_TALLY].indexOf(event.type) === -1) {
+          } else if ([TestEvent.types.START_TEST, TestEvent.types.END_TALLY].indexOf(event.type) === -1) {
             return "".concat(JSON.stringify({
               event: event
             }, null, 2), ",");
@@ -1891,52 +1984,81 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       'use strict';
 
       var consoleStyles = dependencies.consoleStyles,
-          TestEvent = dependencies.TestEvent;
+          TestEvent = dependencies.TestEvent,
+          SpecFormatter = dependencies.SpecFormatter,
+          DefaultFormatter = dependencies.DefaultFormatter;
       var newLine = consoleStyles.newLine();
 
-      var addToMd = function addToMd(parts, md) {
-        if (!parts.length) {
-          return;
-        }
+      var _ref3 = new SpecFormatter(),
+          makeOrderId = _ref3.makeOrderId,
+          makeSpec = _ref3.makeSpec;
 
-        var part = parts.shift().trim();
-        md[part] = md[part] || {};
+      var _ref4 = new DefaultFormatter(),
+          formatDuration = _ref4.formatDuration;
 
-        if (parts.length) {
-          addToMd(parts, md[part]);
-        }
-      };
-
-      var space = '                                                               ';
-
-      var toBullets = function toBullets(md, layer) {
+      var toBullets = function toBullets(md, SPACE, layer) {
         if (typeof layer === 'undefined') layer = 0;
         var output = '';
         Object.keys(md).forEach(function (key) {
-          var line = key.replace(/\n/g, newLine + space.substring(0, (layer + 1) * 2));
-          output += space.substring(0, layer * 2) + "* ".concat(line).concat(newLine);
-          output += toBullets(md[key], layer + 1);
+          var line = key.replace(/\n/g, newLine + SPACE.substring(0, (layer + 1) * 2));
+          output += SPACE.substring(0, layer * 2) + "* ".concat(line).concat(newLine);
+
+          if (md[key].type && md[key].type === TestEvent.types.TEST) {// done
+          } else {
+            output += toBullets(md[key], SPACE, layer + 1);
+          }
         });
         return output;
       };
 
-      var totals = function totals(_totals) {
-        return "## Totals".concat(newLine) + "".concat(newLine, "- **total**: ").concat(_totals.total) + "".concat(newLine, "- **passed**: ").concat(_totals.passed) + "".concat(newLine, "- **failed**: ").concat(_totals.failed) + "".concat(newLine, "- **skipped**: ").concat(_totals.skipped) + "".concat(newLine, "- **duration**: ").concat((_totals.endTime - _totals.startTime) / 1000, "s");
+      var makeTotalsH2 = function makeTotalsH2(totals) {
+        return "## Totals".concat(newLine) + "".concat(newLine, "- **total**: ").concat(totals.total) + "".concat(newLine, "- **passed**: ").concat(totals.passed) + "".concat(newLine, "- **failed**: ").concat(totals.failed) + "".concat(newLine, "- **skipped**: ").concat(totals.skipped) + "".concat(newLine, "- **duration**: ").concat(formatDuration(totals.duration));
+      };
+
+      var makeErrorsH2 = function makeErrorsH2(specs) {
+        var found = specs.filter(function (event) {
+          return event.status === TestEvent.status.FAILED || event.status === TestEvent.status.BROKEN;
+        });
+
+        if (!found.length) {
+          return;
+        }
+
+        var output = "## Errors".concat(newLine);
+        found.forEach(function (event) {
+          if (event.error && event.error.stack) {
+            output += "".concat(newLine).concat(event.behavior).concat(newLine) + '```' + "".concat(newLine).concat(event.error.stack).concat(newLine) + '```' + newLine;
+          } else {
+            output += "".concat(newLine).concat(event.behavior).concat(newLine);
+          }
+        });
+        return output;
       };
 
       function MarkdownFormatter() {
         var title = 'Tests';
-        var md = {};
+        var order = [];
+        var specs = [];
 
         var format = function format(event) {
           if (event.type === TestEvent.types.START) {
             title = event.suiteId;
           } else if (event.type === TestEvent.types.END) {
-            return "# ".concat(title).concat(newLine).concat(newLine).concat(toBullets(md)).concat(newLine).concat(totals(event.totals));
-          } else if (event.type === TestEvent.types.INFO) {// should we include info?
-            // return `# ${event.behavior}${formatInfo(event.behavior, event.log, 'comment')}`
+            var _makeSpec = makeSpec(order, specs),
+                spec = _makeSpec.spec,
+                SPACE = _makeSpec.SPACE;
+
+            var errors = makeErrorsH2(specs);
+
+            if (errors) {
+              return "# ".concat(title).concat(newLine).concat(newLine).concat(toBullets(spec, SPACE)).concat(newLine).concat(errors).concat(newLine).concat(makeTotalsH2(event.totals));
+            } else {
+              return "# ".concat(title).concat(newLine).concat(newLine).concat(toBullets(spec, SPACE)).concat(newLine).concat(makeTotalsH2(event.totals));
+            }
+          } else if (event.type === TestEvent.types.START_TEST) {
+            order.push(makeOrderId(event));
           } else if (event.type === TestEvent.types.TEST) {
-            addToMd(event.behavior.split(','), md);
+            specs.push(event);
           }
         }; // /format
 
@@ -1991,14 +2113,14 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }
   };
   module.exports = {
-    name: 'SymbolFormatter',
+    name: 'ListFormatter',
     factory: function factory(dependencies) {
       'use strict';
 
       var consoleStyles = dependencies.consoleStyles,
           DefaultFormatter = dependencies.DefaultFormatter;
 
-      function SymbolFormatter() {
+      function ListFormatter() {
         return DefaultFormatter({
           SYMBOLS: {
             PASSED: consoleStyles.green('✓ '),
@@ -2014,7 +2136,162 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       }
 
       return {
-        SymbolFormatter: SymbolFormatter
+        ListFormatter: ListFormatter
+      };
+    }
+  };
+  module.exports = {
+    name: 'SpecFormatter',
+    factory: function factory(dependencies) {
+      'use strict';
+
+      var consoleStyles = dependencies.consoleStyles,
+          TestEvent = dependencies.TestEvent,
+          DefaultFormatter = dependencies.DefaultFormatter;
+      var newLine = consoleStyles.newLine();
+      var space = consoleStyles.space();
+      var SYMBOLS = {
+        PASSED: consoleStyles.green('✓ '),
+        // heavy-check: '✔',
+        FAILED: consoleStyles.red('✗ '),
+        // heavy-x '✘',
+        BROKEN: consoleStyles.red('!= '),
+        // heavy-x '✘',
+        SKIPPED: consoleStyles.yellow('⸕ '),
+        INFO: consoleStyles.cyan('# ')
+      };
+
+      var _DefaultFormatter = DefaultFormatter({
+        SYMBOLS: SYMBOLS
+      }),
+          format = _DefaultFormatter.format,
+          formatDuration = _DefaultFormatter.formatDuration,
+          formatInfo = _DefaultFormatter.formatInfo,
+          formatExpectedAndActual = _DefaultFormatter.formatExpectedAndActual,
+          formatStack = _DefaultFormatter.formatStack;
+
+      var addToSpec = function addToSpec(parts, spec, event) {
+        if (!parts.length) {
+          return;
+        }
+
+        var part = parts.shift().trim();
+
+        if (parts.length) {
+          spec[part] = spec[part] || {};
+          addToSpec(parts, spec[part], event);
+        } else {
+          spec[part] = event;
+        }
+      };
+
+      var makeSpec = function makeSpec(order, specs) {
+        var spec = {};
+
+        var SPACE = _toConsumableArray(new Array(order.length * 2)).join(space);
+
+        specs.sort(function (a, b) {
+          var aIdx;
+          var bIdx;
+          var foundCount = 0;
+
+          for (var i = 0; i < order.length; i += 1) {
+            if (order[i] === makeOrderId(a)) {
+              aIdx = i;
+              foundCount += 1;
+            } else if (order[i] === makeOrderId(b)) {
+              bIdx = i;
+              foundCount += 1;
+            }
+
+            if (foundCount === 2) {
+              break;
+            }
+          }
+
+          if (aIdx < bIdx) {
+            return -1;
+          }
+
+          if (aIdx > bIdx) {
+            return 1;
+          } // a must be equal to b
+
+
+          return 0;
+        }).forEach(function (event) {
+          return addToSpec(event.behavior.split(','), spec, event);
+        });
+        return {
+          spec: spec,
+          SPACE: SPACE
+        };
+      };
+
+      var toPrint = function toPrint(spec, SPACE, layer) {
+        if (typeof layer === 'undefined') layer = 0;
+        var output = ''; // use getOwnPropertyNames instead of keys because the order is guarnateed back to es2015
+        // (Object.keys order is guaranteed in es6 and newer)
+
+        Object.getOwnPropertyNames(spec).forEach(function (key) {
+          if (spec[key].type && spec[key].type === TestEvent.types.TEST) {
+            var event = spec[key];
+            var line;
+
+            if (!event.error) {
+              line = "".concat(SYMBOLS[event.status]).concat(key, " (").concat(formatDuration(event.duration), ")").concat(formatInfo(event.log));
+            } else if (event.error.expected && event.error.actual) {
+              line = "".concat(SYMBOLS[event.status]).concat(key).concat(newLine).concat(newLine) + formatExpectedAndActual(event.error) + formatStack(event.error);
+            } else {
+              line = "".concat(SYMBOLS[event.status]).concat(key) + formatStack(event.error);
+            }
+
+            output += SPACE.substring(0, layer * 2) + "".concat(line).concat(newLine);
+          } else {
+            var _line = key.replace(/\n/g, newLine + SPACE.substring(0, (layer + 1) * 2));
+
+            output += SPACE.substring(0, layer * 2) + "".concat(_line).concat(newLine);
+            output += toPrint(spec[key], SPACE, layer + 1);
+          }
+        });
+        return output;
+      };
+
+      var makeOrderId = function makeOrderId(event) {
+        return "".concat(event.batchId, "-").concat(event.testId);
+      };
+
+      function SpecFormatter() {
+        var order = [];
+        var specs = [];
+
+        var _format = function _format(event) {
+          if (event.type === TestEvent.types.START) {
+            return format(event);
+          } else if (event.type === TestEvent.types.END) {
+            var _makeSpec2 = makeSpec(order, specs),
+                spec = _makeSpec2.spec,
+                SPACE = _makeSpec2.SPACE;
+
+            return "".concat(toPrint(spec, SPACE)).concat(newLine).concat(format(event));
+          } else if (event.type === TestEvent.types.START_TEST) {
+            order.push(makeOrderId(event));
+          } else if (event.type === TestEvent.types.TEST) {
+            specs.push(event);
+          }
+        }; // /format
+
+
+        return {
+          format: _format,
+          makeSpec: makeSpec,
+          makeOrderId: makeOrderId
+        };
+      } // /Formatter
+
+
+      return {
+        SpecFormatter: SpecFormatter
       };
     }
   };
@@ -2151,7 +2428,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
       function ConsoleReporter() {
         var write = function write(event) {
-          if ([TestEvent.types.START, TestEvent.types.TEST, TestEvent.types.INFO, TestEvent.types.END].indexOf(event.type) > -1) {
+          if ([TestEvent.types.START, TestEvent.types.START_TEST, TestEvent.types.TEST, TestEvent.types.INFO, TestEvent.types.END].indexOf(event.type) > -1) {
             var line = format(event);
 
             if (line) {
@@ -2212,7 +2489,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
         var write = function write(event) {
           // write to the console
-          if ([TestEvent.types.START, TestEvent.types.TEST, TestEvent.types.INFO, TestEvent.types.END].indexOf(event.type) > -1) {
+          if ([TestEvent.types.START, TestEvent.types.START_TEST, TestEvent.types.TEST, TestEvent.types.INFO, TestEvent.types.END].indexOf(event.type) > -1) {
             var line = format(event);
 
             if (!line) {
@@ -2325,11 +2602,13 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       'use strict';
 
       var publish = dependencies.publish,
-          TestEvent = dependencies.TestEvent;
+          TestEvent = dependencies.TestEvent,
+          clock = dependencies.clock,
+          duration = dependencies.duration;
 
       function TallyFactory() {
         var now = function now() {
-          return Date.now();
+          return clock();
         };
 
         var makeTally = function makeTally() {
@@ -2340,7 +2619,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             failed: 0,
             broken: 0,
             startTime: -1,
-            endTime: -1
+            endTime: -1,
+            duration: undefined
           };
         }; // there's only 1 tally per require
 
@@ -2353,6 +2633,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           broken: 0,
           startTime: -1,
           endTime: -1,
+          duration: undefined,
           results: [],
           batches: {}
         };
@@ -2412,10 +2693,12 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
               case TestEvent.types.END_BATCH:
                 totals.batches[event.batchId].endTime = now();
+                totals.batches[event.batchId].duration = duration(totals.batches[event.batchId].startTime, totals.batches[event.batchId].endTime);
                 return Promise.resolve();
 
               case TestEvent.types.END_TALLY:
                 totals.endTime = now();
+                totals.duration = duration(totals.startTime, totals.endTime);
                 return Promise.resolve();
             } // /switch
 
@@ -2442,7 +2725,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             failed: tally.failed,
             broken: tally.broken,
             startTime: tally.startTime,
-            endTime: tally.endTime
+            endTime: tally.endTime,
+            duration: tally.duration
           };
         };
 
@@ -2477,14 +2761,21 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
     var envvars = {
       assertionLibrary: {},
-      reporters: ['DEFAULT'],
+      reporters: ['LIST'],
       useColors: true,
       timeUnits: 'us'
     };
 
+    var clock = function clock() {
+      return time.clock(envvars.timeUnits);
+    };
+
+    var duration = function duration(start, end) {
+      return time.duration(start, end, envvars.timeUnits);
+    };
+
     var _module$factories$Tes = module.factories.TestEventFactory({
-      clock: time.clock,
-      timeUnits: envvars.timeUnits
+      clock: clock
     }),
         TestEvent = _module$factories$Tes.TestEvent;
 
@@ -2495,12 +2786,12 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }),
         Pubsub = _module$factories$pub.Pubsub;
 
-    var _ref3 = new Pubsub(),
-        publish = _ref3.publish,
-        subscribe = _ref3.subscribe,
-        subscriptionExists = _ref3.subscriptionExists,
-        allSubscriptions = _ref3.allSubscriptions,
-        reset = _ref3.reset;
+    var _ref5 = new Pubsub(),
+        publish = _ref5.publish,
+        subscribe = _ref5.subscribe,
+        subscriptionExists = _ref5.subscriptionExists,
+        allSubscriptions = _ref5.allSubscriptions,
+        reset = _ref5.reset;
 
     var consoleStyles = module.factories.consoleStylesFactory({
       envvars: envvars
@@ -2508,11 +2799,13 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
     var _module$factories$Tal = module.factories.TallyFactory({
       publish: publish,
-      TestEvent: TestEvent
+      TestEvent: TestEvent,
+      clock: clock,
+      duration: duration
     }),
         TallyFactory = _module$factories$Tal.TallyFactory;
 
-    var _TallyFactory = TallyFactory(),
+    var _TallyFactory = TallyFactory({}),
         Tally = _TallyFactory.Tally;
 
     var _module$factories$rep = module.factories.reporterFactoryFactory({}),
@@ -2534,7 +2827,13 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       return module.factories.DefaultFormatterFactory({
         consoleStyles: consoleStyles,
         TestEvent: TestEvent,
-        SYMBOLS: options.SYMBOLS
+        SYMBOLS: options && options.SYMBOLS || {
+          PASSED: ' PASS ',
+          FAILED: ' FAIL ',
+          BROKEN: ' !!!! ',
+          SKIPPED: ' SKIP ',
+          INFO: ' INFO '
+        }
       }).DefaultFormatter();
     }
 
@@ -2545,14 +2844,19 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       }).DomReporter();
     }
 
-    var symbolFormatter = module.factories.SymbolFormatterFactory({
+    var listFormatter = module.factories.ListFormatterFactory({
       consoleStyles: consoleStyles,
       DefaultFormatter: DefaultFormatter
-    }).SymbolFormatter();
-    reporterFactory.add(function DefaultReporter() {
+    }).ListFormatter();
+    var SpecFormatter = module.factories.SpecFormatterFactory({
+      consoleStyles: consoleStyles,
+      DefaultFormatter: DefaultFormatter,
+      TestEvent: TestEvent
+    }).SpecFormatter;
+    reporterFactory.add(function ListReporter() {
       return {
         write: ConsoleReporter({
-          formatter: symbolFormatter
+          formatter: listFormatter
         }).write
       };
     }).add(function BlockReporter() {
@@ -2587,7 +2891,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         write: ConsoleReporter({
           formatter: module.factories.MarkdownFormatterFactory({
             consoleStyles: consoleStyles,
-            TestEvent: TestEvent
+            TestEvent: TestEvent,
+            SpecFormatter: SpecFormatter,
+            DefaultFormatter: DefaultFormatter
           }).MarkdownFormatter()
         }).write
       };
@@ -2597,12 +2903,18 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           formatter: {
             format: function format(event) {
               if (event.type === TestEvent.types.TEST) {
-                return symbolFormatter.format(event).split('\n')[0];
+                return listFormatter.format(event).split('\n')[0];
               } else {
-                return symbolFormatter.format(event);
+                return listFormatter.format(event);
               }
             }
           }
+        }).write
+      };
+    }).add(function SpecReporter() {
+      return {
+        write: ConsoleReporter({
+          formatter: SpecFormatter()
         }).write
       };
     }).add(function SummaryReporter() {
@@ -2629,7 +2941,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     var _module$factories$Asy = module.factories.AsyncTestFactory({
       isPromise: isPromise,
       publish: publish,
-      TestEvent: TestEvent
+      TestEvent: TestEvent,
+      clock: clock,
+      duration: duration
     }),
         AsyncTest = _module$factories$Asy.AsyncTest;
 
