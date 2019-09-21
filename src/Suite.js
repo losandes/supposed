@@ -72,7 +72,7 @@ module.exports = {
       return {
         batchId,
         batch: processed,
-        tests: processed.map(theory => new AsyncTest(theory, config.makeTheoryConfig(theory), batchId))
+        tests: processed.map(theory => new AsyncTest(theory, config.makeTheoryConfig(theory), batchId, config.name))
       }
     }
 

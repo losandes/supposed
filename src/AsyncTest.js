@@ -160,6 +160,7 @@ module.exports = {
         return publish({
           type: TestEvent.types.TEST,
           status: TestEvent.status.PASSED,
+          suiteId: context.suiteId,
           batchId,
           testId: assertion.id,
           behavior: assertion.behavior,
@@ -178,6 +179,7 @@ module.exports = {
       const fail = (e) => publish({
         type: TestEvent.types.TEST,
         status: TestEvent.status.FAILED,
+        suiteId: context.suiteId,
         batchId,
         testId: assertion.id,
         behavior: assertion.behavior,
@@ -190,6 +192,7 @@ module.exports = {
           return publish({
             type: TestEvent.types.TEST,
             status: TestEvent.status.SKIPPED,
+            suiteId: context.suiteId,
             batchId,
             testId: assertion.id,
             behavior: assertion.behavior,
@@ -201,6 +204,7 @@ module.exports = {
 
         return publish({
           type: TestEvent.types.START_TEST,
+          suiteId: context.suiteId,
           batchId,
           testId: assertion.id,
           behavior: assertion.behavior,
@@ -223,6 +227,7 @@ module.exports = {
       const self = {
         test: context.test,
         config: context.config,
+        suiteId: context.suiteId,
         batchId: context.batchId,
         timer: context.timer,
         given: context.given,
@@ -256,7 +261,7 @@ module.exports = {
     //     test: [Function: we get Infinity]
     //   }]
     // }
-    function AsyncTest (test, config, batchId) {
+    function AsyncTest (test, config, batchId, suiteId) {
       return () => {
         // we need a Promise wrapper, to timout the test if it never returns
         return new Promise((resolve, reject) => {
@@ -266,11 +271,13 @@ module.exports = {
             const context = new Context({
               test: test,
               config: config,
+              suiteId,
               batchId,
               timer: setTimeout(() => {
                 publish({
                   type: TestEvent.types.TEST,
                   status: TestEvent.status.BROKEN,
+                  suiteId,
                   batchId,
                   behavior: test.behavior,
                   behaviors: test.behaviors,
@@ -294,6 +301,7 @@ module.exports = {
                 publish({
                   type: TestEvent.types.TEST,
                   status: TestEvent.status.BROKEN,
+                  suiteId,
                   batchId,
                   behavior: test.behavior,
                   behaviors: test.behaviors,

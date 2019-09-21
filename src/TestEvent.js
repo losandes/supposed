@@ -31,7 +31,22 @@ module.exports = {
       var self = {}
       event = Object.assign({}, event)
 
-      self.type = getType(event.type)
+      if (event.suiteId) {
+        self.suiteId = event.suiteId
+      }
+
+      if (event.batchId) {
+        self.batchId = event.batchId
+      }
+
+      if (event.testId) {
+        self.testId = event.testId
+      }
+
+      if (self.type === TestEvent.types.TEST) {
+        testCount += 1
+        self.count = testCount
+      }
 
       if (typeof event.time === 'number' || typeof event.time === 'bigint') {
         self.time = event.time
@@ -39,14 +54,7 @@ module.exports = {
         self.time = clock()
       }
 
-      if (event.duration) {
-        self.duration = event.duration
-      }
-
-      if (self.type === TestEvent.types.TEST) {
-        testCount += 1
-        self.count = testCount
-      }
+      self.type = getType(event.type)
 
       if (typeof event.status === 'string' && STATUS_EXPRESSION.test(event.status)) {
         self.status = event.status
@@ -62,28 +70,24 @@ module.exports = {
         self.behaviors = event.behaviors
       }
 
-      if (event.error) {
-        self.error = makeJSONStringifiableError(event.error)
-      }
-
-      if (event.batchId) {
-        self.batchId = event.batchId
-      }
-
-      if (event.testId) {
-        self.testId = event.testId
-      }
-
-      if (event.suiteId) {
-        self.suiteId = event.suiteId
-      }
-
       if (event.plan) {
         self.plan = event.plan
       }
 
+      if (event.error) {
+        self.error = makeJSONStringifiableError(event.error)
+      }
+
       if (typeof event.log !== 'undefined') {
         self.log = event.log
+      }
+
+      if (event.context) {
+        self.context = event.context
+      }
+
+      if (event.duration) {
+        self.duration = event.duration
       }
 
       if (event.tally) {
@@ -92,10 +96,6 @@ module.exports = {
 
       if (event.totals) {
         self.totals = event.totals
-      }
-
-      if (event.context) {
-        self.context = event.context
       }
 
       return Object.freeze(self)

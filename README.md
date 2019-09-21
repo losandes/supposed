@@ -1102,53 +1102,216 @@ test('when dividing a number by zero', {
 ```
 
 ### Subscribing to Test Events
-Supposed uses a simple event system (pubsub) to report. You can subscribe to these events in two different ways. Before demonstrating that, let's look at the types of events you can expect. The interface has properties for many different types of events. Not all events produce all of these properties.
+Supposed uses a simple event system (pubsub) to report. You can subscribe to these events in two different ways. Before demonstrating that, let's look at the types of events you can expect. First lets look at the facade interface, which includes all of the properties for every type of event:
 
 ```TypeScript
-interface ITestEvent {
-  type: string;
-  status?: string;  // only when type === 'TEST'
-  time?: number;
-  behavior?: string;
-  error?: Error;
+interface ISimpleTally {
+  total: number;
+  passed: number;
+  skipped: number;
+  failed: number;
+  broken: number;
+  startTime: number;
+  endTime: number;
+}
+
+interface IDuration {
+  seconds: number;
+  milliseconds: number;
+  microseconds: number;
+  nanoseconds: number;
+}
+
+interface ISupposedEvent {
   suiteId?: string;
   batchId?: string;
   testId?: string;
+  count?: number;
+  time: number;
+  type: string;
+  status?: string;
+  behavior?: string;
+  behaviors?: string[];
   plan?: {
     count: number;
     completed: number;
   };
-  log?: any;      // only when type === 'TEST'
-  context?: any;  // only when type === 'TEST'
-  tally?: {
-    total: number;
-    passed: number;
-    skipped: number;
-    failed: number;
-    broken: number;
-    startTime: number;
-    endTime: number;
-    results: ITestEvent[];
-    batches: { [batchId: string]: ITally };
+  error?: Error;
+  log?: any;
+  context?: any;
+  duration?: {
+    given: IDuration;
+    when: IDuration;
+    then: IDuration;
+    total: IDuration;
   };
-  totals?: {
-    total: number;
-    passed: number;
-    skipped: number;
-    failed: number;
-    broken: number;
-    startTime: number;
-    endTime: number;
-  };
+  totals?: ISimpleTally;
 }
 ```
 
+Some more specific event interfaces are supported for TypeScript:
+
+```TypeScript
+interface IStartEvent {
+  type: 'START';
+  suiteId: string;
+  time: number;
+}
+
+interface IEndEvent {
+  type: 'START';
+  suiteId: string;
+  time: number;
+  totals: ISimpleTally;
+}
+
+interface ITestEvent {
+  suiteId: string;
+  batchId: string;
+  testId: string;
+  count: number;
+  time: number;
+  type: 'TEST';
+  status: 'PASSED' | 'SKIPPED' | 'FAILED' | 'BROKEN';
+  behavior: string;
+  behaviors: string[];
+}
+
+interface ITestPassedEvent extends ITestEvent {
+  status: 'PASSED';
+  log?: any;
+  context?: any;
+  duration: {
+    given: IDuration;
+    when: IDuration;
+    then: IDuration;
+    total: IDuration;
+  };
+}
+
+interface ITestFailedEvent extends ITestEvent {
+  status: 'FAILED' | 'BROKEN';
+  error: Error;
+}
+```
+
+* `suiteId` - The name you gave the suite, or a generated id
+* `batchId` - A hash of the first description in a test file, preceded by a "B" (i.e. "B2703165877")
+* `testId` - A hash of the `behavior`, preceded by a "T" (i.e. "T2703165877")
+* `count` - The index of this test in relation to all of the tests a suite is running (count is set upon test completion)
+* `time` - The time the event occurred (not a datetime; in microseconds by default, using hrtime, or performance.now)
+* `type` - The event type (`START|START_BATCH|START_TEST|TEST|END_BATCH|END_TALLY|FINAL_TALLY|END`)
+* `status` - The outcome of the test (`TEST` events only) (`PASSED|SKIPPED|FAILED|BROKEN`)
+* `behaviors` - The descriptions, including inherited descriptions in an array
+* `behavior` - `behaviors` joined into a string with commas
+* `plan` - Plan information for TAP reporting
+* `error` - For `TEST` events, if the status is `FAILED` or `BROKEN`, an error will be present
+* `log` - For `TEST` events, if an assertion returns `{ log: any; }` the value will be emitted as part of this event, and included in the test output with reporters that support it
+* `context` - For `TEST` events, if an assertion returns `{ context: any; }` the value will be emitted as part of this event
+* `duration` - The time it took to run `given`, `when`, the assertion, and the total duration for a test
+* `totals` - the tally of all test outomes: passed, failed, skipped, broken, total, start and end times, and duration
+
+> The difference between `log` and `context` is that `log` can be included in reporter output
+
+OK - now that we know about the events, and what to expect, it's pretty easy to take advantage of them. In this example, we'll make our own reporter that prints the test status, descriptions, and the performance information. This example uses `subscribe`, and sets the reporter to "noop" to achieve this. A benefit of this design, is that other reporters can also be used in conjunction.
+
+```JavaScript
+// ./first-module/first-spec.js
+module.exports = (test) => test('given first-module, when... it...', (t) => {
+  t.strictEqual(42 / 0, Infinity)
+})
+
+// ./second-module/second-spec.js
+module.exports = (test) => test('given second-module, when... it...', (t) => {
+  t.strictEqual(42 / 0, Infinity)
+})
+
+// ./tests.js
+const supposed = require('supposed')
+
+const formatDuration = (duration) => {
+  if (!duration) {
+    return 0
+  }
+
+  if (typeof duration === 'number' && duration.seconds > 1) {
+    return `${Math.round(duration.seconds)}s`
+  } else if (duration.milliseconds > 1) {
+    return `${Math.round(duration.milliseconds)}ms`
+  } else if (duration.microseconds > 1) {
+    return `${Math.round(duration.microseconds)}µs`
+  } else if (duration.nanoseconds > 1) {
+    return `${Math.round(duration.nanoseconds)}ns`
+  } else {
+    return 0
+  }
+}
+
+module.exports = supposed.Suite({
+  reporter: 'noop'  // use the noop reporter to turn off supposed reporting and roll your own
+}).subscribe((event) => {
+  if (event.type === 'TEST') {
+    const durations = [
+      `given: ${formatDuration(event.duration.given)}`,
+      `when: ${formatDuration(event.duration.when)}`,
+      `then: ${formatDuration(event.duration.then)}`
+    ]
+
+    // console.log(`  ${event.status}  ${event.behavior} (${durations.join(', ')})`)
+    console.log(`${event.status} ${event.behavior} (duration: ${formatDuration(event.duration.total)} (${durations.join(', ')}))`)
+  }
+})
+  .runner({ cwd: __dirname })
+  .run()
+```
+
+If we don't want the freedom to use other reporters, we can register a reporter instead of subscribing to events.
+
+```JavaScript
+// ... (from example above)
+// ./tests.js
+const supposed = require('supposed')
+
+const formatDuration = (duration) => {
+  if (!duration) {
+    return 0
+  }
+
+  if (typeof duration === 'number' && duration.seconds > 1) {
+    return `${Math.round(duration.seconds)}s`
+  } else if (duration.milliseconds > 1) {
+    return `${Math.round(duration.milliseconds)}ms`
+  } else if (duration.microseconds > 1) {
+    return `${Math.round(duration.microseconds)}µs`
+  } else if (duration.nanoseconds > 1) {
+    return `${Math.round(duration.nanoseconds)}ns`
+  } else {
+    return 0
+  }
+}
+
+module.exports = supposed.Suite({
+  reporter: (event) => {
+    if (event.type === 'TEST') {
+      const durations = [
+        `given: ${formatDuration(event.duration.given)}`,
+        `when: ${formatDuration(event.duration.when)}`,
+        `then: ${formatDuration(event.duration.then)}`
+      ]
+
+      // console.log(`  ${event.status}  ${event.behavior} (${durations.join(', ')})`)
+      console.log(`${event.status} ${event.behavior} (duration: ${formatDuration(event.duration.total)} (${durations.join(', ')}))`)
+    }
+  }
+}).runner({ cwd: __dirname })
+  .run()
+```
 
 ### Streaming Output to a File
 The following examples assumes you have a `./tests.js` file that executes your tests:
 
 ```Shell
-$ node tests -r tap > tests.log
+$ node tests -r md > tests.md
 ```
 
 ### Writing Your Own Test Runner

@@ -36,23 +36,14 @@ export interface IVow {
   [assert: string]: IBDD | IBehaviors | IAssert | ICurriedAssert | IPromiseOrFunction | undefined;
 }
 
-interface ITally {
-  total: number;
-  passed: number;
-  skipped: number;
-  failed: number;
-  broken: number;
-  startTime: number;
-  endTime: number;
-  duration: {
-    seconds: number;
-    milliseconds: number;
-    microseconds: number;
-    nanoseconds: number;
-  }
+interface IDuration {
+  seconds: number;
+  milliseconds: number;
+  microseconds: number;
+  nanoseconds: number;
 }
 
-interface IFinalTally {
+interface ISimpleTally {
   total: number;
   passed: number;
   skipped: number;
@@ -60,32 +51,86 @@ interface IFinalTally {
   broken: number;
   startTime: number;
   endTime: number;
-  results: ITestEvent[];
-  batches: { [batchId: string]: ITally };
+  duration: IDuration;
+}
+
+interface IFinalTally extends ISimpleTally {
+  results: ISupposedEvent[];
+  batches: { [batchId: string]: ISimpleTally };
 }
 
 // different events have different properties - this has all-possibilities (nullable)
-export interface ITestEvent {
-  type: string;
-  status?: string;  // only when type === 'TEST'
-  time?: number;
-  behavior?: string;
-  error?: Error;
+export interface ISupposedEvent {
   suiteId?: string;
   batchId?: string;
   testId?: string;
+  count?: number;
+  time?: number;
+  type: string;
+  status?: string;  // only when type === 'TEST'
+  behavior?: string;    // behaviors joined to a string with comma's
+  behaviors?: string[]; // the test descriptions nests as an array
   plan?: {
     count: number;
     completed: number;
   };
+  error?: Error;
   log?: any;      // only when type === 'TEST'
   context?: any;  // only when type === 'TEST'
+  duration?: {
+    given: IDuration;
+    when: IDuration;
+    then: IDuration;
+    total: IDuration;
+  };
   tally?: IFinalTally;
-  totals?: ITally;
+  totals?: ISimpleTally;
+}
+
+export interface IStartEvent {
+  type: 'START';
+  suiteId: string;
+  time: number;
+}
+
+export interface IEndEvent {
+  type: 'START';
+  suiteId: string;
+  time: number;
+  totals: ISimpleTally;
+}
+
+export interface ITestEvent {
+  suiteId: string;
+  batchId: string;
+  testId: string;
+  count: number;
+  time: number;
+  type: 'TEST';
+  status: 'PASSED' | 'SKIPPED' | 'FAILED' | 'BROKEN';
+  behavior: string;
+  behaviors: string[];
+}
+
+export interface ITestPassedEvent extends ITestEvent {
+  status: 'PASSED';
+  log?: any;
+  context?: any;
+  duration: {
+    given: IDuration;
+    when: IDuration;
+    then: IDuration;
+    total: IDuration;
+  };
+}
+
+export interface ITestFailedEvent extends ITestEvent {
+  status: 'FAILED' | 'BROKEN';
+  error: Error;
 }
 
 interface IWrite {
-  (event: ITestEvent): Promise<void>
+  (event: ISupposedEvent): Promise<void>
 }
 
 interface IReport {
@@ -102,13 +147,13 @@ interface IReport {
  * i.e.
  *   ```
  *   class MyReporter {
- *     write (event: ITestEvent): Promise<void> { ... }
+ *     write (event: ISupposedEvent): Promise<void> { ... }
  *   }
  *   ```
  *
  *   ```
  *   function MyReporter () {
- *     const write = (event: ITestEvent): Promise<void> => { ... }
+ *     const write = (event: ISupposedEvent): Promise<void> => { ... }
  *     return { write }
  *   }
  *   ```
@@ -190,8 +235,8 @@ export interface IBrowserRunnerConfigOutput {
 
 export interface ICompletedBatch {
   batchId: string;
-  results: ITestEvent[];
-  totals: ITally;
+  results: ISupposedEvent[];
+  totals: ISimpleTally;
 }
 
 export interface INodeRunnerOutput {
@@ -200,7 +245,7 @@ export interface INodeRunnerOutput {
   broken: Error[];
   config: INodeRunnerConfigOutput;
   suite: ISuppose;
-  totals: ITally;
+  totals: ISimpleTally;
 }
 
 export interface IBrowserRunnerOutput {

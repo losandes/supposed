@@ -1,7 +1,7 @@
 module.exports = (test) => {
-  const DESCRIPTION = 'slow tests '
+  const DESCRIPTION = 'slow tests'
   const DELAY = 10
-  const makeDescription = (count) => DESCRIPTION + ', #' + count
+  const makeDescription = (count) => `${DESCRIPTION}, # ${count}`
 
   const slowTest = async () => new Promise((resolve) => {
     setTimeout(() => { resolve() }, DELAY)
