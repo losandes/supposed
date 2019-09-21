@@ -41,7 +41,7 @@ module.exports = {
           const event = spec[key]
           let line
           if (!event.error) {
-            line = `${SYMBOLS[event.status]}${key} (${formatDuration(event.duration)})${formatInfo(event.log)}`
+            line = `${SYMBOLS[event.status]}${key}${formatInfo(event.log)}`
           } else if (event.error.expected && event.error.actual) {
             line = `${SYMBOLS[event.status]}${key}${newLine}${newLine}` +
               formatExpectedAndActual(event.error) +

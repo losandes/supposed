@@ -3,7 +3,7 @@ module.exports = {
   factory: (dependencies) => {
     'use strict'
 
-    const { isPromise, publish, TestEvent, clock, duration } = dependencies
+    const { isPromise, publish, TestEvent, clock, duration, addDurations } = dependencies
 
     function noop () { }
 
@@ -45,6 +45,7 @@ module.exports = {
       }
 
       try {
+        const startTime = clock()
         const actual = context.given()
         if (isPromise(actual)) {
           return actual.then((value) => {
@@ -56,6 +57,7 @@ module.exports = {
           })
         }
 
+        context.givenDuration = duration(startTime, clock())
         context.resultOfGiven = actual
         return Promise.resolve(context)
       } catch (e) {
@@ -74,6 +76,7 @@ module.exports = {
       }
 
       try {
+        const startTime = clock()
         const actual = context.when(context.resultOfGiven)
         if (isPromise(actual)) {
           return actual.then((value) => {
@@ -85,6 +88,7 @@ module.exports = {
           })
         }
 
+        context.whenDuration = duration(startTime, clock())
         context.resultOfWhen = actual
         return Promise.resolve(context)
       } catch (e) {
@@ -99,7 +103,7 @@ module.exports = {
      */
     function checkAssertions (context) {
       const promises = context.test.assertions.map((assertion) => {
-        return assertOne(context.batchId, assertion, () => {
+        return assertOne(context, assertion, () => {
           if (assertion.test.length > 1) {
             // the assertion accepts all arguments to a single function
             return assertion.test(
@@ -146,9 +150,12 @@ module.exports = {
      * Executes one assertion
      * @param {Object} context
      */
-    function assertOne (batchId, assertion, test) {
+    function assertOne (context, assertion, test) {
+      const { batchId, givenDuration, whenDuration } = context
+
       const pass = (startTime) => (result) => {
         const endTime = clock()
+        const _dur = duration(startTime, endTime)
 
         return publish({
           type: TestEvent.types.TEST,
@@ -157,7 +164,12 @@ module.exports = {
           testId: assertion.id,
           behavior: assertion.behavior,
           time: endTime,
-          duration: duration(startTime, endTime),
+          duration: {
+            given: givenDuration,
+            when: whenDuration,
+            then: _dur,
+            total: addDurations(givenDuration, whenDuration, _dur)
+          },
           log: maybeLog(result),
           context: maybeContext(result)
         })
@@ -182,7 +194,7 @@ module.exports = {
           })
         }
 
-        let startTime // TODO: This is measuring the wrong thing - we likely want to know how long the `when` takes
+        let startTime
 
         return publish({
           type: TestEvent.types.START_TEST,
@@ -213,6 +225,18 @@ module.exports = {
         when: context.when,
         resultOfGiven: context.resultOfGiven,
         resultOfWhen: context.resultOfWhen,
+        givenDuration: context.givenDuration || Object.seal({
+          seconds: -1,
+          milliseconds: -1,
+          microseconds: -1,
+          nanoseconds: -1
+        }),
+        whenDuration: context.whenDuration || Object.seal({
+          seconds: -1,
+          milliseconds: -1,
+          microseconds: -1,
+          nanoseconds: -1
+        }),
         outcomes: context.outcomes || [],
         err: context.err
       }

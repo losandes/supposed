@@ -81,7 +81,7 @@ module.exports = {
             `  duration: ${formatDuration(totals.duration)}${newLine}`
         } else if (event.type === TestEvent.types.TEST) {
           if (!event.error) {
-            return `${SYMBOLS[event.status]}${event.behavior} (${formatDuration(event.duration)})${formatInfo(event.log)}`
+            return `${SYMBOLS[event.status]}${event.behavior}${formatInfo(event.log)}`
           } else if (event.error.expected && event.error.actual) {
             return `${SYMBOLS[event.status]}${event.behavior}${newLine}${newLine}` +
               formatExpectedAndActual(event.error) +

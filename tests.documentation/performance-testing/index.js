@@ -1,40 +1,36 @@
 const supposed = require('supposed')
 const { time } = supposed
 
-const durations = {}
+const formatDuration = (duration) => {
+  if (!duration) {
+    return 0
+  }
+
+  if (typeof duration === 'number' && duration.seconds > 1) {
+    return `${Math.round(duration.seconds)}s`
+  } else if (duration.milliseconds > 1) {
+    return `${Math.round(duration.milliseconds)}ms`
+  } else if (duration.microseconds > 1) {
+    return `${Math.round(duration.microseconds)}µs`
+  } else if (duration.nanoseconds > 1) {
+    return `${Math.round(duration.nanoseconds)}ns`
+  } else {
+    return 0
+  }
+}
 
 module.exports = supposed.Suite({
-  reporter: 'noop'
+  // reporter: 'noop'
 }).subscribe((event) => {
-  if (event.type === 'START_TEST') {
-    durations[`t${event.testId}`] = {
-      behavior: event.behavior,
-      start: {
-        us: event.time,
-        us2: time.clock('us'),
-        ms: time.clock('ms')
-      }
-    }
-  } else if (event.type === 'END_TEST') {
-    const dur = durations[`t${event.testId}`]
+  if (event.type === 'TEST') {
+    const durations = [
+      `given: ${formatDuration(event.duration.given)}`,
+      `when: ${formatDuration(event.duration.when)}`,
+      `then: ${formatDuration(event.duration.then)}`
+    ]
 
-    dur.end = {
-      us: event.time,
-      us2: time.clock('us')
-    }
-    dur.duration = {
-      us: (event.time - dur.start.us),
-      us2: dur.end.us2 - dur.start.us2,
-      ms: (time.clock('ms') - dur.start.ms)
-    }
-  } else if (event.type === 'END') {
-    console.log(durations)
-    // console.log(Object.keys(durations).map((key) => {
-    //   return {
-    //     test: durations[key].behavior,
-    //     duration: durations[key].duration
-    //   }
-    // }))
+    // console.log(`  ${event.status}  ${event.behavior} (${durations.join(', ')})`)
+    console.log(`# latency: ${formatDuration(event.duration.total)} (${durations.join(', ')})`)
   }
 })
   .runner({ cwd: __dirname })

@@ -131,6 +131,12 @@
           reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
         }).write
       }
+    }).add(function PerformanceReporter () {
+      return {
+        write: ConsoleReporter({
+          formatter: module.factories.PerformanceFormatterFactory({ consoleStyles, TestEvent }).PerformanceFormatter()
+        }).write
+      }
     }).add(function JustTheDescriptionsReporter () {
       return {
         write: ConsoleReporter({
@@ -175,7 +181,8 @@
       publish,
       TestEvent,
       clock,
-      duration
+      duration,
+      addDurations: time.addDurations
     })
     const { hash } = module.factories.hashFactory()
     const { BatchComposer } = module.factories.makeBatchFactory({ hash })

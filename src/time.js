@@ -79,6 +79,26 @@ module.exports = {
       }
     }
 
+    const addDurations = (...durations) => {
+      const duration = {
+        seconds: 0,
+        milliseconds: 0,
+        microseconds: 0,
+        nanoseconds: 0
+      }
+
+      durations.forEach((_dur) => {
+        if (typeof _dur.microseconds === 'number' && _dur.microseconds > 0) {
+          duration.seconds += _dur.seconds
+          duration.milliseconds += _dur.milliseconds
+          duration.microseconds += _dur.microseconds
+          duration.nanoseconds += _dur.nanoseconds
+        }
+      })
+
+      return duration
+    }
+
     const NODE_MULTIPLIERS = {
       SECONDS: [1, 1e-9],
       MILLISECONDS: [1e3, 1e-6],
@@ -105,6 +125,6 @@ module.exports = {
       ? makeClock(NODE_MULTIPLIERS, nodeClock)
       : makeClock(BROWSER_MULTIPLIERS, browserClock)
 
-    return { clock, isValidUnit, duration }
+    return { clock, isValidUnit, duration, addDurations }
   }
 }

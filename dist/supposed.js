@@ -83,7 +83,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           publish = dependencies.publish,
           TestEvent = dependencies.TestEvent,
           clock = dependencies.clock,
-          duration = dependencies.duration;
+          duration = dependencies.duration,
+          addDurations = dependencies.addDurations;
 
       function noop() {}
       /**
@@ -125,6 +126,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         }
 
         try {
+          var startTime = clock();
           var actual = context.given();
 
           if (isPromise(actual)) {
@@ -137,6 +139,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             });
           }
 
+          context.givenDuration = duration(startTime, clock());
           context.resultOfGiven = actual;
           return Promise.resolve(context);
         } catch (e) {
@@ -156,6 +159,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         }
 
         try {
+          var startTime = clock();
           var actual = context.when(context.resultOfGiven);
 
           if (isPromise(actual)) {
@@ -168,6 +172,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             });
           }
 
+          context.whenDuration = duration(startTime, clock());
           context.resultOfWhen = actual;
           return Promise.resolve(context);
         } catch (e) {
@@ -183,7 +188,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
       function checkAssertions(context) {
         var promises = context.test.assertions.map(function (assertion) {
-          return assertOne(context.batchId, assertion, function () {
+          return assertOne(context, assertion, function () {
             if (assertion.test.length > 1) {
               // the assertion accepts all arguments to a single function
               return assertion.test(context.config.assertionLibrary, context.err, context.resultOfWhen);
@@ -227,10 +232,17 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
        */
 
 
-      function assertOne(batchId, assertion, test) {
+      function assertOne(context, assertion, test) {
+        var batchId = context.batchId,
+            givenDuration = context.givenDuration,
+            whenDuration = context.whenDuration;
+
         var pass = function pass(startTime) {
           return function (result) {
             var endTime = clock();
+
+            var _dur = duration(startTime, endTime);
+
             return publish({
               type: TestEvent.types.TEST,
               status: TestEvent.status.PASSED,
@@ -238,7 +250,12 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               testId: assertion.id,
               behavior: assertion.behavior,
               time: endTime,
-              duration: duration(startTime, endTime),
+              duration: {
+                given: givenDuration,
+                when: whenDuration,
+                then: _dur,
+                total: addDurations(givenDuration, whenDuration, _dur)
+              },
               log: maybeLog(result),
               context: maybeContext(result)
             });
@@ -301,6 +318,18 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           when: context.when,
           resultOfGiven: context.resultOfGiven,
           resultOfWhen: context.resultOfWhen,
+          givenDuration: context.givenDuration || Object.seal({
+            seconds: -1,
+            milliseconds: -1,
+            microseconds: -1,
+            nanoseconds: -1
+          }),
+          whenDuration: context.whenDuration || Object.seal({
+            seconds: -1,
+            milliseconds: -1,
+            microseconds: -1,
+            nanoseconds: -1
+          }),
           outcomes: context.outcomes || [],
           err: context.err
         };
@@ -1319,7 +1348,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       'use strict';
 
       var clock = dependencies.clock;
-      var TYPE_EXPRESSION = /(^START$)|(^START_BATCH$)|(^START_TEST$)|(^TEST$)|(^INFO$)|(^END_BATCH$)|(^END_TALLY$)|(^FINAL_TALLY$)|(^END$)/;
+      var TYPE_EXPRESSION = /(^START$)|(^START_BATCH$)|(^START_TEST$)|(^TEST$)|(^END_BATCH$)|(^END_TALLY$)|(^FINAL_TALLY$)|(^END$)/;
       var STATUS_EXPRESSION = /(^PASSED$)|(^SKIPPED$)|(^FAILED$)|(^BROKEN$)/;
       var testCount = 0;
 
@@ -1414,7 +1443,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         START_BATCH: 'START_BATCH',
         START_TEST: 'START_TEST',
         TEST: 'TEST',
-        INFO: 'INFO',
         END_BATCH: 'END_BATCH',
         END_TALLY: 'END_TALLY',
         FINAL_TALLY: 'FINAL_TALLY',
@@ -1542,6 +1570,29 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         };
       };
 
+      var addDurations = function addDurations() {
+        var duration = {
+          seconds: 0,
+          milliseconds: 0,
+          microseconds: 0,
+          nanoseconds: 0
+        };
+
+        for (var _len = arguments.length, durations = new Array(_len), _key = 0; _key < _len; _key++) {
+          durations[_key] = arguments[_key];
+        }
+
+        durations.forEach(function (_dur) {
+          if (typeof _dur.microseconds === 'number' && _dur.microseconds > 0) {
+            duration.seconds += _dur.seconds;
+            duration.milliseconds += _dur.milliseconds;
+            duration.microseconds += _dur.microseconds;
+            duration.nanoseconds += _dur.nanoseconds;
+          }
+        });
+        return duration;
+      };
+
       var NODE_MULTIPLIERS = {
         SECONDS: [1, 1e-9],
         MILLISECONDS: [1e3, 1e-6],
@@ -1568,7 +1619,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       return {
         clock: clock,
         isValidUnit: isValidUnit,
-        duration: duration
+        duration: duration,
+        addDurations: addDurations
       };
     }
   };
@@ -1821,11 +1873,19 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           }
         }).format;
 
+        var isFail = function isFail(event) {
+          return event.type === TestEvent.types.TEST && (event.status === TestEvent.status.FAILED || event.status === TestEvent.status.BROKEN);
+        };
+
         var format = function format(event) {
           if ([TestEvent.types.START, TestEvent.types.END].indexOf(event.type) > -1) {
             return defaultFormat(event);
-          } else if (event.type === TestEvent.types.TEST && (event.status === TestEvent.status.FAILED || event.status === TestEvent.status.BROKEN)) {
+          } else if (isFail(event)) {
             return defaultFormat(event);
+          } else if (event.isDeterministicOutput) {
+            var output = event.testEvents.filter(isFail).map(defaultFormat).join('\n');
+            output += defaultFormat(event.endEvent);
+            return output;
           }
         };
 
@@ -1907,7 +1967,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       };
 
       function DefaultFormatter() {
-        var format = function format(event) {
+        var _format = function _format(event) {
           if (event.type === TestEvent.types.START) {
             return "".concat(newLine).concat(SYMBOLS.INFO, "Running tests...");
           }
@@ -1915,16 +1975,22 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           if (event.type === TestEvent.types.END) {
             var totals = event.totals;
             return "".concat(newLine).concat(SYMBOLS.INFO, "total: ").concat(consoleStyles.cyan(totals.total)) + "  passed: ".concat(consoleStyles.green(totals.passed)) + "  failed: ".concat(consoleStyles.red(totals.failed + totals.broken)) + "  skipped: ".concat(consoleStyles.yellow(totals.skipped)) + "  duration: ".concat(formatDuration(totals.duration)).concat(newLine);
-          } else if (event.type === TestEvent.types.INFO) {
-            return "".concat(SYMBOLS[event.type]).concat(event.behavior).concat(formatInfo(event.log));
           } else if (event.type === TestEvent.types.TEST) {
             if (!event.error) {
-              return "".concat(SYMBOLS[event.status]).concat(event.behavior, " (").concat(formatDuration(event.duration), ")").concat(formatInfo(event.log));
+              return "".concat(SYMBOLS[event.status]).concat(event.behavior).concat(formatInfo(event.log));
             } else if (event.error.expected && event.error.actual) {
               return "".concat(SYMBOLS[event.status]).concat(event.behavior).concat(newLine).concat(newLine) + formatExpectedAndActual(event.error) + formatStack(event.error);
             } else {
               return "".concat(SYMBOLS[event.status]).concat(event.behavior) + formatStack(event.error);
             }
+          }
+        };
+
+        var format = function format(event) {
+          if (event.isDeterministicOutput) {
+            return event.testEvents.map(_format).concat([_format(event.endEvent)]).join('\n');
+          } else {
+            return _format(event);
           }
         }; // /format
 
@@ -1945,6 +2011,34 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }
   };
   module.exports = {
+    name: 'ListFormatter',
+    factory: function factory(dependencies) {
+      'use strict';
+
+      var consoleStyles = dependencies.consoleStyles,
+          DefaultFormatter = dependencies.DefaultFormatter;
+
+      function ListFormatter() {
+        return DefaultFormatter({
+          SYMBOLS: {
+            PASSED: consoleStyles.green('✓ '),
+            // heavy-check: '✔',
+            FAILED: consoleStyles.red('✗ '),
+            // heavy-x '✘',
+            BROKEN: consoleStyles.red('!= '),
+            // heavy-x '✘',
+            SKIPPED: consoleStyles.yellow('⸕ '),
+            INFO: consoleStyles.cyan('# ')
+          }
+        });
+      }
+
+      return {
+        ListFormatter: ListFormatter
+      };
+    }
+  };
+  module.exports = {
     name: 'JsonFormatter',
     factory: function factory(dependencies) {
       'use strict';
@@ -1961,10 +2055,20 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             return "".concat(JSON.stringify({
               event: event
             }, null, 2), "]");
-          } else if ([TestEvent.types.START_TEST, TestEvent.types.END_TALLY].indexOf(event.type) === -1) {
+          } else if ([TestEvent.types.START_TEST, TestEvent.types.END_TALLY].indexOf(event.type) === -1 && !event.isDeterministicOutput) {
             return "".concat(JSON.stringify({
               event: event
             }, null, 2), ",");
+          } else if (event.isDeterministicOutput) {
+            var output = event.testEvents.map(function (_event) {
+              return "".concat(JSON.stringify({
+                event: _event
+              }, null, 2));
+            }).join(',\n');
+            output += ",\n".concat(JSON.stringify({
+              event: event.endEvent
+            }, null, 2), "]");
+            return output;
           }
         };
 
@@ -1988,10 +2092,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           SpecFormatter = dependencies.SpecFormatter,
           DefaultFormatter = dependencies.DefaultFormatter;
       var newLine = consoleStyles.newLine();
+      var space = consoleStyles.space();
 
       var _ref3 = new SpecFormatter(),
-          makeOrderId = _ref3.makeOrderId,
-          makeSpec = _ref3.makeSpec;
+          addToSpec = _ref3.addToSpec;
 
       var _ref4 = new DefaultFormatter(),
           formatDuration = _ref4.formatDuration;
@@ -2037,28 +2141,24 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
       function MarkdownFormatter() {
         var title = 'Tests';
-        var order = [];
-        var specs = [];
 
         var format = function format(event) {
           if (event.type === TestEvent.types.START) {
             title = event.suiteId;
-          } else if (event.type === TestEvent.types.END) {
-            var _makeSpec = makeSpec(order, specs),
-                spec = _makeSpec.spec,
-                SPACE = _makeSpec.SPACE;
+          } else if (event.isDeterministicOutput) {
+            var SPACE = _toConsumableArray(new Array(event.testEvents.length * 2)).join(space);
 
-            var errors = makeErrorsH2(specs);
+            var spec = {};
+            event.testEvents.forEach(function (_event) {
+              return addToSpec(_event.behavior.split(','), spec, _event);
+            });
+            var errors = makeErrorsH2(event.testEvents);
 
             if (errors) {
-              return "# ".concat(title).concat(newLine).concat(newLine).concat(toBullets(spec, SPACE)).concat(newLine).concat(errors).concat(newLine).concat(makeTotalsH2(event.totals));
+              return "# ".concat(title).concat(newLine).concat(newLine).concat(toBullets(spec, SPACE)).concat(newLine).concat(errors).concat(newLine).concat(makeTotalsH2(event.endEvent.totals));
             } else {
-              return "# ".concat(title).concat(newLine).concat(newLine).concat(toBullets(spec, SPACE)).concat(newLine).concat(makeTotalsH2(event.totals));
+              return "# ".concat(title).concat(newLine).concat(newLine).concat(toBullets(spec, SPACE)).concat(newLine).concat(makeTotalsH2(event.endEvent.totals));
             }
-          } else if (event.type === TestEvent.types.START_TEST) {
-            order.push(makeOrderId(event));
-          } else if (event.type === TestEvent.types.TEST) {
-            specs.push(event);
           }
         }; // /format
 
@@ -2075,30 +2175,36 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }
   };
   module.exports = {
-    name: 'SummaryFormatter',
+    name: 'PerformanceFormatter',
     factory: function factory(dependencies) {
       'use strict';
 
       var consoleStyles = dependencies.consoleStyles,
-          DefaultFormatter = dependencies.DefaultFormatter,
           TestEvent = dependencies.TestEvent;
 
-      function SummaryFormatter() {
-        var defaultFormat = DefaultFormatter({
-          // Other than INFO, these aren't actually used, since this doesn't produce TEST output
-          SYMBOLS: {
-            PASSED: consoleStyles.green('✓ '),
-            FAILED: consoleStyles.red('✗ '),
-            BROKEN: consoleStyles.red('!= '),
-            SKIPPED: consoleStyles.yellow('⸕ '),
-            INFO: consoleStyles.cyan('# ') // the `#` is important for TAP compliance
-
+      function PerformanceFormatter() {
+        var formatDuration = function formatDuration(duration) {
+          if (!duration) {
+            return 0;
           }
-        }).format;
+
+          if (typeof duration === 'number' && duration.seconds > 1) {
+            return "".concat(Math.round(duration.seconds), "s");
+          } else if (duration.milliseconds > 1) {
+            return "".concat(Math.round(duration.milliseconds), "ms");
+          } else if (duration.microseconds > 1) {
+            return "".concat(Math.round(duration.microseconds), "\xB5s");
+          } else if (duration.nanoseconds > 1) {
+            return "".concat(Math.round(duration.nanoseconds), "ns");
+          } else {
+            return 0;
+          }
+        };
 
         var format = function format(event) {
-          if (event.type === TestEvent.types.END) {
-            return defaultFormat(event);
+          if (event.type === TestEvent.types.TEST && event.duration) {
+            var durations = ["given: ".concat(formatDuration(event.duration.given)), "when: ".concat(formatDuration(event.duration.when)), "then: ".concat(formatDuration(event.duration.then))];
+            return "".concat(consoleStyles.cyan('# '), "  latency: ").concat(formatDuration(event.duration.total), " (").concat(durations.join(', '), ")");
           }
         };
 
@@ -2108,35 +2214,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       }
 
       return {
-        SummaryFormatter: SummaryFormatter
-      };
-    }
-  };
-  module.exports = {
-    name: 'ListFormatter',
-    factory: function factory(dependencies) {
-      'use strict';
-
-      var consoleStyles = dependencies.consoleStyles,
-          DefaultFormatter = dependencies.DefaultFormatter;
-
-      function ListFormatter() {
-        return DefaultFormatter({
-          SYMBOLS: {
-            PASSED: consoleStyles.green('✓ '),
-            // heavy-check: '✔',
-            FAILED: consoleStyles.red('✗ '),
-            // heavy-x '✘',
-            BROKEN: consoleStyles.red('!= '),
-            // heavy-x '✘',
-            SKIPPED: consoleStyles.yellow('⸕ '),
-            INFO: consoleStyles.cyan('# ')
-          }
-        });
-      }
-
-      return {
-        ListFormatter: ListFormatter
+        PerformanceFormatter: PerformanceFormatter
       };
     }
   };
@@ -2185,49 +2263,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         }
       };
 
-      var makeSpec = function makeSpec(order, specs) {
-        var spec = {};
-
-        var SPACE = _toConsumableArray(new Array(order.length * 2)).join(space);
-
-        specs.sort(function (a, b) {
-          var aIdx;
-          var bIdx;
-          var foundCount = 0;
-
-          for (var i = 0; i < order.length; i += 1) {
-            if (order[i] === makeOrderId(a)) {
-              aIdx = i;
-              foundCount += 1;
-            } else if (order[i] === makeOrderId(b)) {
-              bIdx = i;
-              foundCount += 1;
-            }
-
-            if (foundCount === 2) {
-              break;
-            }
-          }
-
-          if (aIdx < bIdx) {
-            return -1;
-          }
-
-          if (aIdx > bIdx) {
-            return 1;
-          } // a must be equal to b
-
-
-          return 0;
-        }).forEach(function (event) {
-          return addToSpec(event.behavior.split(','), spec, event);
-        });
-        return {
-          spec: spec,
-          SPACE: SPACE
-        };
-      };
-
       var toPrint = function toPrint(spec, SPACE, layer) {
         if (typeof layer === 'undefined') layer = 0;
         var output = ''; // use getOwnPropertyNames instead of keys because the order is guarnateed back to es2015
@@ -2239,7 +2274,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             var line;
 
             if (!event.error) {
-              line = "".concat(SYMBOLS[event.status]).concat(key, " (").concat(formatDuration(event.duration), ")").concat(formatInfo(event.log));
+              line = "".concat(SYMBOLS[event.status]).concat(key).concat(formatInfo(event.log));
             } else if (event.error.expected && event.error.actual) {
               line = "".concat(SYMBOLS[event.status]).concat(key).concat(newLine).concat(newLine) + formatExpectedAndActual(event.error) + formatStack(event.error);
             } else {
@@ -2257,41 +2292,72 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         return output;
       };
 
-      var makeOrderId = function makeOrderId(event) {
-        return "".concat(event.batchId, "-").concat(event.testId);
-      };
-
       function SpecFormatter() {
-        var order = [];
-        var specs = [];
-
         var _format = function _format(event) {
           if (event.type === TestEvent.types.START) {
             return format(event);
-          } else if (event.type === TestEvent.types.END) {
-            var _makeSpec2 = makeSpec(order, specs),
-                spec = _makeSpec2.spec,
-                SPACE = _makeSpec2.SPACE;
+          } else if (event.isDeterministicOutput) {
+            var SPACE = _toConsumableArray(new Array(event.testEvents.length * 2)).join(space);
 
-            return "".concat(toPrint(spec, SPACE)).concat(newLine).concat(format(event));
-          } else if (event.type === TestEvent.types.START_TEST) {
-            order.push(makeOrderId(event));
-          } else if (event.type === TestEvent.types.TEST) {
-            specs.push(event);
+            var spec = {};
+            event.testEvents.forEach(function (_event) {
+              return addToSpec(_event.behavior.split(','), spec, _event);
+            });
+            return "".concat(toPrint(spec, SPACE)).concat(newLine).concat(format(event.endEvent));
           }
         }; // /format
 
 
         return {
           format: _format,
-          makeSpec: makeSpec,
-          makeOrderId: makeOrderId
+          addToSpec: addToSpec
         };
-      } // /Formatter
-
+      }
 
       return {
         SpecFormatter: SpecFormatter
+      };
+    }
+  };
+  module.exports = {
+    name: 'SummaryFormatter',
+    factory: function factory(dependencies) {
+      'use strict';
+
+      var consoleStyles = dependencies.consoleStyles,
+          DefaultFormatter = dependencies.DefaultFormatter,
+          TestEvent = dependencies.TestEvent;
+
+      function SummaryFormatter() {
+        var defaultFormat = DefaultFormatter({
+          // Other than INFO, these aren't actually used, since this doesn't produce TEST output
+          SYMBOLS: {
+            PASSED: consoleStyles.green('✓ '),
+            FAILED: consoleStyles.red('✗ '),
+            BROKEN: consoleStyles.red('!= '),
+            SKIPPED: consoleStyles.yellow('⸕ '),
+            INFO: consoleStyles.cyan('# ') // the `#` is important for TAP compliance
+
+          }
+        }).format;
+
+        var format = function format(event) {
+          if (event.isDeterministicOutput) {
+            return defaultFormat(event.endEvent);
+          }
+
+          if (event.type === TestEvent.types.END) {
+            return defaultFormat(event);
+          }
+        };
+
+        return {
+          format: format
+        };
+      }
+
+      return {
+        SummaryFormatter: SummaryFormatter
       };
     }
   };
@@ -2356,6 +2422,22 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       };
 
       function TapFormatter() {
+        var formatTest = function formatTest(event) {
+          switch (event.status) {
+            case TestEvent.status.PASSED:
+              return "ok ".concat(event.count, " - ").concat(event.behavior).concat(formatInfo(event.behavior, event.log, 'comment'));
+
+            case TestEvent.status.SKIPPED:
+              return event.behavior.indexOf('# TODO') > -1 ? "ok ".concat(event.count, " # TODO ").concat(event.behavior.replace('# TODO ', '')) : "ok ".concat(event.count, " # SKIP ").concat(event.behavior);
+
+            case TestEvent.status.FAILED:
+              return "not ok ".concat(event.count, " - ").concat(event.behavior).concat(formatError(event.error, 'fail'));
+
+            case TestEvent.status.BROKEN:
+              return "not ok ".concat(event.count, " - ").concat(event.behavior).concat(formatError(event.error, 'broken'));
+          }
+        };
+
         var format = function format(event) {
           if (event.type === TestEvent.types.START) {
             return 'TAP version 13';
@@ -2363,22 +2445,16 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
           if (event.type === TestEvent.types.END) {
             return "1..".concat(event.totals.total);
-          } else if (event.type === TestEvent.types.INFO) {
-            return "# ".concat(event.behavior).concat(formatInfo(event.behavior, event.log, 'comment'));
           } else if (event.type === TestEvent.types.TEST) {
-            switch (event.status) {
-              case TestEvent.status.PASSED:
-                return "ok ".concat(event.count, " - ").concat(event.behavior).concat(formatInfo(event.behavior, event.log, 'comment'));
-
-              case TestEvent.status.SKIPPED:
-                return event.behavior.indexOf('# TODO') > -1 ? "ok ".concat(event.count, " # TODO ").concat(event.behavior.replace('# TODO ', '')) : "ok ".concat(event.count, " # SKIP ").concat(event.behavior);
-
-              case TestEvent.status.FAILED:
-                return "not ok ".concat(event.count, " - ").concat(event.behavior).concat(formatError(event.error, 'fail'));
-
-              case TestEvent.status.BROKEN:
-                return "not ok ".concat(event.count, " - ").concat(event.behavior).concat(formatError(event.error, 'broken'));
-            }
+            return formatTest(event);
+          } else if (event.isDeterministicOutput) {
+            var output = "1..".concat(event.endEvent.totals.total, "\n");
+            output += event.testEvents.map(function (_event, idx) {
+              return formatTest(_objectSpread({}, _event, {}, {
+                count: idx + 1
+              }));
+            }).join('\n');
+            return output;
           }
         }; // /format
 
@@ -2423,16 +2499,89 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       'use strict';
 
       var TestEvent = dependencies.TestEvent,
-          formatter = dependencies.formatter;
+          formatter = dependencies.formatter,
+          envvars = dependencies.envvars,
+          REPORT_ORDERS = dependencies.REPORT_ORDERS;
       var format = formatter.format;
 
-      function ConsoleReporter() {
-        var write = function write(event) {
-          if ([TestEvent.types.START, TestEvent.types.START_TEST, TestEvent.types.TEST, TestEvent.types.INFO, TestEvent.types.END].indexOf(event.type) > -1) {
-            var line = format(event);
+      var makeOrderId = function makeOrderId(event) {
+        return "".concat(event.batchId, "-").concat(event.testId);
+      };
 
-            if (line) {
-              console.log(line);
+      var byTestOrder = function byTestOrder(order) {
+        return function (a, b) {
+          var aIdx;
+          var bIdx;
+          var foundCount = 0;
+
+          for (var i = 0; i < order.length; i += 1) {
+            if (order[i] === makeOrderId(a)) {
+              aIdx = i;
+              foundCount += 1;
+            } else if (order[i] === makeOrderId(b)) {
+              bIdx = i;
+              foundCount += 1;
+            }
+
+            if (foundCount === 2) {
+              break;
+            }
+          }
+
+          if (aIdx < bIdx) {
+            return -1;
+          }
+
+          if (aIdx > bIdx) {
+            return 1;
+          } // a must be equal to b
+
+
+          return 0;
+        };
+      };
+
+      function ConsoleReporter(options) {
+        options = _objectSpread({}, {
+          reportOrder: REPORT_ORDERS.NON_DETERMINISTIC
+        }, {}, envvars, {}, options);
+        var testOrder = [];
+        var testEvents = [];
+
+        var writeOne = function writeOne(event) {
+          var line = format(event);
+
+          if (line) {
+            console.log(line);
+          }
+        };
+
+        var write = function write(event) {
+          if (event.type === TestEvent.types.START) {
+            writeOne(event);
+          } else if (event.type === TestEvent.types.END) {
+            if (options.reportOrder === REPORT_ORDERS.NON_DETERMINISTIC) {
+              writeOne(event);
+            } else {
+              testOrder.push(makeOrderId(event));
+              writeOne({
+                isDeterministicOutput: true,
+                testEvents: testEvents.sort(byTestOrder(testOrder)),
+                endEvent: event
+              });
+            }
+          } else if (event.type === TestEvent.types.START_TEST) {
+            if (options.reportOrder === REPORT_ORDERS.NON_DETERMINISTIC) {
+              writeOne(event);
+            } else {
+              testOrder.push(makeOrderId(event));
+              writeOne(event);
+            }
+          } else if (event.type === TestEvent.types.TEST) {
+            if (options.reportOrder === REPORT_ORDERS.NON_DETERMINISTIC) {
+              writeOne(event);
+            } else {
+              testEvents.push(event);
             }
           }
         }; // /write
@@ -2454,12 +2603,51 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       'use strict';
 
       var TestEvent = dependencies.TestEvent,
-          formatter = dependencies.formatter;
+          formatter = dependencies.formatter,
+          envvars = dependencies.envvars,
+          REPORT_ORDERS = dependencies.REPORT_ORDERS;
       var format = formatter.format;
       var reportDivId = 'supposed_report';
       var reportPreId = 'supposed_report_results';
       var reportDiv;
       var reportPre;
+
+      var makeOrderId = function makeOrderId(event) {
+        return "".concat(event.batchId, "-").concat(event.testId);
+      };
+
+      var byTestOrder = function byTestOrder(order) {
+        return function (a, b) {
+          var aIdx;
+          var bIdx;
+          var foundCount = 0;
+
+          for (var i = 0; i < order.length; i += 1) {
+            if (order[i] === makeOrderId(a)) {
+              aIdx = i;
+              foundCount += 1;
+            } else if (order[i] === makeOrderId(b)) {
+              bIdx = i;
+              foundCount += 1;
+            }
+
+            if (foundCount === 2) {
+              break;
+            }
+          }
+
+          if (aIdx < bIdx) {
+            return -1;
+          }
+
+          if (aIdx > bIdx) {
+            return 1;
+          } // a must be equal to b
+
+
+          return 0;
+        };
+      };
 
       var initDom = function initDom() {
         var _reportDiv = document.getElementById(reportDivId);
@@ -2484,21 +2672,53 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         }
       };
 
-      function DomReporter() {
+      function DomReporter(options) {
+        options = _objectSpread({}, {
+          reportOrder: REPORT_ORDERS.NON_DETERMINISTIC
+        }, {}, envvars, {}, options);
+        var testOrder = [];
+        var testEvents = [];
         initDom();
 
+        var writeOne = function writeOne(event) {
+          var line = format(event);
+
+          if (!line) {
+            return;
+          }
+
+          console.log(line);
+          reportPre.append("".concat(line, "\n"));
+          scrollToBottom();
+        };
+
         var write = function write(event) {
-          // write to the console
-          if ([TestEvent.types.START, TestEvent.types.START_TEST, TestEvent.types.TEST, TestEvent.types.INFO, TestEvent.types.END].indexOf(event.type) > -1) {
-            var line = format(event);
-
-            if (!line) {
-              return;
+          if (event.type === TestEvent.types.START) {
+            writeOne(event);
+          } else if (event.type === TestEvent.types.END) {
+            if (options.reportOrder === REPORT_ORDERS.NON_DETERMINISTIC) {
+              writeOne(event);
+            } else {
+              testOrder.push(makeOrderId(event));
+              writeOne({
+                isDeterministicOutput: true,
+                testEvents: testEvents.sort(byTestOrder(testOrder)),
+                endEvent: event
+              });
             }
-
-            console.log(line);
-            reportPre.append("".concat(line, "\n"));
-            scrollToBottom();
+          } else if (event.type === TestEvent.types.START_TEST) {
+            if (options.reportOrder === REPORT_ORDERS.NON_DETERMINISTIC) {
+              writeOne(event);
+            } else {
+              testOrder.push(makeOrderId(event));
+              writeOne(event);
+            }
+          } else if (event.type === TestEvent.types.TEST) {
+            if (options.reportOrder === REPORT_ORDERS.NON_DETERMINISTIC) {
+              writeOne(event);
+            } else {
+              testEvents.push(event);
+            }
           }
         }; // /write
 
@@ -2746,6 +2966,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     return input && typeof input.then === 'function';
   }
 
+  var REPORT_ORDERS = {
+    NON_DETERMINISTIC: 'non-deterministic',
+    DETERMINISTIC: 'deterministic'
+  };
   var time = module.factories.timeFactory();
   var suites = {};
   var supposed = null; // resolve the dependency graph
@@ -2763,7 +2987,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       assertionLibrary: {},
       reporters: ['LIST'],
       useColors: true,
-      timeUnits: 'us'
+      timeUnits: 'us',
+      reportOrder: REPORT_ORDERS.NON_DETERMINISTIC
     };
 
     var clock = function clock() {
@@ -2840,8 +3065,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     function ConsoleReporter(options) {
       return module.factories.DomReporterFactory({
         TestEvent: TestEvent,
-        formatter: options.formatter
-      }).DomReporter();
+        formatter: options.formatter,
+        envvars: envvars,
+        REPORT_ORDERS: REPORT_ORDERS
+      }).DomReporter(options);
     }
 
     var listFormatter = module.factories.ListFormatterFactory({
@@ -2894,7 +3121,31 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             TestEvent: TestEvent,
             SpecFormatter: SpecFormatter,
             DefaultFormatter: DefaultFormatter
-          }).MarkdownFormatter()
+          }).MarkdownFormatter(),
+          reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
+
+        }).write
+      };
+    }).add(function MdReporter() {
+      return {
+        write: ConsoleReporter({
+          formatter: module.factories.MarkdownFormatterFactory({
+            consoleStyles: consoleStyles,
+            TestEvent: TestEvent,
+            SpecFormatter: SpecFormatter,
+            DefaultFormatter: DefaultFormatter
+          }).MarkdownFormatter(),
+          reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
+
+        }).write
+      };
+    }).add(function PerformanceReporter() {
+      return {
+        write: ConsoleReporter({
+          formatter: module.factories.PerformanceFormatterFactory({
+            consoleStyles: consoleStyles,
+            TestEvent: TestEvent
+          }).PerformanceFormatter()
         }).write
       };
     }).add(function JustTheDescriptionsReporter() {
@@ -2914,7 +3165,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }).add(function SpecReporter() {
       return {
         write: ConsoleReporter({
-          formatter: SpecFormatter()
+          formatter: SpecFormatter(),
+          reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
+
         }).write
       };
     }).add(function SummaryReporter() {
@@ -2943,7 +3196,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       publish: publish,
       TestEvent: TestEvent,
       clock: clock,
-      duration: duration
+      duration: duration,
+      addDurations: time.addDurations
     }),
         AsyncTest = _module$factories$Asy.AsyncTest;
 

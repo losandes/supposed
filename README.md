@@ -6,7 +6,7 @@ Supposed is a test framework for Node.js, TypeScript, and the Browser. Supposed 
 * [Get Started with the Browser](#get-started-with-the-browser)
 * [Get Started with TypeScript](#typescript-support)
 * [Test Syntax and DSLs](#test-syntax-and-domain-service-languages-dsls))
-* [Built in Reporters](#built-in-reporters): list|tap|json|spec|markdown|md|nyan|brief|summary|array|block|noop
+* [Built in Reporters](#built-in-reporters): list|tap|json|spec|markdown|md|nyan|performance|brief|summary|array|block|noop
 * [Suites, & Configuring Suites](#suites)
 * [Tests, & Configuring Tests](#tests)
 * [Discovering and Running NodeJS Tests](#using-the-nodejs-runner)
@@ -16,7 +16,7 @@ Supposed is a test framework for Node.js, TypeScript, and the Browser. Supposed 
 * [Running Specific Files With The Runner](#arguments-and-envvars)
 * [Using Promises in Tests](#using-promises-in-tests)
 * [Using async-await in Tests](#using-async---await-in-tests)
-* [Measure Performance]()
+* [Measure Latency / Performance]()
 * [Cookbook](#cookbook)
 
 ## Get Started With Node
@@ -176,13 +176,15 @@ module.exports = test('when dividing numbers by 0', {
 ## Arguments and ENVVARS
 Supposed has options that can be set with command-line arguments, or envvars. They are described here, and then the actual arguments, and envvars are listed and shown in examples below.
 
-* **reporters**: choose reporter(s) by name (`list|tap|json|spec|markdown|md|nyan|brief|summary|array|block|noop`) (comma-separated)
+* **reporters**: choose reporter(s) by name (`list|tap|json|spec|markdown|md|nyan|performance|brief|summary|array|block|noop`) (comma-separated)
 * **match description**: run only tests whose descriptions/behaviors match the regular expression
 * **match file name**: run only tests whose file names match the regular expression (only used with runner)
-* **no-color**: display all output in black + white
+* **no-color**: force supposed to display all output without color
 * **report-order**: Some reporters print test outcomes in a non-deterministic order because tests run concurrently. You can override this by setting the order to "deterministic"
 * **time-units**: the units to use for event timestamps (`s|ms|us|ns`) (default is `us`)
 
+> When running in the terminal (NodeJS), Supposed detects whether it is in TTY and automatically turns colors off when it is not (i.e. if you pipe the output of supposed to another command)
+>
 > NOTE that timestamps use numeric representations of hrtime in nodejs, and performance.now in the browser. Changing the time-unit doesn't necessarily change the reporter output - it sets the units that are used for event times.
 
 ### Arguments
@@ -237,6 +239,7 @@ $ node tests | npx tap-parser -j | jq
 * `markdown` - the test descriptions in markdown format _(deterministic order)_
 * `md` - (alias for markdown)
 * `nyan` - rainbows, and flying cats? check
+* `performance` - the total test duration, and the duration for each of: given, when, then accurate to the microsecond (these measurements are taken without other significant supposed operations being in scope, so should be close to measurements taken inside of those functions)
 * `brief` - just the summary, and the output from any failing tests
 * `summary` - just the summary (no error output - useful in combination with `tap`)
 * `array` - no output, but you can read the test events from `suite.config.reporters[${indexOfArrayReporter}].events` (it's easier just to `suite.subscribe`, or `suite.runner().run().then((results) => {})` though - you probably don't need this - it's mostly for testing this library)
@@ -245,6 +248,8 @@ $ node tests | npx tap-parser -j | jq
 > Note the deterministic, and non-deterministic order comments. Supposed runs tests concurrently. Reporters that indicate "non-deterministic order" report the status of each test as soon as it completes, regardless of the order in which it was discovered. These are optimized for efficiency. You can override this with `-o deterministic`. See [Arguments and ENVVARS](#arguments-and-envvars) for more info.
 >
 > Reporters that indicate "deterministic" order report tests status after all tests have finished, so the results are printed in the order in which the tests were discovered. These are optimized for comprehension. Reporters that are deterministic by default do not support non-deterministic output.
+>
+> Note that performance measurements are included for subjective observation. This library hasn't been tested as a purely performance testing library. Performance works well in combination with some, but not all reporters (i.e. `node tests -r list,performance` is helpful, while `node tests -r spec,performance` is not).
 
 ### Using Multiple Reporters
 Supposed uses pubsub to report, so there's no limit on the number of reporters that can be used. Some reporters when used in combination can cause problems (nyan isn't really compatible with anything else), but others can be helpful. Let's say you like the TAP output, but you want a summary:
@@ -256,7 +261,16 @@ TAP version 13
 ok 1 - given... when... then...
 1..1
 
-# total: 1  passed: 1  failed: 0  skipped: 0  duration: 0.011
+# total: 1  passed: 1  failed: 0  skipped: 0  duration: 8ms
+```
+
+```Shell
+$ node tests -r list,performance
+
+✓ given... when... then...
+#   latency: 8ms (given: 856ns, when: 10µs, then: 8ms)
+
+# total: 1  passed: 1  failed: 0  skipped: 0  duration: 8ms
 ```
 
 > You can also [register your own reporters](#writing-a-test-reporter), as well as [subscribe to test events](#subscribing-to-test-events) to get the desired effect you're looking for. This is particularly useful for alerting, or sending a messages to Slack when tests fail in continuous-integration.
@@ -301,8 +315,8 @@ Whether your using `supposed.configure({...})`, or creating a new `supposed.Suit
 * `name` {string} (default is generated) - A name for the suite (suites can be retrieved by name: `require('supposed').suites.mySuite`)
 * `timeout` {number} (default is 2000ms) - The amount of time in milliseconds that _Supposed_ waits, before it cancels a long-running test
 * `assertionLibrary` {object} (default for nodeJS is `assert`; no default for browsers) - The assertion library that will be passed to the tests
-* `reporter` {string|`(event: ITestEvent): Promise<void>`} - The reporter to use for test output (`list|tap|json|spec|markdown|md|nyan|brief|summary|array|block|noop`), or a function
-* `reporters` {string[]} - A comma-separated list of reporters to use (by name) (`list|tap|json|spec|markdown|md|nyan|brief|summary|array|block|noop`)
+* `reporter` {string|`(event: ITestEvent): Promise<void>`} - The reporter to use for test output (`list|tap|json|spec|markdown|md|nyan|performance|brief|summary|array|block|noop`), or a function
+* `reporters` {string[]} - A comma-separated list of reporters to use (by name) (`list|tap|json|spec|markdown|md|nyan|performance|brief|summary|array|block|noop`)
 * `match` {string|RegExp|`{ test (description: string): boolean; }`} - run only tests whose descriptions/behaviors match the regular expression, or pass this test
 * `useColors` {boolean} - whether or not to use color in the reporter output
 * `inject` {any} - when present this object will be available to tests via `suite.dependencies`. If your test files `module.exports = (suite, dependencies) => {}`, this object will also be passed as the second argument to your exported function.
@@ -638,8 +652,8 @@ module.exports = require('supposed')
 * [Marking Tests as TODO](#skipping-tests)
 * [Running Specific Tests (only)](#running-specific-tests-only)
 * [Nest/Branch Inheritance](#nest-branch-inheritance)
-* [Writing a Test Reporter](#subscribing-to-test-events)
-* [Subscribing to Test Events](#subscribing-to-test-events)
+- [] [Writing a Test Reporter](#subscribing-to-test-events)
+- [] [Subscribing to Test Events](#subscribing-to-test-events)
 * [Streaming Output to a File](#streaming-output-to-a-file)
 - [] [Adding Information to Report Output (event.log)](#adding-information-to-report-output-event.log)
 - [] [Adding Context to Test Events (event.context)](#adding-context-to-test-events-event.context)

@@ -13,13 +13,20 @@ const suite = supposed.Suite({
 })
 
 const __projectdir = __dirname.split('tests.browser')[0]
+const reporters = (config) => {
+  try {
+    return config.reporters.map((reporter) => reporter.name).join(',') || 'list'
+  } catch (e) {
+    return 'tap'
+  }
+}
 
 module.exports = suite.runner({
   cwd: __projectdir,
   directories: ['./tests.browser'],
   title: 'supposed-browser-tests',
   port: 42002,
-  stringifiedSuiteConfig: `{ reporter: '${suite.config.reporters[0].name || 'spec'}', assertionLibrary: browserTestAssert }`,
+  stringifiedSuiteConfig: `{ reporter: '${reporters(suite.config)}', assertionLibrary: browserTestAssert }`,
   dependencies: ['/tests.browser/assert.js'],
   supposedPath: path.join(__projectdir, 'dist/supposed.js')
   // styles: 'body { color: #2eb815; }' // #b0c9dc

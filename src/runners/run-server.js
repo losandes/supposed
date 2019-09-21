@@ -21,6 +21,14 @@ module.exports = {
       return modules.join('\n\n')
     }
 
+    const defaultReporters = (config) => {
+      try {
+        return config.reporters.map((reporter) => reporter.name).join(',') || 'list'
+      } catch (e) {
+        return 'list'
+      }
+    }
+
     function Config (config, paths, suite) {
       config = Object.assign({}, config)
 
@@ -33,7 +41,7 @@ module.exports = {
         styles: '',
         supposed: undefined,
         template: undefined,
-        stringifiedSuiteConfig: `{ reporter: '${suite.config.reporter || 'default'}'}`,
+        stringifiedSuiteConfig: `{ reporter: '${defaultReporters(suite.config)}'}`,
         page: undefined
       }
 
@@ -190,7 +198,7 @@ module.exports = {
           return console.log('something bad happened', err)
         }
 
-        console.log(`server is listening on ${port}`)
+        console.log(`# supposed server is listening on ${port}`)
       })
 
       return server

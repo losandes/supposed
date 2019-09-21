@@ -31,6 +31,7 @@ const consoleUtilsFactory = require('./src/formatters/console-utils.js').factory
 const DefaultFormatterFactory = require('./src/formatters/DefaultFormatter.js').factory
 const JsonFormatterFactory = require('./src/formatters/JsonFormatter.js').factory
 const MarkdownFormatterFactory = require('./src/formatters/MarkdownFormatter.js').factory
+const PerformanceFormatterFactory = require('./src/formatters/PerformanceFormatter.js').factory
 const SpecFormatterFactory = require('./src/formatters/SpecFormatter.js').factory
 const SummaryFormatterFactory = require('./src/formatters/SummaryFormatter.js').factory
 const ListFormatterFactory = require('./src/formatters/ListFormatter.js').factory
@@ -180,6 +181,12 @@ function Supposed (options) {
         reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
       }).write
     }
+  }).add(function PerformanceReporter () {
+    return {
+      write: ConsoleReporter({
+        formatter: PerformanceFormatterFactory({ consoleStyles, TestEvent }).PerformanceFormatter()
+      }).write
+    }
   }).add(function JustTheDescriptionsReporter () {
     return {
       write: ConsoleReporter({
@@ -213,19 +220,32 @@ function Supposed (options) {
         formatter: TapFormatterFactory({ consoleStyles, TestEvent }).TapFormatter()
       }).write
     }
-  }).add(NyanReporterFactory({
-    consoleStyles,
-    consoleUtils,
-    DefaultFormatter,
-    TestEvent
-  }).NyanReporter)
+  })
+
+  if (process.stdout.isTTY) {
+    reporterFactory.add(NyanReporterFactory({
+      consoleStyles,
+      consoleUtils,
+      DefaultFormatter,
+      TestEvent
+    }).NyanReporter)
+  } else {
+    reporterFactory.add(function NyanReporter () {
+      return {
+        write: () => {
+          throw new Error('Nyan Reporter Is Only Supported in TTY Terminals (it can\'t be piped)')
+        }
+      }
+    })
+  }
 
   const { AsyncTest } = AsyncTestFactory({
     isPromise,
     publish,
     TestEvent,
     clock,
-    duration
+    duration,
+    addDurations: time.addDurations
   })
   const { hash } = HashFactory()
   const { BatchComposer } = makeBatchFactory({ hash })
