@@ -30,40 +30,6 @@ module.exports = {
       }
     }
 
-    const makeSpec = (order, specs) => {
-      const spec = {}
-      const SPACE = [...new Array(order.length * 2)].join(space)
-
-      specs.sort((a, b) => {
-        let aIdx; let bIdx; let foundCount = 0
-
-        for (let i = 0; i < order.length; i += 1) {
-          if (order[i] === makeOrderId(a)) {
-            aIdx = i
-            foundCount += 1
-          } else if (order[i] === makeOrderId(b)) {
-            bIdx = i
-            foundCount += 1
-          }
-
-          if (foundCount === 2) {
-            break
-          }
-        }
-
-        if (aIdx < bIdx) {
-          return -1
-        }
-        if (aIdx > bIdx) {
-          return 1
-        }
-        // a must be equal to b
-        return 0
-      }).forEach((event) => addToSpec(event.behavior.split(','), spec, event))
-
-      return { spec, SPACE }
-    }
-
     const toPrint = (spec, SPACE, layer) => {
       if (typeof layer === 'undefined') layer = 0
       let output = ''
@@ -96,27 +62,21 @@ module.exports = {
       return output
     }
 
-    const makeOrderId = (event) => `${event.batchId}-${event.testId}`
-
     function SpecFormatter () {
-      const order = []
-      const specs = []
-
       const _format = (event) => {
         if (event.type === TestEvent.types.START) {
           return format(event)
-        } else if (event.type === TestEvent.types.END) {
-          const { spec, SPACE } = makeSpec(order, specs)
-          return `${toPrint(spec, SPACE)}${newLine}${format(event)}`
-        } else if (event.type === TestEvent.types.START_TEST) {
-          order.push(makeOrderId(event))
-        } else if (event.type === TestEvent.types.TEST) {
-          specs.push(event)
+        } else if (event.isDeterministicOutput) {
+          const SPACE = [...new Array(event.testEvents.length * 2)].join(space)
+          const spec = {}
+          event.testEvents.forEach((_event) => addToSpec(_event.behavior.split(','), spec, _event))
+
+          return `${toPrint(spec, SPACE)}${newLine}${format(event.endEvent)}`
         }
       } // /format
 
-      return { format: _format, makeSpec, makeOrderId }
-    } // /Formatter
+      return { format: _format, addToSpec }
+    }
 
     return { SpecFormatter }
   }

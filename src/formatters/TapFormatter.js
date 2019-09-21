@@ -71,27 +71,35 @@ module.exports = {
     }
 
     function TapFormatter () {
+      const formatTest = (event) => {
+        switch (event.status) {
+          case TestEvent.status.PASSED:
+            return `ok ${event.count} - ${event.behavior}${formatInfo(event.behavior, event.log, 'comment')}`
+          case TestEvent.status.SKIPPED:
+            return event.behavior.indexOf('# TODO') > -1
+              ? `ok ${event.count} # TODO ${event.behavior.replace('# TODO ', '')}`
+              : `ok ${event.count} # SKIP ${event.behavior}`
+          case TestEvent.status.FAILED:
+            return `not ok ${event.count} - ${event.behavior}${formatError(event.error, 'fail')}`
+
+          case TestEvent.status.BROKEN:
+            return `not ok ${event.count} - ${event.behavior}${formatError(event.error, 'broken')}`
+        }
+      }
+
       const format = (event) => {
         if (event.type === TestEvent.types.START) {
           return 'TAP version 13'
         } if (event.type === TestEvent.types.END) {
           return `1..${event.totals.total}`
-        } else if (event.type === TestEvent.types.INFO) {
-          return `# ${event.behavior}${formatInfo(event.behavior, event.log, 'comment')}`
         } else if (event.type === TestEvent.types.TEST) {
-          switch (event.status) {
-            case TestEvent.status.PASSED:
-              return `ok ${event.count} - ${event.behavior}${formatInfo(event.behavior, event.log, 'comment')}`
-            case TestEvent.status.SKIPPED:
-              return event.behavior.indexOf('# TODO') > -1
-                ? `ok ${event.count} # TODO ${event.behavior.replace('# TODO ', '')}`
-                : `ok ${event.count} # SKIP ${event.behavior}`
-            case TestEvent.status.FAILED:
-              return `not ok ${event.count} - ${event.behavior}${formatError(event.error, 'fail')}`
-
-            case TestEvent.status.BROKEN:
-              return `not ok ${event.count} - ${event.behavior}${formatError(event.error, 'broken')}`
-          }
+          return formatTest(event)
+        } else if (event.isDeterministicOutput) {
+          let output = `1..${event.endEvent.totals.total}\n`
+          output += event.testEvents.map((_event, idx) =>
+            formatTest({ ..._event, ...{ count: idx + 1 } })
+          ).join('\n')
+          return output
         }
       } // /format
 

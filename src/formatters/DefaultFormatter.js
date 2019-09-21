@@ -69,7 +69,7 @@ module.exports = {
     }
 
     function DefaultFormatter () {
-      const format = (event) => {
+      const _format = (event) => {
         if (event.type === TestEvent.types.START) {
           return `${newLine}${SYMBOLS.INFO}Running tests...`
         } if (event.type === TestEvent.types.END) {
@@ -79,8 +79,6 @@ module.exports = {
             `  failed: ${consoleStyles.red(totals.failed + totals.broken)}` +
             `  skipped: ${consoleStyles.yellow(totals.skipped)}` +
             `  duration: ${formatDuration(totals.duration)}${newLine}`
-        } else if (event.type === TestEvent.types.INFO) {
-          return `${SYMBOLS[event.type]}${event.behavior}${formatInfo(event.log)}`
         } else if (event.type === TestEvent.types.TEST) {
           if (!event.error) {
             return `${SYMBOLS[event.status]}${event.behavior} (${formatDuration(event.duration)})${formatInfo(event.log)}`
@@ -92,6 +90,14 @@ module.exports = {
             return `${SYMBOLS[event.status]}${event.behavior}` +
               formatStack(event.error)
           }
+        }
+      }
+
+      const format = (event) => {
+        if (event.isDeterministicOutput) {
+          return event.testEvents.map(_format).concat([_format(event.endEvent)]).join('\n')
+        } else {
+          return _format(event)
         }
       } // /format
 

@@ -3,12 +3,40 @@ module.exports = {
   factory: (dependencies) => {
     'use strict'
 
-    const { TestEvent, formatter } = dependencies
+    const { TestEvent, formatter, envvars, REPORT_ORDERS } = dependencies
     const { format } = formatter
     const reportDivId = 'supposed_report'
     const reportPreId = 'supposed_report_results'
     let reportDiv
     let reportPre
+    const makeOrderId = (event) => `${event.batchId}-${event.testId}`
+
+    const byTestOrder = (order) => (a, b) => {
+      let aIdx; let bIdx; let foundCount = 0
+
+      for (let i = 0; i < order.length; i += 1) {
+        if (order[i] === makeOrderId(a)) {
+          aIdx = i
+          foundCount += 1
+        } else if (order[i] === makeOrderId(b)) {
+          bIdx = i
+          foundCount += 1
+        }
+
+        if (foundCount === 2) {
+          break
+        }
+      }
+
+      if (aIdx < bIdx) {
+        return -1
+      }
+      if (aIdx > bIdx) {
+        return 1
+      }
+      // a must be equal to b
+      return 0
+    }
 
     const initDom = () => {
       const _reportDiv = document.getElementById(reportDivId)
@@ -38,27 +66,52 @@ module.exports = {
       }
     }
 
-    function DomReporter () {
+    function DomReporter (options) {
+      options = { ...{ reportOrder: REPORT_ORDERS.NON_DETERMINISTIC }, ...envvars, ...options }
+      const testOrder = []
+      const testEvents = []
+
       initDom()
 
+      const writeOne = (event) => {
+        const line = format(event)
+
+        if (!line) {
+          return
+        }
+
+        console.log(line)
+        reportPre.append(`${line}\n`)
+        scrollToBottom()
+      }
+
       const write = (event) => {
-        // write to the console
-        if ([
-          TestEvent.types.START,
-          TestEvent.types.START_TEST,
-          TestEvent.types.TEST,
-          TestEvent.types.INFO,
-          TestEvent.types.END
-        ].indexOf(event.type) > -1) {
-          const line = format(event)
-
-          if (!line) {
-            return
+        if (event.type === TestEvent.types.START) {
+          writeOne(event)
+        } else if (event.type === TestEvent.types.END) {
+          if (options.reportOrder === REPORT_ORDERS.NON_DETERMINISTIC) {
+            writeOne(event)
+          } else {
+            testOrder.push(makeOrderId(event))
+            writeOne({
+              isDeterministicOutput: true,
+              testEvents: testEvents.sort(byTestOrder(testOrder)),
+              endEvent: event
+            })
           }
-
-          console.log(line)
-          reportPre.append(`${line}\n`)
-          scrollToBottom()
+        } else if (event.type === TestEvent.types.START_TEST) {
+          if (options.reportOrder === REPORT_ORDERS.NON_DETERMINISTIC) {
+            writeOne(event)
+          } else {
+            testOrder.push(makeOrderId(event))
+            writeOne(event)
+          }
+        } else if (event.type === TestEvent.types.TEST) {
+          if (options.reportOrder === REPORT_ORDERS.NON_DETERMINISTIC) {
+            writeOne(event)
+          } else {
+            testEvents.push(event)
+          }
         }
       } // /write
 

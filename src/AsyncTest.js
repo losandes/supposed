@@ -182,7 +182,7 @@ module.exports = {
           })
         }
 
-        let startTime
+        let startTime // TODO: This is measuring the wrong thing - we likely want to know how long the `when` takes
 
         return publish({
           type: TestEvent.types.START_TEST,

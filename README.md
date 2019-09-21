@@ -180,6 +180,7 @@ Supposed has options that can be set with command-line arguments, or envvars. Th
 * **match description**: run only tests whose descriptions/behaviors match the regular expression
 * **match file name**: run only tests whose file names match the regular expression (only used with runner)
 * **no-color**: display all output in black + white
+* **report-order**: Some reporters print test outcomes in a non-deterministic order because tests run concurrently. You can override this by setting the order to "deterministic"
 * **time-units**: the units to use for event timestamps (`s|ms|us|ns`) (default is `us`)
 
 > NOTE that timestamps use numeric representations of hrtime in nodejs, and performance.now in the browser. Changing the time-unit doesn't necessarily change the reporter output - it sets the units that are used for event times.
@@ -189,13 +190,14 @@ Supposed has options that can be set with command-line arguments, or envvars. Th
 * `-r` or `--reporter` (reporters)
 * `-m` or `--match` (matches description)
 * `-f` or `--file` (matches file name)
+* `-o` or `--report-order` (whether the report order is deterministic, or non-deterministic)
 * `-u` or `--time-units` (the units to use for timestamps)
 * `--no-color` (b+w terminal output)
 
 
 ```Shell
 $ npm install --save-dev tap-parser
-$ node tests -m foo -r tap -u ms | npx tap-parser -j | jq
+$ node tests -m foo -r tap -u ms -o deterministic | npx tap-parser -j | jq
 ```
 
 > In that example, we run tests that have the word "foo" in their descriptions, using TAP output, and milliseconds for timestamps. We pipe the output of the tests into another package, [tap-parser](https://www.npmjs.com/package/tap-parser), and then pipe the output of that package into [jq](https://stedolan.github.io/jq/).
@@ -209,6 +211,7 @@ $ node tests --no-color
 * `SUPPOSED_REPORTERS` (reporters)
 * `SUPPOSED_MATCH` (matches description)
 * `SUPPOSED_FILE` (matches file name)
+* `SUPPOSED_REPORT_ORDER` (whether the report order is deterministic, or non-deterministic)
 * `SUPPOSED_TIME_UNITS` (the units to use for timestamps)
 * `SUPPOSED_NO_COLOR` (b+w terminal output)
 
@@ -216,6 +219,7 @@ $ node tests --no-color
 $ npm install --save-dev tap-parser
 $ export SUPPOSED_REPORTERS=tap
 $ export SUPPOSED_MATCH=continuous-integration
+$ export SUPPOSED_REPORT_ORDER=deterministic
 $ export SUPPOSED_TIME_UNITS=ms
 $ export SUPPOSED_NO_COLOR=true
 $ node tests | npx tap-parser -j | jq
@@ -225,20 +229,22 @@ $ node tests | npx tap-parser -j | jq
 
 ### Built in Reporters
 
-* `list` (default) - a concise reporter with start indication, symbols for pass|fail|skip, error details, and a summary at the end (order is based on completion)
-* `tap` - a TAP compliant reporter, which can also be piped into [other TAP reporters](https://github.com/sindresorhus/awesome-tap#reporters) (order is based on completion)
-* `json` - test events in JSON format (order is based on completion)
-* `spec` - the test descriptions in markdown format (order is preserved)
-* `markdown` - the test descriptions in markdown format (order is preserved)
+* `list` (default) - a concise reporter with start indication, symbols for pass|fail|skip, error details, and a summary at the end _(default: non-deterministic order)_
+* `tap` - a TAP compliant reporter, which can also be piped into [other TAP reporters](https://github.com/sindresorhus/awesome-tap#reporters) _(default: non-deterministic order)_
+* `json` - test events in JSON format _(default: non-deterministic order)_
+* `block` - Colorized blocks with PASS|FAIL|SKIP text (like jest) _(default: non-deterministic order)_
+* `spec` - the test descriptions in markdown format _(deterministic order)_
+* `markdown` - the test descriptions in markdown format _(deterministic order)_
 * `md` - (alias for markdown)
 * `nyan` - rainbows, and flying cats? check
 * `brief` - just the summary, and the output from any failing tests
-* `summary` - just the summary
+* `summary` - just the summary (no error output - useful in combination with `tap`)
 * `array` - no output, but you can read the test events from `suite.config.reporters[${indexOfArrayReporter}].events` (it's easier just to `suite.subscribe`, or `suite.runner().run().then((results) => {})` though - you probably don't need this - it's mostly for testing this library)
-* `block` - Colorized blocks with PASS|FAIL|SKIP text (like jest) (order is based on completion)
 * `noop` - turn reporting off, and do your own thing
 
-> Note that most reporters are optimized for efficiency, and report tests as they complete, rather than in the order that they start. Reporters that suggest _order is preserved_ report the results after all tests complete, and print in the order in which they were discovered.
+> Note the deterministic, and non-deterministic order comments. Supposed runs tests concurrently. Reporters that indicate "non-deterministic order" report the status of each test as soon as it completes, regardless of the order in which it was discovered. These are optimized for efficiency. You can override this with `-o deterministic`. See [Arguments and ENVVARS](#arguments-and-envvars) for more info.
+>
+> Reporters that indicate "deterministic" order report tests status after all tests have finished, so the results are printed in the order in which the tests were discovered. These are optimized for comprehension. Reporters that are deterministic by default do not support non-deterministic output.
 
 ### Using Multiple Reporters
 Supposed uses pubsub to report, so there's no limit on the number of reporters that can be used. Some reporters when used in combination can cause problems (nyan isn't really compatible with anything else), but others can be helpful. Let's say you like the TAP output, but you want a summary:

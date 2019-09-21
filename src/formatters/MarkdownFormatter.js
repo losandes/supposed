@@ -5,7 +5,8 @@ module.exports = {
 
     const { consoleStyles, TestEvent, SpecFormatter, DefaultFormatter } = dependencies
     const newLine = consoleStyles.newLine()
-    const { makeOrderId, makeSpec } = new SpecFormatter()
+    const space = consoleStyles.space()
+    const { addToSpec } = new SpecFormatter()
     const { formatDuration } = new DefaultFormatter()
 
     const toBullets = (md, SPACE, layer) => {
@@ -64,25 +65,21 @@ module.exports = {
 
     function MarkdownFormatter () {
       let title = 'Tests'
-      const order = []
-      const specs = []
 
       const format = (event) => {
         if (event.type === TestEvent.types.START) {
           title = event.suiteId
-        } else if (event.type === TestEvent.types.END) {
-          const { spec, SPACE } = makeSpec(order, specs)
-          const errors = makeErrorsH2(specs)
+        } else if (event.isDeterministicOutput) {
+          const SPACE = [...new Array(event.testEvents.length * 2)].join(space)
+          const spec = {}
+          event.testEvents.forEach((_event) => addToSpec(_event.behavior.split(','), spec, _event))
+          const errors = makeErrorsH2(event.testEvents)
 
           if (errors) {
-            return `# ${title}${newLine}${newLine}${toBullets(spec, SPACE)}${newLine}${errors}${newLine}${makeTotalsH2(event.totals)}`
+            return `# ${title}${newLine}${newLine}${toBullets(spec, SPACE)}${newLine}${errors}${newLine}${makeTotalsH2(event.endEvent.totals)}`
           } else {
-            return `# ${title}${newLine}${newLine}${toBullets(spec, SPACE)}${newLine}${makeTotalsH2(event.totals)}`
+            return `# ${title}${newLine}${newLine}${toBullets(spec, SPACE)}${newLine}${makeTotalsH2(event.endEvent.totals)}`
           }
-        } else if (event.type === TestEvent.types.START_TEST) {
-          order.push(makeOrderId(event))
-        } else if (event.type === TestEvent.types.TEST) {
-          specs.push(event)
         }
       } // /format
 

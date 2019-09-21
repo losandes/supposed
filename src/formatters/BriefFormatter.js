@@ -16,20 +16,26 @@ module.exports = {
         }
       }).format
 
+      const isFail = (event) => {
+        return event.type === TestEvent.types.TEST &&
+        (
+          event.status === TestEvent.status.FAILED ||
+          event.status === TestEvent.status.BROKEN
+        )
+      }
+
       const format = (event) => {
         if ([
           TestEvent.types.START,
           TestEvent.types.END
         ].indexOf(event.type) > -1) {
           return defaultFormat(event)
-        } else if (
-          event.type === TestEvent.types.TEST &&
-          (
-            event.status === TestEvent.status.FAILED ||
-            event.status === TestEvent.status.BROKEN
-          )
-        ) {
+        } else if (isFail(event)) {
           return defaultFormat(event)
+        } else if (event.isDeterministicOutput) {
+          let output = event.testEvents.filter(isFail).map(defaultFormat).join('\n')
+          output += defaultFormat(event.endEvent)
+          return output
         }
       }
 

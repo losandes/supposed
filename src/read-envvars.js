@@ -3,7 +3,7 @@ module.exports = {
   factory: (dependencies) => {
     'use strict'
 
-    const { isValidUnit } = dependencies
+    const { isValidUnit, isValidReportOrder } = dependencies
 
     function Switch (lowercaseLetter) { // eslint-disable-line no-unused-vars
       return { switch: `-${lowercaseLetter}`.toUpperCase() }
@@ -59,7 +59,18 @@ module.exports = {
           : undefined,
         timeUnits: process.env.SUPPOSED_TIME_UNITS && isValidUnit(process.env.SUPPOSED_TIME_UNITS.trim().toLowerCase())
           ? process.env.SUPPOSED_TIME_UNITS.trim().toLowerCase()
+          : undefined,
+        reportOrder: process.env.SUPPOSED_REPORT_ORDER && isValidReportOrder(process.env.SUPPOSED_REPORT_ORDER.trim().toLowerCase())
+          ? process.env.SUPPOSED_REPORT_ORDER.trim().toLowerCase()
           : undefined
+      }
+
+      if (process.env.SUPPOSED_TIME_UNITS && !output.timeUnits) {
+        console.log(`${process.env.SUPPOSED_TIME_UNITS} is not a supported time unit`)
+      }
+
+      if (process.env.SUPPOSED_REPORT_ORDER && !output.reportOrder) {
+        console.log(`${process.env.SUPPOSED_REPORT_ORDER} is not a supported report order`)
       }
 
       if (!Array.isArray(process.argv)) {
@@ -72,6 +83,7 @@ module.exports = {
         const file = findMatch(Option('f', 'file'), value, idx, args)
         const noColor = findMatch(Swatch('no-color'), value, idx, args)
         const timeUnits = findMatch(Option('u', 'time-units'), value, idx, args)
+        const reportOrder = findMatch(Option('o', 'report-order'), value, idx, args)
 
         if (reporters) {
           output.reporters = reporters.split(',').map((reporter) => reporter.trim().toUpperCase())
@@ -91,6 +103,14 @@ module.exports = {
 
         if (timeUnits && isValidUnit(timeUnits.trim().toLowerCase())) {
           output.timeUnits = timeUnits.trim().toLowerCase()
+        } else if (timeUnits) {
+          console.log(`${timeUnits} is not a supported time unit`)
+        }
+
+        if (reportOrder && isValidReportOrder(reportOrder.trim().toLowerCase())) {
+          output.reportOrder = reportOrder.trim().toLowerCase()
+        } else if (reportOrder) {
+          console.log(`${reportOrder} is not a supported report order`)
         }
       }) // /forEach
 

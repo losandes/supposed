@@ -48,6 +48,10 @@ function isPromise (input) {
   return input && typeof input.then === 'function'
 }
 
+const REPORT_ORDERS = {
+  NON_DETERMINISTIC: 'non-deterministic',
+  DETERMINISTIC: 'deterministic'
+}
 const time = TimeFactory()
 const suites = {}
 let supposed = null
@@ -55,14 +59,20 @@ let supposed = null
 // resolve the dependency graph
 function Supposed (options) {
   const { allSettled } = allSettledFactory({})
-  const { readEnvvars } = readEnvvarsFactory({ isValidUnit: time.isValidUnit })
+  const { readEnvvars } = readEnvvarsFactory({
+    isValidUnit: time.isValidUnit,
+    isValidReportOrder: (value) => {
+      return value === REPORT_ORDERS.NON_DETERMINISTIC || value === REPORT_ORDERS.DETERMINISTIC
+    }
+  })
 
   const envvars = {
     ...{
       assertionLibrary: assert,
       reporters: ['LIST'],
-      useColors: true,
-      timeUnits: 'us'
+      useColors: process.stdout.isTTY, // use colors by default if running in a text terminal
+      timeUnits: 'us',
+      reportOrder: REPORT_ORDERS.NON_DETERMINISTIC
     },
     ...(() => {
       const output = {}
@@ -125,8 +135,10 @@ function Supposed (options) {
   function ConsoleReporter (options) {
     return ConsoleReporterFactory({
       TestEvent,
-      formatter: options.formatter
-    }).ConsoleReporter()
+      formatter: options.formatter,
+      envvars,
+      REPORT_ORDERS
+    }).ConsoleReporter(options)
   }
 
   const listFormatter = ListFormatterFactory({ consoleStyles, DefaultFormatter }).ListFormatter()
@@ -157,13 +169,15 @@ function Supposed (options) {
   }).add(function MarkdownReporter () {
     return {
       write: ConsoleReporter({
-        formatter: MarkdownFormatterFactory({ consoleStyles, TestEvent, SpecFormatter, DefaultFormatter }).MarkdownFormatter()
+        formatter: MarkdownFormatterFactory({ consoleStyles, TestEvent, SpecFormatter, DefaultFormatter }).MarkdownFormatter(),
+        reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
       }).write
     }
   }).add(function MdReporter () {
     return {
       write: ConsoleReporter({
-        formatter: MarkdownFormatterFactory({ consoleStyles, TestEvent, SpecFormatter, DefaultFormatter }).MarkdownFormatter()
+        formatter: MarkdownFormatterFactory({ consoleStyles, TestEvent, SpecFormatter, DefaultFormatter }).MarkdownFormatter(),
+        reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
       }).write
     }
   }).add(function JustTheDescriptionsReporter () {
@@ -183,7 +197,8 @@ function Supposed (options) {
   }).add(function SpecReporter () {
     return {
       write: ConsoleReporter({
-        formatter: new SpecFormatter()
+        formatter: new SpecFormatter(),
+        reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
       }).write
     }
   }).add(function SummaryReporter () {

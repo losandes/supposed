@@ -24,6 +24,10 @@
     return input && typeof input.then === 'function'
   }
 
+  const REPORT_ORDERS = {
+    NON_DETERMINISTIC: 'non-deterministic',
+    DETERMINISTIC: 'deterministic'
+  }
   const time = module.factories.timeFactory()
   const suites = {}
   let supposed = null
@@ -37,7 +41,8 @@
       assertionLibrary: {},
       reporters: ['LIST'],
       useColors: true,
-      timeUnits: 'us'
+      timeUnits: 'us',
+      reportOrder: REPORT_ORDERS.NON_DETERMINISTIC
     }
 
     const clock = () => time.clock(envvars.timeUnits)
@@ -81,8 +86,10 @@
     function ConsoleReporter (options) {
       return module.factories.DomReporterFactory({
         TestEvent,
-        formatter: options.formatter
-      }).DomReporter()
+        formatter: options.formatter,
+        envvars,
+        REPORT_ORDERS
+      }).DomReporter(options)
     }
 
     const listFormatter = module.factories.ListFormatterFactory({ consoleStyles, DefaultFormatter }).ListFormatter()
@@ -113,13 +120,15 @@
     }).add(function MarkdownReporter () {
       return {
         write: ConsoleReporter({
-          formatter: module.factories.MarkdownFormatterFactory({ consoleStyles, TestEvent, SpecFormatter, DefaultFormatter }).MarkdownFormatter()
+          formatter: module.factories.MarkdownFormatterFactory({ consoleStyles, TestEvent, SpecFormatter, DefaultFormatter }).MarkdownFormatter(),
+          reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
         }).write
       }
     }).add(function MdReporter () {
       return {
         write: ConsoleReporter({
-          formatter: module.factories.MarkdownFormatterFactory({ consoleStyles, TestEvent, SpecFormatter, DefaultFormatter }).MarkdownFormatter()
+          formatter: module.factories.MarkdownFormatterFactory({ consoleStyles, TestEvent, SpecFormatter, DefaultFormatter }).MarkdownFormatter(),
+          reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
         }).write
       }
     }).add(function JustTheDescriptionsReporter () {
@@ -139,7 +148,8 @@
     }).add(function SpecReporter () {
       return {
         write: ConsoleReporter({
-          formatter: SpecFormatter()
+          formatter: SpecFormatter(),
+          reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
         }).write
       }
     }).add(function SummaryReporter () {

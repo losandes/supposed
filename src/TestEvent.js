@@ -4,7 +4,7 @@ module.exports = {
     'use strict'
 
     const { clock } = dependencies
-    const TYPE_EXPRESSION = /(^START$)|(^START_BATCH$)|(^START_TEST$)|(^TEST$)|(^INFO$)|(^END_BATCH$)|(^END_TALLY$)|(^FINAL_TALLY$)|(^END$)/
+    const TYPE_EXPRESSION = /(^START$)|(^START_BATCH$)|(^START_TEST$)|(^TEST$)|(^END_BATCH$)|(^END_TALLY$)|(^FINAL_TALLY$)|(^END$)/
     const STATUS_EXPRESSION = /(^PASSED$)|(^SKIPPED$)|(^FAILED$)|(^BROKEN$)/
     let testCount = 0
 
@@ -102,7 +102,6 @@ module.exports = {
       START_BATCH: 'START_BATCH',
       START_TEST: 'START_TEST',
       TEST: 'TEST',
-      INFO: 'INFO',
       END_BATCH: 'END_BATCH',
       END_TALLY: 'END_TALLY',
       FINAL_TALLY: 'FINAL_TALLY',

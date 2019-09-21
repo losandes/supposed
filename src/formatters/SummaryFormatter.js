@@ -18,7 +18,9 @@ module.exports = {
       }).format
 
       const format = (event) => {
-        if (event.type === TestEvent.types.END) {
+        if (event.isDeterministicOutput) {
+          return defaultFormat(event.endEvent)
+        } if (event.type === TestEvent.types.END) {
           return defaultFormat(event)
         }
       }
