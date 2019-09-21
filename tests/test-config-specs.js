@@ -1,11 +1,10 @@
 module.exports = function (describe, dependencies) {
   const { chai } = dependencies
-  const sut = describe.Suite({ reporter: 'QUIET', match: null })
 
   return describe('test configuration', {
     'when a test sets a timeout': {
       when: () => {
-        return sut('sut', {
+        return describe.Suite({ name: 'test-timeout', reporter: 'QUIET', match: null })('sut', {
           'sut-description': {
             timeout: 5,
             when: () => { return new Promise(() => { /* should timeout */ }) },
@@ -22,7 +21,7 @@ module.exports = function (describe, dependencies) {
       },
       'and another node overrides it': {
         when: () => {
-          return sut('sut', {
+          return describe.Suite({ name: 'test-timeout-override', reporter: 'QUIET', match: null })('sut', {
             'sut-description': {
               timeout: 5,
               'sut-override': {
@@ -45,7 +44,7 @@ module.exports = function (describe, dependencies) {
     },
     'when a test sets a timeout, with no description': {
       when: () => {
-        return sut({
+        return describe.Suite({ name: 'test-timeout-no-description', reporter: 'QUIET', match: null })({
           'sut-description': {
             timeout: 5,
             when: () => { return new Promise(() => { /* should timeout */ }) },

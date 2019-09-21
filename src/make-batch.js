@@ -28,27 +28,29 @@ module.exports = {
       const makeBatchId = (behavior) => `B${hash(behavior)}`
       const makeTestId = (behavior) => `T${hash(behavior)}`
 
-      const getAssertions = (behavior, node, skipped) => {
+      const makeOneAssertion = (behavior, behaviors, node, skipped) => {
+        const _behaviors = behavior && behavior.trim().length ? behaviors.concat([behavior]) : behaviors
+        const _behavior = _behaviors.map(trimBehavior).join(', ')
+
+        return {
+          id: makeTestId(_behavior),
+          behaviors: _behaviors,
+          behavior: _behavior,
+          test: node,
+          skipped: skipped
+        }
+      }
+
+      const getAssertions = (behavior, behaviors, node, skipped) => {
         if (isAssertion(node, behavior)) {
-          return [{
-            id: makeTestId(behavior),
-            behavior: behavior,
-            test: node,
-            skipped: skipped
-          }]
+          return [makeOneAssertion(behavior, behaviors, node, skipped /* isSkipped(behavior) was called just before this */)]
         }
 
-        return Object.keys(node)
-          .filter(key => isAssertion(node[key], key))
-          .map(key => {
-            const _behavior = concatBehavior(behavior, key)
-            return {
-              id: makeTestId(_behavior),
-              behavior: _behavior,
-              test: node[key],
-              skipped: skipped || isSkipped(key)
-            }
-          })
+        return Object.getOwnPropertyNames(node)
+          .filter((key) => isAssertion(node[key], key))
+          .map((key) =>
+            makeOneAssertion(key, behaviors, node[key], skipped || isSkipped(key))
+          )
       }
 
       const isCommentedOut = (behavior) => {
@@ -79,23 +81,15 @@ module.exports = {
         }
       }
 
-      const concatBehavior = (behavior, key) => {
-        if (typeof key === 'string' && key.trim().length) {
-          return `${trimBehavior(behavior)}, ${trimBehavior(key)}`
-        }
-
-        return trimBehavior(behavior)
-      }
-
       function Layer (input) {
-        const { id, behavior, node, timeout, assertionLibrary } = input
+        const { id, behavior, behaviors, node, timeout, assertionLibrary } = input
         const parentSkipped = input.skipped
         const parentGiven = input.given
         const parentWhen = input.when
         const parentWhenIsInheritedGiven = input.whenIsInheritedGiven
 
         const skipped = parentSkipped || isSkipped(behavior)
-        const assertions = getAssertions(behavior, node, skipped, timeout)
+        const assertions = getAssertions(behavior, behaviors, node, skipped, timeout)
         const given = getGiven(node) || parentGiven
         let when = getWhen(node)
         let whenIsInheritedGiven = parentWhenIsInheritedGiven || false // false is the default
@@ -150,6 +144,7 @@ module.exports = {
 
         return {
           id: id || makeTestId(behavior),
+          behaviors,
           behavior,
           given,
           when,
@@ -162,10 +157,11 @@ module.exports = {
       }
 
       function FlattenedTests (input) {
-        const { behavior, node, given, when, whenIsInheritedGiven, skipped, timeout, assertionLibrary } = input
+        const { behavior, behaviors, node, given, when, whenIsInheritedGiven, skipped, timeout, assertionLibrary } = input
         const layers = []
         const parent = new Layer({
           id: makeBatchId(behavior),
+          behaviors: Array.isArray(behaviors) ? behaviors : [behavior],
           behavior,
           node,
           given,
@@ -180,37 +176,32 @@ module.exports = {
           layers.push(parent)
         }
 
-        Object.keys(node).filter(childKey => {
-          return typeof node[childKey] === 'object'
-        }).map(childKey => {
-          const childBehavior = concatBehavior(behavior, childKey)
-
-          return FlattenedTests({
-            behavior: childBehavior,
-            node: node[childKey],
-            given: parent.given,
-            when: parent.when,
-            whenIsInheritedGiven: parent.whenIsInheritedGiven,
-            // skipping favors the parent over the child
-            skipped: parent.skipped || isSkipped(childKey),
-            // timeout and assertion lib favor the child over the parent
-            timeout: node[childKey].timeout || parent.timeout,
-            assertionLibrary: node[childKey].assertionLibrary || parent.assertionLibrary
-          })
-        }).forEach(mappedLayers => {
-          mappedLayers
-            .filter(mappedLayer => {
-              return Array.isArray(mappedLayer.assertions) && mappedLayer.assertions.length
+        Object.getOwnPropertyNames(node)
+          .filter((childKey) => typeof node[childKey] === 'object')
+          .map((childKey) => {
+            return FlattenedTests({
+              behaviors: parent.behaviors.concat([childKey]),
+              behavior: childKey,
+              node: node[childKey],
+              given: parent.given,
+              when: parent.when,
+              whenIsInheritedGiven: parent.whenIsInheritedGiven,
+              // skipping favors the parent over the child
+              skipped: parent.skipped || isSkipped(childKey),
+              // timeout and assertion lib favor the child over the parent
+              timeout: node[childKey].timeout || parent.timeout,
+              assertionLibrary: node[childKey].assertionLibrary || parent.assertionLibrary
             })
-            .forEach(mappedLayer => {
-              layers.push(mappedLayer)
-            })
-        })
+          }).forEach((mappedLayers) =>
+            mappedLayers
+              .filter((mappedLayer) => Array.isArray(mappedLayer.assertions) && mappedLayer.assertions.length)
+              .forEach((mappedLayer) => layers.push(mappedLayer))
+          )
 
         return layers
       }
 
-      const makeBatch = (tests) => Object.keys(tests).reduce((batch, key) => {
+      const makeBatch = (tests) => Object.getOwnPropertyNames(tests).reduce((batch, key) => {
         return batch.concat(new FlattenedTests({ behavior: key, node: tests[key] }))
       }, [])
 

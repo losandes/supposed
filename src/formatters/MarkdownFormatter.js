@@ -72,7 +72,7 @@ module.exports = {
         } else if (event.isDeterministicOutput) {
           const SPACE = [...new Array(event.testEvents.length * 2)].join(space)
           const spec = {}
-          event.testEvents.forEach((_event) => addToSpec(_event.behavior.split(','), spec, _event))
+          event.testEvents.forEach((_event) => addToSpec(_event.behaviors, spec, _event))
           const errors = makeErrorsH2(event.testEvents)
 
           if (errors) {

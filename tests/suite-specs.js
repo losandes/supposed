@@ -57,7 +57,9 @@ module.exports = function (test, dependencies) {
         t.strictEqual(found[1].type, 'TEST')
       },
       // SOMEDAY - this test would cause confusing output for this suite
-      '# TODO and the reporter is unknown, it should use the default reporter': (t) => {}
+      '# TODO and the reporter is unknown': {
+        'it should use the default reporter': (t) => {}
+      }
     },
     'when a new suite is created with multiple reporters': {
       when: async () => {

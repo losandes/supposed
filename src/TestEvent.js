@@ -58,6 +58,10 @@ module.exports = {
         self.behavior = event.behavior
       }
 
+      if (Array.isArray(event.behaviors)) {
+        self.behaviors = event.behaviors
+      }
+
       if (event.error) {
         self.error = makeJSONStringifiableError(event.error)
       }

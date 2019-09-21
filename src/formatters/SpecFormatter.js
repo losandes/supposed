@@ -13,14 +13,14 @@ module.exports = {
       SKIPPED: consoleStyles.yellow('⸕ '),
       INFO: consoleStyles.cyan('# ')
     }
-    const { format, formatDuration, formatInfo, formatExpectedAndActual, formatStack } = DefaultFormatter({ SYMBOLS })
+    const { format, formatInfo, formatExpectedAndActual, formatStack } = DefaultFormatter({ SYMBOLS })
 
     const addToSpec = (parts, spec, event) => {
       if (!parts.length) {
         return
       }
 
-      const part = parts.shift().trim()
+      const part = parts.shift()
 
       if (parts.length) {
         spec[part] = spec[part] || {}
@@ -69,7 +69,7 @@ module.exports = {
         } else if (event.isDeterministicOutput) {
           const SPACE = [...new Array(event.testEvents.length * 2)].join(space)
           const spec = {}
-          event.testEvents.forEach((_event) => addToSpec(_event.behavior.split(','), spec, _event))
+          event.testEvents.forEach((_event) => addToSpec(_event.behaviors, spec, _event))
 
           return `${toPrint(spec, SPACE)}${newLine}${format(event.endEvent)}`
         }

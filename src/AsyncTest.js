@@ -163,6 +163,7 @@ module.exports = {
           batchId,
           testId: assertion.id,
           behavior: assertion.behavior,
+          behaviors: assertion.behaviors,
           time: endTime,
           duration: {
             given: givenDuration,
@@ -180,6 +181,7 @@ module.exports = {
         batchId,
         testId: assertion.id,
         behavior: assertion.behavior,
+        behaviors: assertion.behaviors,
         error: e
       })
 
@@ -190,7 +192,8 @@ module.exports = {
             status: TestEvent.status.SKIPPED,
             batchId,
             testId: assertion.id,
-            behavior: assertion.behavior
+            behavior: assertion.behavior,
+            behaviors: assertion.behaviors
           })
         }
 
@@ -200,7 +203,8 @@ module.exports = {
           type: TestEvent.types.START_TEST,
           batchId,
           testId: assertion.id,
-          behavior: assertion.behavior
+          behavior: assertion.behavior,
+          behaviors: assertion.behaviors
         }).then(() => {
           startTime = clock()
         }).then(() => test())
@@ -269,6 +273,7 @@ module.exports = {
                   status: TestEvent.status.BROKEN,
                   batchId,
                   behavior: test.behavior,
+                  behaviors: test.behaviors,
                   error: new Error(`Timeout: the test exceeded ${context.config.timeout} ms`)
                 }).then(resolve)
               }, config.timeout),
@@ -291,6 +296,7 @@ module.exports = {
                   status: TestEvent.status.BROKEN,
                   batchId,
                   behavior: test.behavior,
+                  behaviors: test.behaviors,
                   error: err && err.error ? err.error : err
                 }).then(resolve)
               }) // /flow
