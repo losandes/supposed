@@ -20,7 +20,7 @@ const formatDuration = (duration) => {
 }
 
 module.exports = supposed.Suite({
-  // reporter: 'noop'
+  reporter: 'noop'
 }).subscribe((event) => {
   if (event.type === 'TEST') {
     const durations = [
@@ -30,7 +30,7 @@ module.exports = supposed.Suite({
     ]
 
     // console.log(`  ${event.status}  ${event.behavior} (${durations.join(', ')})`)
-    console.log(`# latency: ${formatDuration(event.duration.total)} (${durations.join(', ')})`)
+    console.log(`${event.status} ${event.behavior} (duration: ${formatDuration(event.duration.total)} (${durations.join(', ')}))`)
   }
 })
   .runner({ cwd: __dirname })

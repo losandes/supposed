@@ -32,7 +32,7 @@ module.exports = {
             `then: ${formatDuration(event.duration.then)}`
           ]
 
-          return `${consoleStyles.cyan('# ')}  latency: ${formatDuration(event.duration.total)} (${durations.join(', ')})`
+          return `${consoleStyles.cyan('# ')}  duration: ${formatDuration(event.duration.total)} (${durations.join(', ')})`
         }
       }
 

@@ -239,7 +239,7 @@ $ node tests | npx tap-parser -j | jq
 * `markdown` - the test descriptions in markdown format _(deterministic order)_
 * `md` - (alias for markdown)
 * `nyan` - rainbows, and flying cats? check
-* `performance` - the total test duration, and the duration for each of: given, when, then accurate to the microsecond (these measurements are taken without other significant supposed operations being in scope, so should be close to measurements taken inside of those functions)
+* `performance` - the total test duration, and the duration for each of: given, when, then accurate to the microsecond (these measurements are taken without other significant supposed operations being in scope, so should be close to measurements taken inside of those functions). _performance_ is designed to be used in combination with the _list_, and _tap_ reporters: `node tests -r list,performance`, or `node tests -r tap,performance`
 * `brief` - just the summary, and the output from any failing tests
 * `summary` - just the summary (no error output - useful in combination with `tap`)
 * `array` - no output, but you can read the test events from `suite.config.reporters[${indexOfArrayReporter}].events` (it's easier just to `suite.subscribe`, or `suite.runner().run().then((results) => {})` though - you probably don't need this - it's mostly for testing this library)
@@ -249,7 +249,7 @@ $ node tests | npx tap-parser -j | jq
 >
 > Reporters that indicate "deterministic" order report tests status after all tests have finished, so the results are printed in the order in which the tests were discovered. These are optimized for comprehension. Reporters that are deterministic by default do not support non-deterministic output.
 >
-> Note that performance measurements are included for subjective observation. This library hasn't been tested as a purely performance testing library. Performance works well in combination with some, but not all reporters (i.e. `node tests -r list,performance` is helpful, while `node tests -r spec,performance` is not).
+> Note that performance measurements are included for subjective observation. This library hasn't been tested as a purely performance testing library.
 
 ### Using Multiple Reporters
 Supposed uses pubsub to report, so there's no limit on the number of reporters that can be used. Some reporters when used in combination can cause problems (nyan isn't really compatible with anything else), but others can be helpful. Let's say you like the TAP output, but you want a summary:
