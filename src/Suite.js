@@ -1,4 +1,4 @@
-let publishStartAndEnd = true
+let runnerMode = false
 
 module.exports = {
   name: 'Suite',
@@ -31,6 +31,16 @@ module.exports = {
       return batch
     }
 
+    /**
+     * Suite accepts ad-hoc polymorphic input. This function figures out what
+     * combination of inputs are present, and returns a consistent interface:
+     * @param description {string|object|function} - Either a description, a batch, or an assertion
+     * @param assertions {object|function} - Either a batch, or an assertion
+     *
+     *   {
+     *     [description: string]: IBDD | IBehaviors | IAssert | ICurriedAssert | IPromiseOrFunction
+     *   }
+     */
     const normalizeBatch = (description, assertions) => {
       const descriptionType = typeof description
       const assertionsType = typeof assertions
@@ -52,6 +62,13 @@ module.exports = {
       }
     } // /normalizebatch
 
+    /**
+     * If `match` is present in the config, this will test the assertions in
+     * a batch to identity whether or not they match
+     * @curried
+     * @param config {object} - the Suite options
+     * @param theory {object} - one result of makeBatch (`mapper`) (a batch is an array of theories)
+     */
     const matcher = (config) => (theory) => {
       if (!config.match) {
         return true
@@ -64,6 +81,20 @@ module.exports = {
       }
     }
 
+    /**
+     * Maps the result of normalizeBatch to a batch:
+     * @curried
+     * @param config {object} - the Suite options
+     * @param makeBatch {function} - a configured instance of the BatchComposer
+     * @param byMatcher {function} - a configured instance of `matcher`
+     * @param batch {function} - the result of normalized batch
+     *
+     *   {
+     *     batchId: string;
+     *     batch: IBatch,
+     *     tests: IAsyncTest[]
+     *   }
+     */
     const mapper = (config, makeBatch, byMatcher) => (batch) => {
       const processed = makeBatch(batch)
         .filter(byMatcher)
@@ -72,10 +103,15 @@ module.exports = {
       return {
         batchId,
         batch: processed,
-        tests: processed.map(theory => new AsyncTest(theory, config.makeTheoryConfig(theory), batchId, config.name))
+        tests: processed.map((theory) => new AsyncTest(theory, config.makeTheoryConfig(theory), batchId, config.name))
       }
     }
 
+    /**
+     * Merges the values of allSettled results into a single array of values.
+     * > NOTE this does not deal with undefined values
+     * @param results - the allSettled results
+     */
     const reduceResults = (results) => {
       return results.reduce((output, current) => {
         return Array.isArray(current.value)
@@ -95,7 +131,7 @@ module.exports = {
 
           return context
         }).then((context) => {
-          if (publishStartAndEnd) {
+          if (!runnerMode) {
             return publish({ type: TestEvent.types.START, suiteId: config.name })
               .then(() => context)
           }
@@ -139,7 +175,7 @@ module.exports = {
             totals: batchTotals
           }
 
-          if (publishStartAndEnd) {
+          if (!runnerMode) {
             return publish({ type: TestEvent.types.END_TALLY, suiteId: config.name })
               .then(() => publish({
                 type: TestEvent.types.END,
@@ -163,7 +199,7 @@ module.exports = {
     }
 
     const runner = (config, test) => (findAndRun) => () => {
-      publishStartAndEnd = false
+      runnerMode = true
 
       return publish({ type: TestEvent.types.START, suiteId: config.name })
         .then(() => findAndRun())
@@ -232,12 +268,20 @@ module.exports = {
      * @param {Object} suiteConfig : optional configuration
     */
     function Suite (suiteConfig, envvars) {
-      const configure = (_suiteConfig) => {
-        if (_suiteConfig && suiteConfig) {
-          Object.keys(suiteConfig).forEach((key) => {
-            _suiteConfig[key] = _suiteConfig[key] || suiteConfig[key]
-          })
-        }
+      suiteConfig = { ...suiteConfig }
+
+      /**
+       * @param suiteDotConfigureOptions - configuration provided in line with `supposed.Suite().configure(suiteDotConfigureOptions)`
+       */
+      const configure = (suiteDotConfigureOptions) => {
+        suiteDotConfigureOptions = { ...suiteDotConfigureOptions }
+
+        const _suiteConfig = Object.keys(suiteConfig)
+          .concat(Object.keys(suiteDotConfigureOptions))
+          .reduce((cfg, key) => {
+            cfg[key] = typeof suiteDotConfigureOptions[key] !== 'undefined' ? suiteDotConfigureOptions[key] : suiteConfig[key]
+            return cfg
+          }, {})
 
         clearSubscriptions()
         subscribe(reporterFactory.get(Tally.name))
@@ -249,24 +293,7 @@ module.exports = {
         const findAndStart = browserRunner(config, test)
         const run = runner(config, test)
 
-        /**
-        // Make a newly configured suite
-        */
-
         test.id = config.name
-
-        // @deprecated
-        test.printSummary = () => {
-          return publish({
-            type: TestEvent.types.END,
-            suiteId: config.name,
-            totals: Tally.getSimpleTally()
-          })
-        }
-        test.getTotals = () => {
-          return Tally.getSimpleTally()
-        }
-        test.suiteName = config.name
         test.runner = (options) => {
           options = options || {}
           if (envvars && envvars.file && typeof envvars.file.test === 'function') {
@@ -275,9 +302,10 @@ module.exports = {
 
           return {
             // find and run (node)
-            run: run(() => findFiles(options)
-              .then(resolveTests(test))
-              .then(runTests(test))
+            run: run(
+              () => findFiles(options)
+                .then(resolveTests(test))
+                .then(runTests(test))
             ),
             // run (browser|node)
             runTests: (tests) => {
@@ -299,12 +327,24 @@ module.exports = {
           return test
         }
         test.dependencies = _suiteConfig && _suiteConfig.inject
-        test.reporterFactory = reporterFactory
+
+        // @deprecated - may go away in the future
+        test.printSummary = () => {
+          return publish({
+            type: TestEvent.types.END,
+            suiteId: config.name,
+            totals: Tally.getSimpleTally()
+          })
+        }
+        // @deprecated - may go away in the future
+        test.getTotals = () => {
+          return Tally.getSimpleTally()
+        }
 
         return test
       }
 
-      return configure(suiteConfig)
+      return configure()
     }
 
     // Suite.suites = []
