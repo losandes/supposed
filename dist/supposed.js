@@ -1108,7 +1108,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       };
 
       var isPlan = function isPlan(maybePlan) {
-        return typeof maybePlan !== 'undefined' && maybePlan !== null && typeof maybePlan.count === 'number' && typeof maybePlan.complete === 'number' && Array.isArray(maybePlan.batches) && Array.isArray(maybePlan.order);
+        return typeof maybePlan !== 'undefined' && maybePlan !== null && typeof maybePlan.count === 'number' && typeof maybePlan.completed === 'number' && Array.isArray(maybePlan.batches) && Array.isArray(maybePlan.order);
       };
 
       var planner = function planner(config, mapToBatch) {
@@ -1447,13 +1447,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
                 runnerMode = true;
                 var run = runner(config, test, publishOneBrokenTest, tester(config, runBatch, runnerMode));
 
-                if (isPlan(planOrTests)) {
-                  return Promise.resolve({
-                    files: Array.isArray(planOrTests.files) ? planOrTests.files : [],
-                    plan: planOrTests,
-                    config: options || {},
-                    broken: []
-                  }).then(run);
+                if (planOrTests && isPlan(planOrTests.plan)) {
+                  return Promise.resolve(planOrTests).then(run);
                 }
 
                 if (Array.isArray(planOrTests)) {
