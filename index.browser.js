@@ -35,7 +35,7 @@
   // resolve the dependency graph
   function Supposed (options) {
     const { allSettled } = module.factories.allSettledFactory({})
-    const { runTests } = module.factories.runTestsFactory({ allSettled })
+    const { makePlans } = module.factories.makePlansFactory({ allSettled })
 
     const envvars = {
       assertionLibrary: {},
@@ -203,7 +203,7 @@
       subscribe,
       clearSubscriptions: reset,
       reporterFactory,
-      runTests,
+      makePlans,
       Tally,
       TestEvent
     })

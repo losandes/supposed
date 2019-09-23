@@ -1,7 +1,7 @@
 import * as Chai from 'chai';
-import { ISuppose } from '..';
+import { ISuppose } from 'supposed';
 
-export = async function test (test: ISuppose): Promise<void> {
+export = async function (test: ISuppose): Promise<void> {
   await test('TypeScript: when a BDD style test is executed, it should execute the test', {
     given: () => 42,
     when: (num: number) => num / 0,

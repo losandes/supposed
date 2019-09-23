@@ -21,7 +21,7 @@ const TimeFactory = require('./src/time.js').factory
 const findFilesFactory = require('./src/runners/find-files.js').factory
 const resolveTestsFactory = require('./src/runners/resolve-tests.js').factory
 const runServerFactory = require('./src/runners/run-server.js').factory
-const runTestsFactory = require('./src/runners/run-tests.js').factory
+const makePlansFactory = require('./src/runners/make-plans.js').factory
 
 // formatters
 const BlockFormatterFactory = require('./src/formatters/BlockFormatter.js').factory
@@ -102,7 +102,7 @@ function Supposed (options) {
   const { findFiles } = findFilesFactory({ fs, path })
   const { resolveTests } = resolveTestsFactory({})
   const { runServer } = runServerFactory({})
-  const { runTests } = runTestsFactory({ allSettled })
+  const { makePlans } = makePlansFactory({ allSettled })
 
   const consoleStyles = consoleStylesFactory({ envvars }).consoleStyles
   const consoleUtils = consoleUtilsFactory({}).consoleUtils
@@ -270,7 +270,7 @@ function Supposed (options) {
     reporterFactory,
     resolveTests,
     runServer,
-    runTests,
+    makePlans,
     Tally,
     TestEvent
   })

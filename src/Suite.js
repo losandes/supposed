@@ -15,7 +15,7 @@ module.exports = {
       reporterFactory,
       resolveTests,
       runServer,
-      runTests,
+      makePlans,
       Tally,
       TestEvent
     } = dependencies
@@ -331,15 +331,12 @@ module.exports = {
             return plan(description, assertions)
           } else {
             return plan(description, assertions)
-              // .then((context) => {
-              //   console.dir({ PLAN: context }, { depth: null })
-              //   return context
-              // })
               .then(tester(config, runBatch, runnerMode))
           }
         }
 
         test.id = config.name
+        test.plan = plan
         test.reporters = config.reporters
         test.config = config
         test.dependencies = _suiteConfig && _suiteConfig.inject
@@ -356,23 +353,30 @@ module.exports = {
           }
 
           const findAndStart = browserRunner(config, test)
+          const addPlanToContext = () => (context) => {
+            context.plan = plan.getPlan()
+            return context
+          }
+
+          const findAndPlan = () => {
+            runnerMode = true
+
+            return findFiles(options)
+              .then(resolveTests())
+              .then(makePlans(test))
+              .then(addPlanToContext())
+          }
 
           return {
+            plan: findAndPlan,
             // find and run (node)
-            run: () => {
-              runnerMode = true
-              const run = runner(config, test, publishOneBrokenTest, tester(config, runBatch, runnerMode))
-
-              return findFiles(options)
-                .then(resolveTests())
-                .then(runTests(test))
-                // .then((context) => {
-                //   console.dir({ PLAN: context }, { depth: null })
-                //   return context
-                // })
-                .then(run)
-            },
-
+            run: () => findAndPlan()
+              .then(runner(
+                config,
+                test,
+                publishOneBrokenTest,
+                tester(config, runBatch, runnerMode)
+              )),
             // run (browser|node)
             runTests: (tests) => {
               if (Array.isArray(tests)) {
@@ -380,9 +384,15 @@ module.exports = {
               }
 
               runnerMode = true
-              const run = runner(config, test, publishOneBrokenTest, tester(config, runBatch, runnerMode))
 
-              return runTests(test)(options).then(run)
+              return makePlans(test)(options)
+                .then(addPlanToContext())
+                .then(runner(
+                  config,
+                  test,
+                  publishOneBrokenTest,
+                  tester(config, runBatch, runnerMode)
+                ))
             },
             // start test server (browser)
             startServer: findAndStart(options)

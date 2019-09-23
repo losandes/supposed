@@ -21,7 +21,7 @@ modules.push(fs.readFileSync('./src/TestEvent.js'))
 modules.push(fs.readFileSync('./src/time.js'))
 
 // runners
-modules.push(fs.readFileSync('./src/runners/run-tests.js'))
+modules.push(fs.readFileSync('./src/runners/make-plans.js'))
 
 // formatters
 modules.push(fs.readFileSync('./src/formatters/browser-console-styles.js'))

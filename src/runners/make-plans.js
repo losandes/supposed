@@ -1,5 +1,5 @@
 module.exports = {
-  name: 'runTests',
+  name: 'makePlans',
   factory: (dependencies) => {
     'use strict'
 
@@ -20,7 +20,7 @@ module.exports = {
           test = input.test
           path = input.path
         } else {
-          throw new Error(`Invalid runTests entry: expected input ${typeof input} to be a {function}, or { err?: Error; test: Function|Promise; path?: string; }`)
+          throw new Error(`Invalid makePlans entry: expected input ${typeof input} to be a {function}, or { err?: Error; test: Function|Promise; path?: string; }`)
         }
 
         if (err) {
@@ -55,28 +55,16 @@ module.exports = {
     }
 
     const mapToResults = (config, paths = []) => (results) => {
-      const plans = results.filter((result) => result.status === 'fullfilled' && result.value)
-      let plan
-
-      if (!plans.length) {
-        plan = { count: 0, completed: 0, batches: [] }
-      } else if (plans.length === 1) {
-        plan = plans[0].value
-      } else {
-        plan = plans[plans.length - 1].value
-      }
-
       return {
         files: paths,
         config,
-        plan,
         broken: results
           .filter((result) => result.status !== 'fullfilled')
           .map((result) => result.reason)
       }
     }
 
-    const runTests = (suite) => (context) => {
+    const makePlans = (suite) => (context) => {
       const { config, tests, paths } = context
 
       if (!tests) {
@@ -88,6 +76,6 @@ module.exports = {
         .then(mapToResults(config, paths))
     }
 
-    return { runTests }
+    return { makePlans }
   } // /factory
 } // /module

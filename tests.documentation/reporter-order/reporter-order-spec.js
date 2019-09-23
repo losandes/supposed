@@ -18,3 +18,6 @@ module.exports = test({
     resolve()
   })
 })
+// .then((plan) => {
+//   console.dir(plan, { depth: null })
+// })

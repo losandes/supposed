@@ -246,9 +246,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             return publish({
               type: TestEvent.types.TEST,
               status: TestEvent.status.PASSED,
+              suiteId: context.suiteId,
               batchId: batchId,
               testId: assertion.id,
               behavior: assertion.behavior,
+              behaviors: assertion.behaviors,
               time: endTime,
               duration: {
                 given: givenDuration,
@@ -266,9 +268,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           return publish({
             type: TestEvent.types.TEST,
             status: TestEvent.status.FAILED,
+            suiteId: context.suiteId,
             batchId: batchId,
             testId: assertion.id,
             behavior: assertion.behavior,
+            behaviors: assertion.behaviors,
             error: e
           });
         };
@@ -278,18 +282,22 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             return publish({
               type: TestEvent.types.TEST,
               status: TestEvent.status.SKIPPED,
+              suiteId: context.suiteId,
               batchId: batchId,
               testId: assertion.id,
-              behavior: assertion.behavior
+              behavior: assertion.behavior,
+              behaviors: assertion.behaviors
             });
           }
 
           var startTime;
           return publish({
             type: TestEvent.types.START_TEST,
+            suiteId: context.suiteId,
             batchId: batchId,
             testId: assertion.id,
-            behavior: assertion.behavior
+            behavior: assertion.behavior,
+            behaviors: assertion.behaviors
           }).then(function () {
             startTime = clock();
           }).then(function () {
@@ -312,6 +320,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         var self = {
           test: context.test,
           config: context.config,
+          suiteId: context.suiteId,
           batchId: context.batchId,
           timer: context.timer,
           given: context.given,
@@ -345,7 +354,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       // }
 
 
-      function AsyncTest(test, config, batchId) {
+      function AsyncTest(test, config, batchId, suiteId) {
         return function () {
           // we need a Promise wrapper, to timout the test if it never returns
           return new Promise(function (resolve, reject) {
@@ -355,13 +364,16 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               var context = new Context({
                 test: test,
                 config: config,
+                suiteId: suiteId,
                 batchId: batchId,
                 timer: setTimeout(function () {
                   publish({
                     type: TestEvent.types.TEST,
                     status: TestEvent.status.BROKEN,
+                    suiteId: suiteId,
                     batchId: batchId,
                     behavior: test.behavior,
+                    behaviors: test.behaviors,
                     error: new Error("Timeout: the test exceeded ".concat(context.config.timeout, " ms"))
                   }).then(resolve);
                 }, config.timeout),
@@ -377,8 +389,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
                 publish({
                   type: TestEvent.types.TEST,
                   status: TestEvent.status.BROKEN,
+                  suiteId: suiteId,
                   batchId: batchId,
                   behavior: test.behavior,
+                  behaviors: test.behaviors,
                   error: err && err.error ? err.error : err
                 }).then(resolve);
               }); // /flow
@@ -532,27 +546,32 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           return "T".concat(hash(behavior));
         };
 
-        var getAssertions = function getAssertions(behavior, node, skipped) {
+        var makeOneAssertion = function makeOneAssertion(behavior, behaviors, node, skipped) {
+          var _behaviors = behavior && behavior.trim().length ? behaviors.concat([behavior]) : behaviors;
+
+          var _behavior = _behaviors.map(trimBehavior).join(', ');
+
+          return {
+            id: makeTestId(_behavior),
+            behaviors: _behaviors,
+            behavior: _behavior,
+            test: node,
+            skipped: skipped
+          };
+        };
+
+        var getAssertions = function getAssertions(behavior, behaviors, node, skipped) {
           if (isAssertion(node, behavior)) {
-            return [{
-              id: makeTestId(behavior),
-              behavior: behavior,
-              test: node,
-              skipped: skipped
-            }];
+            // empty behavior because the behavior should already be in `behaviors`
+            return [makeOneAssertion('', behaviors, node, skipped
+            /* isSkipped(behavior) was called just before this */
+            )];
           }
 
           return Object.keys(node).filter(function (key) {
             return isAssertion(node[key], key);
           }).map(function (key) {
-            var _behavior = concatBehavior(behavior, key);
-
-            return {
-              id: makeTestId(_behavior),
-              behavior: _behavior,
-              test: node[key],
-              skipped: skipped || isSkipped(key)
-            };
+            return makeOneAssertion(key, behaviors, node[key], skipped || isSkipped(key));
           });
         };
 
@@ -584,17 +603,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           }
         };
 
-        var concatBehavior = function concatBehavior(behavior, key) {
-          if (typeof key === 'string' && key.trim().length) {
-            return "".concat(trimBehavior(behavior), ", ").concat(trimBehavior(key));
-          }
-
-          return trimBehavior(behavior);
-        };
-
         function Layer(input) {
           var id = input.id,
               behavior = input.behavior,
+              behaviors = input.behaviors,
               node = input.node,
               timeout = input.timeout,
               assertionLibrary = input.assertionLibrary;
@@ -603,7 +615,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           var parentWhen = input.when;
           var parentWhenIsInheritedGiven = input.whenIsInheritedGiven;
           var skipped = parentSkipped || isSkipped(behavior);
-          var assertions = getAssertions(behavior, node, skipped, timeout);
+          var assertions = getAssertions(behavior, behaviors, node, skipped, timeout);
           var given = getGiven(node) || parentGiven;
           var when = getWhen(node);
           var whenIsInheritedGiven = parentWhenIsInheritedGiven || false; // false is the default
@@ -662,6 +674,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
           return {
             id: id || makeTestId(behavior),
+            behaviors: behaviors,
             behavior: behavior,
             given: given,
             when: when,
@@ -675,6 +688,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
         function FlattenedTests(input) {
           var behavior = input.behavior,
+              behaviors = input.behaviors,
               node = input.node,
               given = input.given,
               when = input.when,
@@ -683,8 +697,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               timeout = input.timeout,
               assertionLibrary = input.assertionLibrary;
           var layers = [];
+          var props = Object.keys(node);
           var parent = new Layer({
             id: makeBatchId(behavior),
+            behaviors: Array.isArray(behaviors) ? behaviors : [behavior],
             behavior: behavior,
             node: node,
             given: given,
@@ -699,12 +715,12 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             layers.push(parent);
           }
 
-          Object.keys(node).filter(function (childKey) {
+          props.filter(function (childKey) {
             return _typeof(node[childKey]) === 'object';
           }).map(function (childKey) {
-            var childBehavior = concatBehavior(behavior, childKey);
             return FlattenedTests({
-              behavior: childBehavior,
+              behaviors: parent.behaviors.concat([childKey]),
+              behavior: childKey,
               node: node[childKey],
               given: parent.given,
               when: parent.when,
@@ -716,10 +732,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               assertionLibrary: node[childKey].assertionLibrary || parent.assertionLibrary
             });
           }).forEach(function (mappedLayers) {
-            mappedLayers.filter(function (mappedLayer) {
+            return mappedLayers.filter(function (mappedLayer) {
               return Array.isArray(mappedLayer.assertions) && mappedLayer.assertions.length;
             }).forEach(function (mappedLayer) {
-              layers.push(mappedLayer);
+              return layers.push(mappedLayer);
             });
           });
           return layers;
@@ -976,7 +992,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       };
     }
   };
-  var publishStartAndEnd = true;
   module.exports = {
     name: 'Suite',
     factory: function factory(dependencies) {
@@ -993,7 +1008,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           reporterFactory = dependencies.reporterFactory,
           resolveTests = dependencies.resolveTests,
           runServer = dependencies.runServer,
-          _runTests = dependencies.runTests,
+          makePlans = dependencies.makePlans,
           Tally = dependencies.Tally,
           TestEvent = dependencies.TestEvent;
 
@@ -1006,6 +1021,17 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         batch[description] = assertions;
         return batch;
       };
+      /**
+       * Suite accepts ad-hoc polymorphic input. This function figures out what
+       * combination of inputs are present, and returns a consistent interface:
+       * @param description {string|object|function} - Either a description, a batch, or an assertion
+       * @param assertions {object|function} - Either a batch, or an assertion
+       *
+       *   {
+       *     [description: string]: IBDD | IBehaviors | IAssert | ICurriedAssert | IPromiseOrFunction
+       *   }
+       */
+
 
       var normalizeBatch = function normalizeBatch(description, assertions) {
         var descriptionType = _typeof(description);
@@ -1033,6 +1059,14 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         }
       }; // /normalizebatch
 
+      /**
+       * If `match` is present in the config, this will test the assertions in
+       * a batch to identity whether or not they match
+       * @curried
+       * @param config {object} - the Suite options
+       * @param theory {object} - one result of makeBatch (`mapper`) (a batch is an array of theories)
+       */
+
 
       var matcher = function matcher(config) {
         return function (theory) {
@@ -1047,42 +1081,157 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           }
         };
       };
+      /**
+       * Maps the result of normalizeBatch to a batch:
+       * @curried
+       * @param config {object} - the Suite options
+       * @param makeBatch {function} - a configured instance of the BatchComposer
+       * @param byMatcher {function} - a configured instance of `matcher`
+       * @param batch {function} - the result of normalized batch
+       *
+       *   {
+       *     batchId: string;
+       *     batch: IBatch,
+       *     tests: IAsyncTest[]
+       *   }
+       */
+
 
       var mapper = function mapper(config, makeBatch, byMatcher) {
         return function (batch) {
-          var processed = makeBatch(batch).filter(byMatcher);
-          var batchId = processed.length ? processed[0].id : makeBatchId();
+          var theories = makeBatch(batch).filter(byMatcher);
           return {
-            batchId: batchId,
-            batch: processed,
-            tests: processed.map(function (theory) {
-              return new AsyncTest(theory, config.makeTheoryConfig(theory), batchId);
-            })
+            batchId: theories.length ? theories[0].id : makeBatchId(),
+            theories: theories
           };
         };
       };
 
-      var reduceResults = function reduceResults(results) {
-        return results.reduce(function (output, current) {
-          return Array.isArray(current.value) ? output.concat(current.value) : output.concat([current.value]);
-        }, []);
+      var planner = function planner(config, mapToBatch) {
+        var plan = {
+          count: 0,
+          completed: 0,
+          batches: []
+        };
+
+        var addToPlan = function addToPlan(description, assertions) {
+          return normalizeBatch(description, assertions).then(mapToBatch).then(function (context) {
+            if (context.theories.length) {
+              plan.batches.push(context);
+              plan.count += context.theories.reduce(function (count, item) {
+                return count + item.assertions.length;
+              }, 0);
+            }
+
+            return plan;
+          });
+        };
+
+        addToPlan.getPlan = function () {
+          return plan;
+        };
+
+        return addToPlan;
       };
 
-      var tester = function tester(config, mapToTests) {
-        return function (description, assertions) {
-          return normalizeBatch(description, assertions).then(mapToTests).then(function (context) {
-            context.plan = {
-              count: context.batch.reduce(function (count, item) {
-                return count + item.assertions.length;
-              }, 0),
-              completed: 0
+      var brokenTestPublisher = function brokenTestPublisher(suiteId) {
+        return function (error) {
+          return publish({
+            type: TestEvent.types.TEST,
+            status: TestEvent.status.BROKEN,
+            behavior: "Failed to load test: ".concat(error.filePath),
+            suiteId: suiteId,
+            error: error
+          });
+        };
+      };
+      /**
+       * Merges the values of allSettled results into a single array of values.
+       * > NOTE this does not deal with undefined values
+       * @param prop - the name of the property to merge (value, or reason)
+       */
+
+
+      var toOneArray = function toOneArray(prop) {
+        return function (output, current) {
+          return Array.isArray(current[prop]) ? output.concat(current[prop]) : output.concat([current[prop]]);
+        };
+      };
+
+      var fullfilledToOneArray = toOneArray('value');
+      var failedToOneArray = toOneArray('reason');
+
+      var batchRunner = function batchRunner(config, publishOneBrokenTest) {
+        return function (batch, plan) {
+          return publish({
+            type: TestEvent.types.START_BATCH,
+            batchId: batch.batchId,
+            suiteId: config.name,
+            plan: plan
+          }).then(function () {
+            // map the batch theories to tests
+            return batch.theories.map(function (theory) {
+              return new AsyncTest(theory, config.makeTheoryConfig(theory), batch.batchId, config.name);
+            });
+          }).then(function (tests) {
+            return allSettled(tests.map(function (test) {
+              return test();
+            }));
+          }).then(function (results) {
+            return {
+              results: results.filter(function (result) {
+                return result.status === 'fullfilled';
+              }).reduce(fullfilledToOneArray, []),
+              broken: results.filter(function (result) {
+                return result.status !== 'fullfilled';
+              }).reduce(failedToOneArray, []),
+              batchTotals: Tally.getTally().batches[batch.batchId]
             };
-            return context;
           }).then(function (context) {
-            if (publishStartAndEnd) {
+            var publishEndBatch = function publishEndBatch() {
+              return publish({
+                type: TestEvent.types.END_BATCH,
+                batchId: batch.batchId,
+                suiteId: config.name,
+                totals: context.batchTotals
+              });
+            };
+
+            if (Array.isArray(context.broken) && context.broken.length) {
+              // these tests failed during the planning stage
+              return allSettled(context.broken.map(publishOneBrokenTest)).then(publishEndBatch).then(function () {
+                return context;
+              });
+            } else {
+              return publishEndBatch().then(function () {
+                return context;
+              });
+            }
+          }).then(function (context) {
+            return {
+              batchId: batch.batchId,
+              results: context.results,
+              broken: context.broken,
+              totals: context.batchTotals
+            };
+          });
+        };
+      }; // /batchRunner
+
+
+      var tester = function tester(config, runBatch, runnerMode) {
+        return function (plan) {
+          return Promise.resolve({
+            plan: plan
+          }).then(function (context) {
+            if (!runnerMode) {
               return publish({
                 type: TestEvent.types.START,
-                suiteId: config.name
+                suiteId: config.name,
+                plan: {
+                  count: context.plan.count,
+                  completed: 0
+                }
               }).then(function () {
                 return context;
               });
@@ -1090,53 +1239,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
             return Promise.resolve(context);
           }).then(function (context) {
-            var batchId = context.batchId,
-                plan = context.plan;
-            return publish({
-              type: TestEvent.types.START_BATCH,
-              batchId: batchId,
-              suiteId: config.name,
-              plan: plan
-            }).then(function () {
-              return context;
-            });
+            return Promise.all(context.plan.batches.map(function (batch) {
+              return runBatch(batch, context.plan);
+            }));
           }).then(function (context) {
-            var batchId = context.batchId,
-                tests = context.tests;
-            return allSettled(tests.map(function (test) {
-              return test();
-            })).then(function (results) {
-              context.results = results;
-              context.batchTotals = Tally.getTally().batches[batchId];
-              return context;
-            });
-          }).then(function (context) {
-            var batchId = context.batchId,
-                plan = context.plan,
-                batchTotals = context.batchTotals;
-            return publish({
-              type: TestEvent.types.END_BATCH,
-              batchId: batchId,
-              suiteId: config.name,
-              plan: {
-                count: plan.count,
-                completed: batchTotals.total
-              },
-              totals: batchTotals
-            }).then(function () {
-              return context;
-            });
-          }).then(function (context) {
-            var batchId = context.batchId,
-                batchTotals = context.batchTotals,
-                results = context.results;
-            var output = {
-              batchId: batchId,
-              results: reduceResults(results),
-              totals: batchTotals
-            };
-
-            if (publishStartAndEnd) {
+            if (!runnerMode) {
               return publish({
                 type: TestEvent.types.END_TALLY,
                 suiteId: config.name
@@ -1144,14 +1251,20 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
                 return publish({
                   type: TestEvent.types.END,
                   suiteId: config.name,
-                  totals: batchTotals
+                  totals: Tally.getSimpleTally()
                 });
               }).then(function () {
-                return output;
+                return context;
               });
             }
 
-            return Promise.resolve(output);
+            return Promise.resolve(context);
+          }).then(function (context) {
+            if (Array.isArray(context) && context.length === 1) {
+              return context[0];
+            }
+
+            return context;
           }).catch(function (e) {
             publish({
               type: TestEvent.types.TEST,
@@ -1165,75 +1278,69 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         };
       };
 
-      var runner = function runner(config, test) {
-        return function (findAndRun) {
-          return function () {
-            publishStartAndEnd = false;
+      var runner = function runner(config, suite, publishOneBrokenTest, execute) {
+        return function (planContext) {
+          var plan = planContext.plan,
+              files = planContext.files,
+              broken = planContext.broken;
+          return publish({
+            type: TestEvent.types.START,
+            suiteId: config.name,
+            plan: {
+              count: plan.count,
+              completed: 0
+            }
+          }).then(function () {
+            if (broken && broken.length) {
+              // these tests failed during the planning stage
+              return allSettled(broken.map(publishOneBrokenTest));
+            }
+          }).then(function () {
+            return execute(plan);
+          }).then(function (output) {
             return publish({
-              type: TestEvent.types.START,
+              type: TestEvent.types.END_TALLY,
               suiteId: config.name
             }).then(function () {
-              return findAndRun();
-            }).then(function (output) {
-              if (output.broken.length) {
-                // these tests failed before being executed
-                var brokenPromises = output.broken.map(function (error) {
-                  return publish({
-                    type: TestEvent.types.TEST,
-                    status: TestEvent.status.BROKEN,
-                    behavior: "Failed to load test: ".concat(error.filePath),
-                    suiteId: config.name,
-                    error: error
-                  });
-                });
-                return allSettled(brokenPromises).then(function () {
-                  return output;
-                });
-              }
-
-              return Promise.resolve(output);
-            }).then(function (output) {
-              return publish({
-                type: TestEvent.types.END_TALLY,
-                suiteId: config.name
-              }).then(function () {
-                return output;
-              });
-            }).then(function (output) {
-              return publish({
-                type: TestEvent.types.FINAL_TALLY,
-                suiteId: config.name,
-                totals: Tally.getTally()
-              }).then(function () {
-                return output;
-              });
-            }).then(function (output) {
-              // only get the tally _after_ END_TALLY was emitted
-              return {
-                output: output,
-                tally: Tally.getSimpleTally()
-              };
-            }).then(function (context) {
-              return publish({
-                type: TestEvent.types.END,
-                suiteId: config.name,
-                totals: context.tally
-              }).then(function () {
-                return context;
-              });
-            }).then(function (_ref) {
-              var output = _ref.output,
-                  tally = _ref.tally;
-              return {
-                files: output.files,
-                results: output.results,
-                broken: output.broken,
-                config: output.config,
-                suite: test,
-                totals: tally
-              };
+              return output;
             });
-          };
+          } // pass through
+          ).then(function (output) {
+            return publish({
+              type: TestEvent.types.FINAL_TALLY,
+              suiteId: config.name,
+              totals: Tally.getTally()
+            }).then(function () {
+              return output;
+            });
+          } // pass through
+          ).then(function (output) {
+            // only get the tally _after_ END_TALLY was emitted
+            return {
+              output: output,
+              tally: Tally.getSimpleTally()
+            };
+          }).then(function (context) {
+            return publish({
+              type: TestEvent.types.END,
+              suiteId: config.name,
+              totals: context.tally
+            }).then(function () {
+              return context;
+            });
+          } // pass through
+          ).then(function (_ref) {
+            var output = _ref.output,
+                tally = _ref.tally;
+            return {
+              files: files,
+              results: output.results,
+              broken: broken,
+              config: planContext.config,
+              suite: suite,
+              totals: tally
+            };
+          });
         };
       };
 
@@ -1251,44 +1358,52 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
 
       function Suite(suiteConfig, envvars) {
-        var configure = function configure(_suiteConfig) {
-          if (_suiteConfig && suiteConfig) {
-            Object.keys(suiteConfig).forEach(function (key) {
-              _suiteConfig[key] = _suiteConfig[key] || suiteConfig[key];
-            });
-          }
+        var runnerMode = false;
+        suiteConfig = _objectSpread({}, suiteConfig);
+        /**
+         * @param suiteDotConfigureOptions - configuration provided in line with `supposed.Suite().configure(suiteDotConfigureOptions)`
+         */
+
+        var configure = function configure(suiteDotConfigureOptions) {
+          suiteDotConfigureOptions = _objectSpread({}, suiteDotConfigureOptions);
+
+          var _suiteConfig = Object.keys(suiteConfig).concat(Object.keys(suiteDotConfigureOptions)).reduce(function (cfg, key) {
+            cfg[key] = typeof suiteDotConfigureOptions[key] !== 'undefined' ? suiteDotConfigureOptions[key] : suiteConfig[key];
+            return cfg;
+          }, {});
 
           clearSubscriptions();
           subscribe(reporterFactory.get(Tally.name));
           var config = makeSuiteConfig(_suiteConfig);
+          var publishOneBrokenTest = brokenTestPublisher(config.name);
 
           var _ref2 = new BatchComposer(config),
               makeBatch = _ref2.makeBatch;
 
           var byMatcher = matcher(config);
-          var mapToTests = mapper(config, makeBatch, byMatcher);
-          var test = tester(config, mapToTests);
-          var findAndStart = browserRunner(config, test);
-          var run = runner(config, test);
-          /**
-          // Make a newly configured suite
-          */
+          var mapToBatch = mapper(config, makeBatch, byMatcher);
+          var runBatch = batchRunner(config, publishOneBrokenTest);
+          var plan = planner(config, mapToBatch);
 
-          test.id = config.name; // @deprecated
-
-          test.printSummary = function () {
-            return publish({
-              type: TestEvent.types.END,
-              suiteId: config.name,
-              totals: Tally.getSimpleTally()
-            });
+          var test = function test(description, assertions) {
+            if (runnerMode) {
+              return plan(description, assertions);
+            } else {
+              return plan(description, assertions).then(tester(config, runBatch, runnerMode));
+            }
           };
 
-          test.getTotals = function () {
-            return Tally.getSimpleTally();
-          };
+          test.id = config.name;
+          test.plan = plan;
+          test.reporters = config.reporters;
+          test.config = config;
+          test.dependencies = _suiteConfig && _suiteConfig.inject;
+          test.configure = configure;
 
-          test.suiteName = config.name;
+          test.subscribe = function (subscription) {
+            subscribe(subscription);
+            return test;
+          };
 
           test.runner = function (options) {
             options = options || {};
@@ -1297,41 +1412,58 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               options.matchesNamingConvention = envvars.file;
             }
 
+            var findAndStart = browserRunner(config, test);
+
+            var addPlanToContext = function addPlanToContext() {
+              return function (context) {
+                context.plan = plan.getPlan();
+                return context;
+              };
+            };
+
+            var findAndPlan = function findAndPlan() {
+              runnerMode = true;
+              return findFiles(options).then(resolveTests()).then(makePlans(test)).then(addPlanToContext());
+            };
+
             return {
+              plan: findAndPlan,
               // find and run (node)
-              run: run(function () {
-                return findFiles(options).then(resolveTests(test)).then(_runTests(test));
-              }),
+              run: function run() {
+                return findAndPlan().then(runner(config, test, publishOneBrokenTest, tester(config, runBatch, runnerMode)));
+              },
               // run (browser|node)
               runTests: function runTests(tests) {
                 if (Array.isArray(tests)) {
                   options.tests = tests;
                 }
 
-                return run(function () {
-                  return _runTests(test)(options);
-                })();
+                runnerMode = true;
+                return makePlans(test)(options).then(addPlanToContext()).then(runner(config, test, publishOneBrokenTest, tester(config, runBatch, runnerMode)));
               },
               // start test server (browser)
               startServer: findAndStart(options)
             };
+          }; // @deprecated - may go away in the future
+
+
+          test.printSummary = function () {
+            return publish({
+              type: TestEvent.types.END,
+              suiteId: config.name,
+              totals: Tally.getSimpleTally()
+            });
+          }; // @deprecated - may go away in the future
+
+
+          test.getTotals = function () {
+            return Tally.getSimpleTally();
           };
 
-          test.reporters = config.reporters;
-          test.config = config;
-          test.configure = configure;
-
-          test.subscribe = function (subscription) {
-            subscribe(subscription);
-            return test;
-          };
-
-          test.dependencies = _suiteConfig && _suiteConfig.inject;
-          test.reporterFactory = reporterFactory;
           return test;
         };
 
-        return configure(suiteConfig);
+        return configure();
       } // Suite.suites = []
 
 
@@ -1372,7 +1504,23 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       var TestEvent = function TestEvent(event) {
         var self = {};
         event = Object.assign({}, event);
-        self.type = getType(event.type);
+
+        if (event.suiteId) {
+          self.suiteId = event.suiteId;
+        }
+
+        if (event.batchId) {
+          self.batchId = event.batchId;
+        }
+
+        if (event.testId) {
+          self.testId = event.testId;
+        }
+
+        if (event.type === TestEvent.types.TEST) {
+          testCount += 1;
+          self.count = testCount;
+        }
 
         if (typeof event.time === 'number' || typeof event.time === 'bigint') {
           self.time = event.time;
@@ -1380,14 +1528,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           self.time = clock();
         }
 
-        if (event.duration) {
-          self.duration = event.duration;
-        }
-
-        if (self.type === TestEvent.types.TEST) {
-          testCount += 1;
-          self.count = testCount;
-        }
+        self.type = getType(event.type);
 
         if (typeof event.status === 'string' && STATUS_EXPRESSION.test(event.status)) {
           self.status = event.status;
@@ -1399,28 +1540,28 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           self.behavior = event.behavior;
         }
 
-        if (event.error) {
-          self.error = makeJSONStringifiableError(event.error);
-        }
-
-        if (event.batchId) {
-          self.batchId = event.batchId;
-        }
-
-        if (event.testId) {
-          self.testId = event.testId;
-        }
-
-        if (event.suiteId) {
-          self.suiteId = event.suiteId;
+        if (Array.isArray(event.behaviors)) {
+          self.behaviors = event.behaviors;
         }
 
         if (event.plan) {
           self.plan = event.plan;
         }
 
+        if (event.error) {
+          self.error = makeJSONStringifiableError(event.error);
+        }
+
         if (typeof event.log !== 'undefined') {
           self.log = event.log;
+        }
+
+        if (event.context) {
+          self.context = event.context;
+        }
+
+        if (event.duration) {
+          self.duration = event.duration;
         }
 
         if (event.tally) {
@@ -1429,10 +1570,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
         if (event.totals) {
           self.totals = event.totals;
-        }
-
-        if (event.context) {
-          self.context = event.context;
         }
 
         return Object.freeze(self);
@@ -1625,7 +1762,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }
   };
   module.exports = {
-    name: 'runTests',
+    name: 'makePlans',
     factory: function factory(dependencies) {
       'use strict';
 
@@ -1647,7 +1784,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               test = input.test;
               path = input.path;
             } else {
-              throw new Error("Invalid runTests entry: expected input ".concat(_typeof(input), " to be a {function}, or { err?: Error; test: Function|Promise; path?: string; }"));
+              throw new Error("Invalid makePlans entry: expected input ".concat(_typeof(input), " to be a {function}, or { err?: Error; test: Function|Promise; path?: string; }"));
             }
 
             if (err) {
@@ -1681,26 +1818,19 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       var mapToResults = function mapToResults(config) {
         var paths = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
         return function (results) {
-          return Object.freeze({
-            results: results.filter(function (result) {
-              return result.status === 'fullfilled';
-            }).map(function (result) {
-              return result.value;
-            }).filter(function (result) {
-              return result;
-            }),
+          return {
+            files: paths,
+            config: config,
             broken: results.filter(function (result) {
               return result.status !== 'fullfilled';
             }).map(function (result) {
               return result.reason;
-            }),
-            files: paths,
-            config: config
-          });
+            })
+          };
         };
       };
 
-      var runTests = function runTests(suite) {
+      var makePlans = function makePlans(suite) {
         return function (context) {
           var config = context.config,
               tests = context.tests,
@@ -1715,7 +1845,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       };
 
       return {
-        runTests: runTests
+        makePlans: makePlans
       };
     } // /factory
 
@@ -2150,7 +2280,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
             var spec = {};
             event.testEvents.forEach(function (_event) {
-              return addToSpec(_event.behavior.split(','), spec, _event);
+              return addToSpec(_event.behaviors, spec, _event);
             });
             var errors = makeErrorsH2(event.testEvents);
 
@@ -2204,7 +2334,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         var format = function format(event) {
           if (event.type === TestEvent.types.TEST && event.duration) {
             var durations = ["given: ".concat(formatDuration(event.duration.given)), "when: ".concat(formatDuration(event.duration.when)), "then: ".concat(formatDuration(event.duration.then))];
-            return "".concat(consoleStyles.cyan('# '), "  latency: ").concat(formatDuration(event.duration.total), " (").concat(durations.join(', '), ")");
+            return "".concat(consoleStyles.cyan('# '), "  duration: ").concat(formatDuration(event.duration.total), " (").concat(durations.join(', '), ")");
           }
         };
 
@@ -2243,7 +2373,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         SYMBOLS: SYMBOLS
       }),
           format = _DefaultFormatter.format,
-          formatDuration = _DefaultFormatter.formatDuration,
           formatInfo = _DefaultFormatter.formatInfo,
           formatExpectedAndActual = _DefaultFormatter.formatExpectedAndActual,
           formatStack = _DefaultFormatter.formatStack;
@@ -2253,7 +2382,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           return;
         }
 
-        var part = parts.shift().trim();
+        var part = parts.shift();
 
         if (parts.length) {
           spec[part] = spec[part] || {};
@@ -2301,7 +2430,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
             var spec = {};
             event.testEvents.forEach(function (_event) {
-              return addToSpec(_event.behavior.split(','), spec, _event);
+              return addToSpec(_event.behaviors, spec, _event);
             });
             return "".concat(toPrint(spec, SPACE)).concat(newLine).concat(format(event.endEvent));
           }
@@ -2440,16 +2569,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
         var format = function format(event) {
           if (event.type === TestEvent.types.START) {
-            return 'TAP version 13';
-          }
-
-          if (event.type === TestEvent.types.END) {
-            return "1..".concat(event.totals.total);
+            return "TAP version 13\n1..".concat(event.plan.count);
           } else if (event.type === TestEvent.types.TEST) {
             return formatTest(event);
           } else if (event.isDeterministicOutput) {
-            var output = "1..".concat(event.endEvent.totals.total, "\n");
-            output += event.testEvents.map(function (_event, idx) {
+            var output = event.testEvents.map(function (_event, idx) {
               return formatTest(_objectSpread({}, _event, {}, {
                 count: idx + 1
               }));
@@ -2978,10 +3102,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     var _module$factories$all = module.factories.allSettledFactory({}),
         allSettled = _module$factories$all.allSettled;
 
-    var _module$factories$run = module.factories.runTestsFactory({
+    var _module$factories$mak = module.factories.makePlansFactory({
       allSettled: allSettled
     }),
-        runTests = _module$factories$run.runTests;
+        makePlans = _module$factories$mak.makePlans;
 
     var envvars = {
       assertionLibrary: {},
@@ -3204,19 +3328,19 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     var _module$factories$has = module.factories.hashFactory(),
         hash = _module$factories$has.hash;
 
-    var _module$factories$mak = module.factories.makeBatchFactory({
+    var _module$factories$mak2 = module.factories.makeBatchFactory({
       hash: hash
     }),
-        BatchComposer = _module$factories$mak.BatchComposer;
+        BatchComposer = _module$factories$mak2.BatchComposer;
 
-    var _module$factories$mak2 = module.factories.makeSuiteConfigFactory({
+    var _module$factories$mak3 = module.factories.makeSuiteConfigFactory({
       defaults: envvars,
       subscriptionExists: subscriptionExists,
       subscribe: subscribe,
       allSubscriptions: allSubscriptions,
       reporterFactory: reporterFactory
     }),
-        makeSuiteConfig = _module$factories$mak2.makeSuiteConfig;
+        makeSuiteConfig = _module$factories$mak3.makeSuiteConfig;
 
     var _module$factories$Sui = module.factories.SuiteFactory({
       allSettled: allSettled,
@@ -3227,7 +3351,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       subscribe: subscribe,
       clearSubscriptions: reset,
       reporterFactory: reporterFactory,
-      runTests: runTests,
+      makePlans: makePlans,
       Tally: Tally,
       TestEvent: TestEvent
     }),
