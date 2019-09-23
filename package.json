@@ -6,7 +6,7 @@
   "scripts": {
     "build": "node build.browser.js",
     "pre-push": "npm test && node pre-push.js",
-    "test": "npm run test:ts && node tests.browser && node tests",
+    "test": "npm run test:ts && node tests.browser && node tests -r nyan",
     "test:ts": "tsc -p ./tsconfig.json && node tests.typescript/index.js",
     "watch": "nodemon -e js --exec 'node tests/index.js --tap | tap-nyan'"
   },

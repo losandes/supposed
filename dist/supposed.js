@@ -1107,11 +1107,16 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         };
       };
 
+      var isPlan = function isPlan(maybePlan) {
+        return typeof maybePlan !== 'undefined' && maybePlan !== null && typeof maybePlan.count === 'number' && typeof maybePlan.complete === 'number' && Array.isArray(maybePlan.batches) && Array.isArray(maybePlan.order);
+      };
+
       var planner = function planner(config, mapToBatch) {
         var plan = {
           count: 0,
           completed: 0,
-          batches: []
+          batches: [],
+          order: []
         };
 
         var addToPlan = function addToPlan(description, assertions) {
@@ -1119,6 +1124,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             if (context.theories.length) {
               plan.batches.push(context);
               plan.count += context.theories.reduce(function (count, item) {
+                item.assertions.forEach(function (assertion) {
+                  return plan.order.push(assertion.id);
+                });
                 return count + item.assertions.length;
               }, 0);
             }
@@ -1251,7 +1259,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
                 return publish({
                   type: TestEvent.types.END,
                   suiteId: config.name,
-                  totals: Tally.getSimpleTally()
+                  totals: Tally.getSimpleTally(),
+                  plan: plan
                 });
               }).then(function () {
                 return context;
@@ -1324,7 +1333,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             return publish({
               type: TestEvent.types.END,
               suiteId: config.name,
-              totals: context.tally
+              totals: context.tally,
+              plan: plan
             }).then(function () {
               return context;
             });
@@ -1433,13 +1443,26 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
                 return findAndPlan().then(runner(config, test, publishOneBrokenTest, tester(config, runBatch, runnerMode)));
               },
               // run (browser|node)
-              runTests: function runTests(tests) {
-                if (Array.isArray(tests)) {
-                  options.tests = tests;
+              runTests: function runTests(planOrTests) {
+                runnerMode = true;
+                var run = runner(config, test, publishOneBrokenTest, tester(config, runBatch, runnerMode));
+
+                if (isPlan(planOrTests)) {
+                  return Promise.resolve({
+                    files: Array.isArray(planOrTests.files) ? planOrTests.files : [],
+                    plan: planOrTests,
+                    config: options || {},
+                    broken: []
+                  }).then(run);
                 }
 
-                runnerMode = true;
-                return makePlans(test)(options).then(addPlanToContext()).then(runner(config, test, publishOneBrokenTest, tester(config, runBatch, runnerMode)));
+                if (Array.isArray(planOrTests)) {
+                  options.tests = planOrTests;
+                } else if (typeof planOrTests === 'function') {
+                  options.tests = planOrTests();
+                }
+
+                return makePlans(test)(options).then(addPlanToContext()).then(run);
               },
               // start test server (browser)
               startServer: findAndStart(options)
@@ -2628,40 +2651,19 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           REPORT_ORDERS = dependencies.REPORT_ORDERS;
       var format = formatter.format;
 
-      var makeOrderId = function makeOrderId(event) {
-        return "".concat(event.batchId, "-").concat(event.testId);
-      };
-
-      var byTestOrder = function byTestOrder(order) {
-        return function (a, b) {
-          var aIdx;
-          var bIdx;
-          var foundCount = 0;
-
-          for (var i = 0; i < order.length; i += 1) {
-            if (order[i] === makeOrderId(a)) {
-              aIdx = i;
-              foundCount += 1;
-            } else if (order[i] === makeOrderId(b)) {
-              bIdx = i;
-              foundCount += 1;
-            }
-
-            if (foundCount === 2) {
-              break;
-            }
-          }
+      var byPlanOrder = function byPlanOrder(order) {
+        return function (eventA, eventB) {
+          var aIdx = order.indexOf(eventA.testId);
+          var bIdx = order.indexOf(eventB.testId);
 
           if (aIdx < bIdx) {
             return -1;
-          }
-
-          if (aIdx > bIdx) {
+          } else if (aIdx > bIdx) {
             return 1;
-          } // a must be equal to b
-
-
-          return 0;
+          } else {
+            // a must be equal to b
+            return 0;
+          }
         };
       };
 
@@ -2669,7 +2671,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         options = _objectSpread({}, {
           reportOrder: REPORT_ORDERS.NON_DETERMINISTIC
         }, {}, envvars, {}, options);
-        var testOrder = [];
         var testEvents = [];
 
         var writeOne = function writeOne(event) {
@@ -2687,20 +2688,14 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             if (options.reportOrder === REPORT_ORDERS.NON_DETERMINISTIC) {
               writeOne(event);
             } else {
-              testOrder.push(makeOrderId(event));
               writeOne({
                 isDeterministicOutput: true,
-                testEvents: testEvents.sort(byTestOrder(testOrder)),
+                testEvents: testEvents.sort(byPlanOrder(event.plan.order)),
                 endEvent: event
               });
             }
           } else if (event.type === TestEvent.types.START_TEST) {
-            if (options.reportOrder === REPORT_ORDERS.NON_DETERMINISTIC) {
-              writeOne(event);
-            } else {
-              testOrder.push(makeOrderId(event));
-              writeOne(event);
-            }
+            writeOne(event);
           } else if (event.type === TestEvent.types.TEST) {
             if (options.reportOrder === REPORT_ORDERS.NON_DETERMINISTIC) {
               writeOne(event);
@@ -2736,40 +2731,19 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       var reportDiv;
       var reportPre;
 
-      var makeOrderId = function makeOrderId(event) {
-        return "".concat(event.batchId, "-").concat(event.testId);
-      };
-
-      var byTestOrder = function byTestOrder(order) {
-        return function (a, b) {
-          var aIdx;
-          var bIdx;
-          var foundCount = 0;
-
-          for (var i = 0; i < order.length; i += 1) {
-            if (order[i] === makeOrderId(a)) {
-              aIdx = i;
-              foundCount += 1;
-            } else if (order[i] === makeOrderId(b)) {
-              bIdx = i;
-              foundCount += 1;
-            }
-
-            if (foundCount === 2) {
-              break;
-            }
-          }
+      var byPlanOrder = function byPlanOrder(order) {
+        return function (eventA, eventB) {
+          var aIdx = order.indexOf(eventA.testId);
+          var bIdx = order.indexOf(eventB.testId);
 
           if (aIdx < bIdx) {
             return -1;
-          }
-
-          if (aIdx > bIdx) {
+          } else if (aIdx > bIdx) {
             return 1;
-          } // a must be equal to b
-
-
-          return 0;
+          } else {
+            // a must be equal to b
+            return 0;
+          }
         };
       };
 
@@ -2800,7 +2774,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         options = _objectSpread({}, {
           reportOrder: REPORT_ORDERS.NON_DETERMINISTIC
         }, {}, envvars, {}, options);
-        var testOrder = [];
         var testEvents = [];
         initDom();
 
@@ -2823,20 +2796,14 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             if (options.reportOrder === REPORT_ORDERS.NON_DETERMINISTIC) {
               writeOne(event);
             } else {
-              testOrder.push(makeOrderId(event));
               writeOne({
                 isDeterministicOutput: true,
-                testEvents: testEvents.sort(byTestOrder(testOrder)),
+                testEvents: testEvents.sort(byPlanOrder(event.plan.order)),
                 endEvent: event
               });
             }
           } else if (event.type === TestEvent.types.START_TEST) {
-            if (options.reportOrder === REPORT_ORDERS.NON_DETERMINISTIC) {
-              writeOne(event);
-            } else {
-              testOrder.push(makeOrderId(event));
-              writeOne(event);
-            }
+            writeOne(event);
           } else if (event.type === TestEvent.types.TEST) {
             if (options.reportOrder === REPORT_ORDERS.NON_DETERMINISTIC) {
               writeOne(event);

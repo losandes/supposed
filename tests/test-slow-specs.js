@@ -7,10 +7,10 @@ module.exports = (test) => {
     ? parseInt(process.env.SUPPOSED_SLOW_TEST_DELAY)
     : 10
 
-  const slowTest = async () => new Promise((resolve) => {
+  const slowTest = (idx) => async () => new Promise((resolve) => {
     setTimeout(() => {
       resolve()
-    }, DELAY)
+    }, DELAY * idx)
   })
 
   return (async () => {
@@ -18,7 +18,13 @@ module.exports = (test) => {
       const description = SKIP_SLOW_TESTS
         ? '// slow tests (export SUPPOSED_INCLUDE_SLOW_TESTS=true to turn these on)'
         : `slow test ${i}`
-      await test(description, slowTest)
+
+      const timeout = DELAY * (COUNT * 2)
+
+      await test(description, {
+        timeout: timeout > 2000 ? timeout : 2000,
+        'it should be delayed': slowTest(i)
+      })
     }
   })()
 }

@@ -103,11 +103,21 @@ module.exports = {
       }
     }
 
+    const isPlan = (maybePlan) => {
+      return typeof maybePlan !== 'undefined' &&
+        maybePlan !== null &&
+        typeof maybePlan.count === 'number' &&
+        typeof maybePlan.complete === 'number' &&
+        Array.isArray(maybePlan.batches) &&
+        Array.isArray(maybePlan.order)
+    }
+
     const planner = (config, mapToBatch) => {
       const plan = {
         count: 0,
         completed: 0,
-        batches: []
+        batches: [],
+        order: []
       }
 
       const addToPlan = (description, assertions) => {
@@ -116,7 +126,10 @@ module.exports = {
           .then((context) => {
             if (context.theories.length) {
               plan.batches.push(context)
-              plan.count += context.theories.reduce((count, item) => count + item.assertions.length, 0)
+              plan.count += context.theories.reduce((count, item) => {
+                item.assertions.forEach((assertion) => plan.order.push(assertion.id))
+                return count + item.assertions.length
+              }, 0)
             }
 
             return plan
@@ -221,7 +234,8 @@ module.exports = {
               .then(() => publish({
                 type: TestEvent.types.END,
                 suiteId: config.name,
-                totals: Tally.getSimpleTally()
+                totals: Tally.getSimpleTally(),
+                plan
               }))
               .then(() => context)
           }
@@ -276,7 +290,8 @@ module.exports = {
           publish({
             type: TestEvent.types.END,
             suiteId: config.name,
-            totals: context.tally
+            totals: context.tally,
+            plan
           }).then(() => context) // pass through
         ).then(({ output, tally }) => {
           return {
@@ -378,21 +393,33 @@ module.exports = {
                 tester(config, runBatch, runnerMode)
               )),
             // run (browser|node)
-            runTests: (tests) => {
-              if (Array.isArray(tests)) {
-                options.tests = tests
+            runTests: (planOrTests) => {
+              runnerMode = true
+              const run = runner(
+                config,
+                test,
+                publishOneBrokenTest,
+                tester(config, runBatch, runnerMode)
+              )
+
+              if (isPlan(planOrTests)) {
+                return Promise.resolve({
+                  files: Array.isArray(planOrTests.files) ? planOrTests.files : [],
+                  plan: planOrTests,
+                  config: options || {},
+                  broken: []
+                }).then(run)
               }
 
-              runnerMode = true
+              if (Array.isArray(planOrTests)) {
+                options.tests = planOrTests
+              } else if (typeof planOrTests === 'function') {
+                options.tests = planOrTests()
+              }
 
               return makePlans(test)(options)
                 .then(addPlanToContext())
-                .then(runner(
-                  config,
-                  test,
-                  publishOneBrokenTest,
-                  tester(config, runBatch, runnerMode)
-                ))
+                .then(run)
             },
             // start test server (browser)
             startServer: findAndStart(options)
