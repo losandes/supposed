@@ -107,7 +107,7 @@ module.exports = {
       return typeof maybePlan !== 'undefined' &&
         maybePlan !== null &&
         typeof maybePlan.count === 'number' &&
-        typeof maybePlan.complete === 'number' &&
+        typeof maybePlan.completed === 'number' &&
         Array.isArray(maybePlan.batches) &&
         Array.isArray(maybePlan.order)
     }
@@ -402,13 +402,8 @@ module.exports = {
                 tester(config, runBatch, runnerMode)
               )
 
-              if (isPlan(planOrTests)) {
-                return Promise.resolve({
-                  files: Array.isArray(planOrTests.files) ? planOrTests.files : [],
-                  plan: planOrTests,
-                  config: options || {},
-                  broken: []
-                }).then(run)
+              if (planOrTests && isPlan(planOrTests.plan)) {
+                return Promise.resolve(planOrTests).then(run)
               }
 
               if (Array.isArray(planOrTests)) {
