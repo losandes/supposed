@@ -3,7 +3,7 @@ module.exports = {
   factory: () => {
     'use strict'
 
-    const resolveTests = (suite) => (context) => {
+    const resolveTests = () => (context) => {
       const { paths } = context
 
       if (!paths) {

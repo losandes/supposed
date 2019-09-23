@@ -1,5 +1,3 @@
-let runnerMode = false
-
 module.exports = {
   name: 'Suite',
   factory: (dependencies) => {
@@ -96,96 +94,145 @@ module.exports = {
      *   }
      */
     const mapper = (config, makeBatch, byMatcher) => (batch) => {
-      const processed = makeBatch(batch)
+      const theories = makeBatch(batch)
         .filter(byMatcher)
-      const batchId = processed.length ? processed[0].id : makeBatchId()
 
       return {
-        batchId,
-        batch: processed,
-        tests: processed.map((theory) => new AsyncTest(theory, config.makeTheoryConfig(theory), batchId, config.name))
+        batchId: theories.length ? theories[0].id : makeBatchId(),
+        theories
       }
     }
+
+    const planner = (config, mapToBatch) => {
+      const plan = {
+        count: 0,
+        completed: 0,
+        batches: []
+      }
+
+      const addToPlan = (description, assertions) => {
+        return normalizeBatch(description, assertions)
+          .then(mapToBatch)
+          .then((context) => {
+            if (context.theories.length) {
+              plan.batches.push(context)
+              plan.count += context.theories.reduce((count, item) => count + item.assertions.length, 0)
+            }
+
+            return plan
+          })
+      }
+
+      addToPlan.getPlan = () => plan
+
+      return addToPlan
+    }
+
+    const brokenTestPublisher = (suiteId) => (error) => publish({
+      type: TestEvent.types.TEST,
+      status: TestEvent.status.BROKEN,
+      behavior: `Failed to load test: ${error.filePath}`,
+      suiteId,
+      error
+    })
 
     /**
      * Merges the values of allSettled results into a single array of values.
      * > NOTE this does not deal with undefined values
-     * @param results - the allSettled results
+     * @param prop - the name of the property to merge (value, or reason)
      */
-    const reduceResults = (results) => {
-      return results.reduce((output, current) => {
-        return Array.isArray(current.value)
-          ? output.concat(current.value)
-          : output.concat([current.value])
-      }, [])
+    const toOneArray = (prop) => (output, current) => {
+      return Array.isArray(current[prop])
+        ? output.concat(current[prop])
+        : output.concat([current[prop]])
     }
 
-    const tester = (config, mapToTests) => (description, assertions) => {
-      return normalizeBatch(description, assertions)
-        .then(mapToTests)
-        .then((context) => {
-          context.plan = {
-            count: context.batch.reduce((count, item) => count + item.assertions.length, 0),
-            completed: 0
-          }
+    const fullfilledToOneArray = toOneArray('value')
+    const failedToOneArray = toOneArray('reason')
 
-          return context
+    const batchRunner = (config, publishOneBrokenTest) => (batch, plan) => {
+      return publish({
+        type: TestEvent.types.START_BATCH,
+        batchId: batch.batchId,
+        suiteId: config.name,
+        plan
+      }).then(() => {
+        // map the batch theories to tests
+        return batch.theories.map((theory) => new AsyncTest(
+          theory,
+          config.makeTheoryConfig(theory),
+          batch.batchId,
+          config.name
+        ))
+      }).then((tests) => allSettled(tests.map((test) => test())))
+        .then((results) => {
+          return {
+            results: results
+              .filter((result) => result.status === 'fullfilled')
+              .reduce(fullfilledToOneArray, []),
+            broken: results
+              .filter((result) => result.status !== 'fullfilled')
+              .reduce(failedToOneArray, []),
+            batchTotals: Tally.getTally().batches[batch.batchId]
+          }
         }).then((context) => {
-          if (!runnerMode) {
-            return publish({ type: TestEvent.types.START, suiteId: config.name })
+          const publishEndBatch = () => publish({
+            type: TestEvent.types.END_BATCH,
+            batchId: batch.batchId,
+            suiteId: config.name,
+            totals: context.batchTotals
+          })
+
+          if (Array.isArray(context.broken) && context.broken.length) {
+            // these tests failed during the planning stage
+            return allSettled(context.broken.map(publishOneBrokenTest))
+              .then(publishEndBatch)
               .then(() => context)
+          } else {
+            return publishEndBatch().then(() => context)
+          }
+        }).then((context) => {
+          return {
+            batchId: batch.batchId,
+            results: context.results,
+            broken: context.broken,
+            totals: context.batchTotals
+          }
+        })
+    } // /batchRunner
+
+    const tester = (config, runBatch, runnerMode) => (plan) => {
+      return Promise.resolve({ plan })
+        .then((context) => {
+          if (!runnerMode) {
+            return publish({
+              type: TestEvent.types.START,
+              suiteId: config.name,
+              plan: { count: context.plan.count, completed: 0 }
+            }).then(() => context)
           }
 
           return Promise.resolve(context)
-        }).then((context) => {
-          const { batchId, plan } = context
-          return publish({
-            type: TestEvent.types.START_BATCH,
-            batchId: batchId,
-            suiteId: config.name,
-            plan
-          }).then(() => context)
-        }).then((context) => {
-          const { batchId, tests } = context
-
-          return allSettled(tests.map((test) => test()))
-            .then((results) => {
-              context.results = results
-              context.batchTotals = Tally.getTally().batches[batchId]
-              return context
-            })
-        }).then((context) => {
-          const { batchId, plan, batchTotals } = context
-
-          return publish({
-            type: TestEvent.types.END_BATCH,
-            batchId: batchId,
-            suiteId: config.name,
-            plan: {
-              count: plan.count,
-              completed: batchTotals.total
-            },
-            totals: batchTotals
-          }).then(() => context)
-        }).then((context) => {
-          const { batchId, batchTotals, results } = context
-          const output = {
-            batchId: batchId,
-            results: reduceResults(results),
-            totals: batchTotals
-          }
-
+        }).then((context) => Promise.all(context.plan.batches.map(
+          (batch) => runBatch(batch, context.plan)
+        ))).then((context) => {
           if (!runnerMode) {
             return publish({ type: TestEvent.types.END_TALLY, suiteId: config.name })
               .then(() => publish({
                 type: TestEvent.types.END,
                 suiteId: config.name,
-                totals: batchTotals
+                totals: Tally.getSimpleTally()
               }))
-              .then(() => output)
+              .then(() => context)
           }
 
-          return Promise.resolve(output)
+          return Promise.resolve(context)
+        }).then((context) => {
+          if (Array.isArray(context) && context.length === 1) {
+            return context[0]
+          }
+
+          return context
         }).catch((e) => {
           publish({
             type: TestEvent.types.TEST,
@@ -198,60 +245,46 @@ module.exports = {
         })
     }
 
-    const runner = (config, test) => (findAndRun) => () => {
-      runnerMode = true
+    const runner = (config, suite, publishOneBrokenTest, execute) => (planContext) => {
+      const { plan, files, broken } = planContext
 
-      return publish({ type: TestEvent.types.START, suiteId: config.name })
-        .then(() => findAndRun())
-        .then((output) => {
-          if (output.broken.length) {
-            // these tests failed before being executed
-
-            const brokenPromises = output.broken
-              .map((error) => publish({
-                type: TestEvent.types.TEST,
-                status: TestEvent.status.BROKEN,
-                behavior: `Failed to load test: ${error.filePath}`,
-                suiteId: config.name,
-                error
-              }))
-
-            return allSettled(brokenPromises).then(() => output)
-          }
-
-          return Promise.resolve(output)
-        })
-        .then((output) => {
-          return publish({ type: TestEvent.types.END_TALLY, suiteId: config.name })
-            .then(() => output)
-        })
-        .then((output) => {
-          return publish({
+      return publish({
+        type: TestEvent.types.START,
+        suiteId: config.name,
+        plan: { count: plan.count, completed: 0 }
+      }).then(() => {
+        if (broken && broken.length) {
+          // these tests failed during the planning stage
+          return allSettled(broken.map(publishOneBrokenTest))
+        }
+      }).then(() => execute(plan))
+        .then((output) =>
+          publish({ type: TestEvent.types.END_TALLY, suiteId: config.name })
+            .then(() => output) // pass through
+        )
+        .then((output) =>
+          publish({
             type: TestEvent.types.FINAL_TALLY,
             suiteId: config.name,
             totals: Tally.getTally()
-          })
-            .then(() => output)
-        })
+          }).then(() => output) // pass through
+        )
         .then((output) => {
           // only get the tally _after_ END_TALLY was emitted
-          return {
-            output,
-            tally: Tally.getSimpleTally()
-          }
-        }).then((context) => {
-          return publish({
+          return { output, tally: Tally.getSimpleTally() }
+        }).then((context) =>
+          publish({
             type: TestEvent.types.END,
             suiteId: config.name,
             totals: context.tally
-          }).then(() => context)
-        }).then(({ output, tally }) => {
+          }).then(() => context) // pass through
+        ).then(({ output, tally }) => {
           return {
-            files: output.files,
+            files: files,
             results: output.results,
-            broken: output.broken,
-            config: output.config,
-            suite: test,
+            broken,
+            config: planContext.config,
+            suite,
             totals: tally
           }
         })
@@ -268,6 +301,7 @@ module.exports = {
      * @param {Object} suiteConfig : optional configuration
     */
     function Suite (suiteConfig, envvars) {
+      let runnerMode = false
       suiteConfig = { ...suiteConfig }
 
       /**
@@ -286,47 +320,74 @@ module.exports = {
         clearSubscriptions()
         subscribe(reporterFactory.get(Tally.name))
         const config = makeSuiteConfig(_suiteConfig)
+        const publishOneBrokenTest = brokenTestPublisher(config.name)
         const { makeBatch } = new BatchComposer(config)
         const byMatcher = matcher(config)
-        const mapToTests = mapper(config, makeBatch, byMatcher)
-        const test = tester(config, mapToTests)
-        const findAndStart = browserRunner(config, test)
-        const run = runner(config, test)
+        const mapToBatch = mapper(config, makeBatch, byMatcher)
+        const runBatch = batchRunner(config, publishOneBrokenTest)
+        const plan = planner(config, mapToBatch)
+        const test = (description, assertions) => {
+          if (runnerMode) {
+            return plan(description, assertions)
+          } else {
+            return plan(description, assertions)
+              // .then((context) => {
+              //   console.dir({ PLAN: context }, { depth: null })
+              //   return context
+              // })
+              .then(tester(config, runBatch, runnerMode))
+          }
+        }
 
         test.id = config.name
+        test.reporters = config.reporters
+        test.config = config
+        test.dependencies = _suiteConfig && _suiteConfig.inject
+        test.configure = configure
+        test.subscribe = (subscription) => {
+          subscribe(subscription)
+          return test
+        }
+
         test.runner = (options) => {
           options = options || {}
           if (envvars && envvars.file && typeof envvars.file.test === 'function') {
             options.matchesNamingConvention = envvars.file
           }
 
+          const findAndStart = browserRunner(config, test)
+
           return {
             // find and run (node)
-            run: run(
-              () => findFiles(options)
-                .then(resolveTests(test))
+            run: () => {
+              runnerMode = true
+              const run = runner(config, test, publishOneBrokenTest, tester(config, runBatch, runnerMode))
+
+              return findFiles(options)
+                .then(resolveTests())
                 .then(runTests(test))
-            ),
+                // .then((context) => {
+                //   console.dir({ PLAN: context }, { depth: null })
+                //   return context
+                // })
+                .then(run)
+            },
+
             // run (browser|node)
             runTests: (tests) => {
               if (Array.isArray(tests)) {
                 options.tests = tests
               }
 
-              return run(() => runTests(test)(options))()
+              runnerMode = true
+              const run = runner(config, test, publishOneBrokenTest, tester(config, runBatch, runnerMode))
+
+              return runTests(test)(options).then(run)
             },
             // start test server (browser)
             startServer: findAndStart(options)
           }
         }
-        test.reporters = config.reporters
-        test.config = config
-        test.configure = configure
-        test.subscribe = (subscription) => {
-          subscribe(subscription)
-          return test
-        }
-        test.dependencies = _suiteConfig && _suiteConfig.inject
 
         // @deprecated - may go away in the future
         test.printSummary = () => {

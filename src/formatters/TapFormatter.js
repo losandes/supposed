@@ -89,14 +89,11 @@ module.exports = {
 
       const format = (event) => {
         if (event.type === TestEvent.types.START) {
-          return 'TAP version 13'
-        } if (event.type === TestEvent.types.END) {
-          return `1..${event.totals.total}`
+          return `TAP version 13\n1..${event.plan.count}`
         } else if (event.type === TestEvent.types.TEST) {
           return formatTest(event)
         } else if (event.isDeterministicOutput) {
-          let output = `1..${event.endEvent.totals.total}\n`
-          output += event.testEvents.map((_event, idx) =>
+          const output = event.testEvents.map((_event, idx) =>
             formatTest({ ..._event, ...{ count: idx + 1 } })
           ).join('\n')
           return output

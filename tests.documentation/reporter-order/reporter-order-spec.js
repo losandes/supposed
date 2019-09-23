@@ -1,6 +1,7 @@
-const test = require('supposed')
+const supposed = require('supposed')
+const test = supposed.suites['reporter-order'] || supposed
 
-test({
+module.exports = test({
   'test 1': () => new Promise((resolve) => {
     setTimeout(() => resolve(), 100)
   }),

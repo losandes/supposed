@@ -55,17 +55,25 @@ module.exports = {
     }
 
     const mapToResults = (config, paths = []) => (results) => {
-      return Object.freeze({
-        results: results
-          .filter((result) => result.status === 'fullfilled')
-          .map((result) => result.value)
-          .filter((result) => result),
+      const plans = results.filter((result) => result.status === 'fullfilled' && result.value)
+      let plan
+
+      if (!plans.length) {
+        plan = { count: 0, completed: 0, batches: [] }
+      } else if (plans.length === 1) {
+        plan = plans[0].value
+      } else {
+        plan = plans[plans.length - 1].value
+      }
+
+      return {
+        files: paths,
+        config,
+        plan,
         broken: results
           .filter((result) => result.status !== 'fullfilled')
-          .map((result) => result.reason),
-        files: paths,
-        config
-      })
+          .map((result) => result.reason)
+      }
     }
 
     const runTests = (suite) => (context) => {

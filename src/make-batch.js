@@ -43,10 +43,11 @@ module.exports = {
 
       const getAssertions = (behavior, behaviors, node, skipped) => {
         if (isAssertion(node, behavior)) {
-          return [makeOneAssertion(behavior, behaviors, node, skipped /* isSkipped(behavior) was called just before this */)]
+          // empty behavior because the behavior should already be in `behaviors`
+          return [makeOneAssertion('', behaviors, node, skipped /* isSkipped(behavior) was called just before this */)]
         }
 
-        return Object.getOwnPropertyNames(node)
+        return Object.keys(node)
           .filter((key) => isAssertion(node[key], key))
           .map((key) =>
             makeOneAssertion(key, behaviors, node[key], skipped || isSkipped(key))
@@ -159,6 +160,7 @@ module.exports = {
       function FlattenedTests (input) {
         const { behavior, behaviors, node, given, when, whenIsInheritedGiven, skipped, timeout, assertionLibrary } = input
         const layers = []
+        const props = Object.keys(node)
         const parent = new Layer({
           id: makeBatchId(behavior),
           behaviors: Array.isArray(behaviors) ? behaviors : [behavior],
@@ -176,7 +178,7 @@ module.exports = {
           layers.push(parent)
         }
 
-        Object.getOwnPropertyNames(node)
+        props
           .filter((childKey) => typeof node[childKey] === 'object')
           .map((childKey) => {
             return FlattenedTests({
@@ -201,7 +203,7 @@ module.exports = {
         return layers
       }
 
-      const makeBatch = (tests) => Object.getOwnPropertyNames(tests).reduce((batch, key) => {
+      const makeBatch = (tests) => Object.keys(tests).reduce((batch, key) => {
         return batch.concat(new FlattenedTests({ behavior: key, node: tests[key] }))
       }, [])
 

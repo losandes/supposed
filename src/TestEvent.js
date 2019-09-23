@@ -43,7 +43,7 @@ module.exports = {
         self.testId = event.testId
       }
 
-      if (self.type === TestEvent.types.TEST) {
+      if (event.type === TestEvent.types.TEST) {
         testCount += 1
         self.count = testCount
       }

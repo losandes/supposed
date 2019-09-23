@@ -1,9 +1,8 @@
 module.exports = function (describe) {
-  const sut = describe.Suite({ reporter: 'QUIET', match: null })
-
   return describe('ava and tape compatibility', {
     'when a test is described, using the ava and tape syntax': {
       when: () => {
+        const sut = describe.Suite({ name: 'ava-tape', reporter: 'QUIET', match: null })
         return sut('ava and tape compatibility', t => {
           t.strictEqual(1, 1)
         })
@@ -14,6 +13,7 @@ module.exports = function (describe) {
       },
       'and it does not have a description': {
         when: () => {
+          const sut = describe.Suite({ name: 'ava-tape-no-desc', reporter: 'QUIET', match: null })
           return sut(t => {
             t.strictEqual(1, 1)
           })
@@ -26,6 +26,7 @@ module.exports = function (describe) {
     },
     'when multiple ava styles tests are added to an object': {
       when: () => {
+        const sut = describe.Suite({ name: 'ava-tape-multiple', reporter: 'QUIET', match: null })
         return sut({
           t1: t => { t.strictEqual(1, 1) },
           t2: t => { t.strictEqual(1, 1) },
