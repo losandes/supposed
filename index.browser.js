@@ -42,7 +42,8 @@
       reporters: ['LIST'],
       useColors: true,
       timeUnits: 'us',
-      reportOrder: REPORT_ORDERS.NON_DETERMINISTIC
+      reportOrder: REPORT_ORDERS.NON_DETERMINISTIC,
+      exit: (results) => results
     }
 
     const { ReporterFactory } = module.factories.reporterFactoryFactory({})
@@ -53,7 +54,7 @@
       REPORT_ORDERS
     })
     const config = makeSuiteConfig(options)
-    const clock = () => time.clock(config.timeUnits)
+    const clock = (timeUnits) => time.clock(timeUnits || config.timeUnits)
     const duration = (start, end) => time.duration(start, end, config.timeUnits)
     const { TestEvent } = module.factories.TestEventFactory({ clock, envvars: config })
     const { Pubsub } = module.factories.pubsubFactory({
@@ -203,6 +204,7 @@
       makePlans,
       Tally,
       TestEvent,
+      clock,
       envvars: config
     })
 

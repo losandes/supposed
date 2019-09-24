@@ -5,7 +5,7 @@ const suite = supposed.Suite({
   name: 'supposed-tests.docs.multiple-suites'
 })
 
-const reporter = suite.reporters[0]
+const reporter = suite.reporterFactory.get('list')
 const subscription = (event) => {
   if (event.type === 'TEST') {
     reporter.write(event)

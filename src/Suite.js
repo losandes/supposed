@@ -16,6 +16,7 @@ module.exports = {
       makePlans,
       Tally,
       TestEvent,
+      clock,
       envvars
     } = dependencies
 
@@ -120,8 +121,10 @@ module.exports = {
       }
 
       let plan = makeEmptyPlan()
+      let lastPlanEntry
 
       const addToPlan = (description, assertions) => {
+        lastPlanEntry = clock('ms')
         return normalizeBatch(description, assertions)
           .then(mapToBatch)
           .then((context) => {
@@ -142,6 +145,7 @@ module.exports = {
       addToPlan.resetPlan = () => {
         plan = makeEmptyPlan()
       }
+      addToPlan.lastPlanEntry = () => lastPlanEntry
 
       return addToPlan
     }
@@ -363,6 +367,7 @@ module.exports = {
     */
     function Suite (suiteConfig) {
       let runnerMode = false
+      let waitingToRun = false
 
       /**
        * @param suiteDotConfigureOptions - configuration provided in line with `supposed.Suite().configure(suiteDotConfigureOptions)`
@@ -378,12 +383,29 @@ module.exports = {
         const mapToBatch = mapper(config, makeBatch, makeBatchId, byMatcher)
         const runBatch = batchRunner(config, publishOneBrokenTest)
         const plan = planner(config, mapToBatch)
+        const waitToRun = () => new Promise((resolve, reject) => {
+          if (waitingToRun) {
+            return
+          }
+
+          waitingToRun = true
+          setTimeout(() => {
+            const lastPlanEntry = plan.lastPlanEntry()
+            const now = clock('ms')
+
+            if (lastPlanEntry && (now - lastPlanEntry) > config.planBuffer) {
+              test.runner().runTests({ plan: plan.getPlan() }).then(resolve).catch(reject)
+            } else {
+              waitToRun()
+            }
+          }, config.planBuffer * 2)
+        })
         const test = (description, assertions) => {
           if (runnerMode) {
             return plan(description, assertions)
           } else {
-            return planner(config, mapToBatch)(description, assertions) // new planner for each test execution
-              .then(tester(config, registerReporters, runBatch, runnerMode))
+            // waitToRun()
+            return plan(description, assertions).then(waitToRun)
           }
         }
 
@@ -392,12 +414,14 @@ module.exports = {
         test.config = config
         test.dependencies = config.inject
         test.configure = configure
+        test.reporterFactory = reporterFactory
         test.subscribe = (subscription) => {
           pubsub.subscribe(subscription)
           return test
         }
 
         test.runner = (options) => {
+          runnerMode = true
           options = options || {}
           if (envvars.file) {
             options.matchesNamingConvention = envvars.file
@@ -410,8 +434,6 @@ module.exports = {
           }
 
           const findAndPlan = () => {
-            runnerMode = true
-
             return findFiles(options)
               .then(resolveTests())
               .then(makePlans(test))
@@ -433,8 +455,6 @@ module.exports = {
               .then(config.exit),
             // run (browser|node)
             runTests: (planOrTests) => {
-              runnerMode = true
-
               if (planOrTests && isPlan(planOrTests.plan)) {
                 return Promise.resolve(planOrTests)
                   .then(run())

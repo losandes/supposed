@@ -72,7 +72,14 @@ function Supposed (options) {
       assertionLibrary: assert,
       useColors: process.stdout.isTTY, // use colors by default if running in a text terminal
       timeUnits: 'us',
-      reportOrder: REPORT_ORDERS.NON_DETERMINISTIC
+      reportOrder: REPORT_ORDERS.NON_DETERMINISTIC,
+      exit: (results) => {
+        if (results.totals.failed > 0) {
+          process.exit(1)
+        } else {
+          return results
+        }
+      }
     },
     ...(() => {
       const output = {}
@@ -96,7 +103,7 @@ function Supposed (options) {
     REPORT_ORDERS
   })
   const config = makeSuiteConfig(options)
-  const clock = () => time.clock(config.timeUnits)
+  const clock = (timeUnits) => time.clock(timeUnits || config.timeUnits)
   const duration = (start, end) => time.duration(start, end, config.timeUnits)
   const { TestEvent } = TestEventFactory({ clock, envvars: config })
   const { Pubsub } = pubsubFactory({
@@ -270,6 +277,7 @@ function Supposed (options) {
     makePlans,
     Tally,
     TestEvent,
+    clock,
     envvars: config
   })
 

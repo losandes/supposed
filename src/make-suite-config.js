@@ -27,6 +27,10 @@ module.exports = {
         ? options.timeout
         : undefined
       )
+      maybeOverrideValue('planBuffer', (options) => typeof options.planBuffer === 'number' && options.planBuffer > 0
+        ? options.planBuffer
+        : undefined
+      )
       maybeOverrideValue('exit', (options) => typeof options.exit === 'function'
         ? options.exit
         : undefined
@@ -141,16 +145,10 @@ module.exports = {
       const suiteConfig = {
         name: makeSuiteId(),
         timeout: 2000,
+        planBuffer: 5,
         reporters: [],
         givenSynonyms: ['given', 'arrange'],
-        whenSynonyms: ['when', 'act', 'topic'],
-        exit: (results) => {
-          if (results.totals.failed > 0) {
-            process.exit(1)
-          } else {
-            return results
-          }
-        }
+        whenSynonyms: ['when', 'act', 'topic']
       }
 
       // TODO: support flipping the priority, and make envvars the top of the hierarchy

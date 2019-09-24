@@ -669,8 +669,9 @@ module.exports = require('supposed')
 * [Marking Tests as TODO](#skipping-tests)
 * [Running Specific Tests (only)](#running-specific-tests-only)
 * [Nest/Branch Inheritance](#nest-branch-inheritance)
-- [] [Writing a Test Reporter](#subscribing-to-test-events)
-- [] [Subscribing to Test Events](#subscribing-to-test-events)
+* [Subscribing to Test Events](#subscribing-to-test-events)
+* [Writing a Test Reporter](#writing-a-test-reporter)
+* [Registering A Test Reporter](#registering-a-test-reporter)
 * [Streaming Output to a File](#streaming-output-to-a-file)
 - [] [Adding Information to Report Output (event.log)](#adding-information-to-report-output-event.log)
 - [] [Adding Context to Test Events (event.context)](#adding-context-to-test-events-event.context)
@@ -872,7 +873,7 @@ const supposed = require('supposed')
 const s1 = require('./first-module/first-suite.js')
 const s2 = require('./second-module/second-suite.js')
 const suite = supposed.Suite({ name: 'multiple-suites' })
-const reporter = suite.reporters[0]
+const reporter = suite.reporterFactory.get('list')
 const subscription = (event) => {
   if (event.type === 'TEST') {
     reporter.write(event)
@@ -1118,7 +1119,7 @@ test('when dividing a number by zero', {
 })
 ```
 
-### Subscribing to Test Events
+### About Test Events
 Supposed uses a simple event system (pubsub) to report. You can subscribe to these events in two different ways. Before demonstrating that, let's look at the types of events you can expect. First lets look at the facade interface, which includes all of the properties for every type of event:
 
 ```TypeScript
@@ -1230,7 +1231,12 @@ interface ITestFailedEvent extends ITestEvent {
 
 > The difference between `log` and `context` is that `log` can be included in reporter output
 
-OK - now that we know about the events, and what to expect, it's pretty easy to take advantage of them. In this example, we'll make our own reporter that prints the test status, descriptions, and the performance information. This example uses `subscribe`, and sets the reporter to "noop" to achieve this. A benefit of this design, is that other reporters can also be used in conjunction.
+### Subscribing to Test Events
+In this example, we'll make our own reporter that prints the test status, descriptions, and the performance information. This example uses `subscribe`, and sets the reporter to "noop" to achieve this.
+
+Use `subscribe` when you want normal reporting, and also need a side-car, like to write output to a repository.
+
+> Consider reading [about test events](#about-test-events) if you haven't already
 
 ```JavaScript
 // ./first-module/first-spec.js
@@ -1282,7 +1288,14 @@ module.exports = supposed.Suite({
   .run()
 ```
 
-If we don't want the freedom to use other reporters, we can register a reporter instead of subscribing to events.
+### Writing a Test Reporter
+If the reporters supposed offers don't meet your needs, it's pretty easy to roll your own.
+
+Use `reporter` when you want to override the reporting mechanism of supposed the same way all the time
+
+> Consider reading [about test events](#about-test-events) if you haven't already
+>
+> Also see [Registering A Test Reporter](#registering-a-test-reporter)
 
 ```JavaScript
 // ... (from example above)
@@ -1323,6 +1336,62 @@ module.exports = supposed.Suite({
 }).runner({ cwd: __dirname })
   .run()
 ```
+
+### Registering A Test Reporter
+Always overriding the `reporter` configuration removes support for ENVVARs. To write your own reporter, and be able to use it like all the other reporters, you can register the reporter.
+
+Use `reporterFactory.add` when you want to use 3rd party reporter, or write your own reporter, and still want to be able to switch reporters with [argv, and/or ENVVARS](#arguments-and-envvars).
+
+> Consider reading [about test events](#about-test-events) if you haven't already
+
+```JavaScript
+// ... (from examples above)
+// ./tests.js
+const supposed = require('supposed')
+
+function MyReporter () {
+  const formatDuration = (duration) => {
+    if (!duration) {
+      return 0
+    }
+
+    if (typeof duration === 'number' && duration.seconds > 1) {
+      return `${Math.round(duration.seconds)}s`
+    } else if (duration.milliseconds > 1) {
+      return `${Math.round(duration.milliseconds)}ms`
+    } else if (duration.microseconds > 1) {
+      return `${Math.round(duration.microseconds)}µs`
+    } else if (duration.nanoseconds > 1) {
+      return `${Math.round(duration.nanoseconds)}ns`
+    } else {
+      return 0
+    }
+  }
+
+  const write = (event) => {
+    if (event.type === 'TEST') {
+      const durations = [
+        `given: ${formatDuration(event.duration.given)}`,
+        `when: ${formatDuration(event.duration.when)}`,
+        `then: ${formatDuration(event.duration.then)}`
+      ]
+
+      // console.log(`  ${event.status}  ${event.behavior} (${durations.join(', ')})`)
+      console.log(`${event.status} ${event.behavior} (duration: ${formatDuration(event.duration.total)} (${durations.join(', ')}))`)
+    }
+  }
+
+  return { write }
+}
+
+const suite = supposed.Suite({ name: 'MySuite' })
+suite.reporterFactory.add(MyReporter)
+
+suite.runner({ cwd: __dirname })
+  .run()
+```
+
+> Note that if you name your reporter using the convention, `[Anything]Reporter`, you can use it in arguments without the word "Reporter". For instance, since the reporter in the example above is named, "MyReporter", we can use like this: `node tests -r my`. Otherwise, you can always use it by the full name.
 
 ### Streaming Output to a File
 The following examples assumes you have a `./tests.js` file that executes your tests:

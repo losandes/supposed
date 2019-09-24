@@ -829,6 +829,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         maybeOverrideValue('timeout', function (options) {
           return typeof options.timeout === 'number' && options.timeout > 0 ? options.timeout : undefined;
         });
+        maybeOverrideValue('planBuffer', function (options) {
+          return typeof options.planBuffer === 'number' && options.planBuffer > 0 ? options.planBuffer : undefined;
+        });
         maybeOverrideValue('exit', function (options) {
           return typeof options.exit === 'function' ? options.exit : undefined;
         });
@@ -948,16 +951,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         var suiteConfig = {
           name: makeSuiteId(),
           timeout: 2000,
+          planBuffer: 5,
           reporters: [],
           givenSynonyms: ['given', 'arrange'],
-          whenSynonyms: ['when', 'act', 'topic'],
-          exit: function exit(results) {
-            if (results.totals.failed > 0) {
-              process.exit(1);
-            } else {
-              return results;
-            }
-          }
+          whenSynonyms: ['when', 'act', 'topic']
         }; // TODO: support flipping the priority, and make envvars the top of the hierarchy
         // this will require that we set the priority in all of the tests for this library
 
@@ -1084,6 +1081,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           makePlans = dependencies.makePlans,
           Tally = dependencies.Tally,
           TestEvent = dependencies.TestEvent,
+          clock = dependencies.clock,
           envvars = dependencies.envvars;
 
       var makeNormalBatch = function makeNormalBatch(description, assertions) {
@@ -1192,8 +1190,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         };
 
         var plan = makeEmptyPlan();
+        var lastPlanEntry;
 
         var addToPlan = function addToPlan(description, assertions) {
+          lastPlanEntry = clock('ms');
           return normalizeBatch(description, assertions).then(mapToBatch).then(function (context) {
             if (context.theories.length) {
               plan.batches.push(context);
@@ -1215,6 +1215,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
         addToPlan.resetPlan = function () {
           plan = makeEmptyPlan();
+        };
+
+        addToPlan.lastPlanEntry = function () {
+          return lastPlanEntry;
         };
 
         return addToPlan;
@@ -1482,6 +1486,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
       function Suite(suiteConfig) {
         var runnerMode = false;
+        var waitingToRun = false;
         /**
          * @param suiteDotConfigureOptions - configuration provided in line with `supposed.Suite().configure(suiteDotConfigureOptions)`
          */
@@ -1502,12 +1507,34 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           var runBatch = batchRunner(config, publishOneBrokenTest);
           var plan = planner(config, mapToBatch);
 
+          var waitToRun = function waitToRun() {
+            return new Promise(function (resolve, reject) {
+              if (waitingToRun) {
+                return;
+              }
+
+              waitingToRun = true;
+              setTimeout(function () {
+                var lastPlanEntry = plan.lastPlanEntry();
+                var now = clock('ms');
+
+                if (lastPlanEntry && now - lastPlanEntry > config.planBuffer) {
+                  test.runner().runTests({
+                    plan: plan.getPlan()
+                  }).then(resolve).catch(reject);
+                } else {
+                  waitToRun();
+                }
+              }, config.planBuffer * 2);
+            });
+          };
+
           var test = function test(description, assertions) {
             if (runnerMode) {
               return plan(description, assertions);
             } else {
-              return planner(config, mapToBatch)(description, assertions) // new planner for each test execution
-              .then(tester(config, registerReporters, runBatch, runnerMode));
+              // waitToRun()
+              return plan(description, assertions).then(waitToRun);
             }
           };
 
@@ -1516,6 +1543,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           test.config = config;
           test.dependencies = config.inject;
           test.configure = configure;
+          test.reporterFactory = reporterFactory;
 
           test.subscribe = function (subscription) {
             pubsub.subscribe(subscription);
@@ -1523,6 +1551,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           };
 
           test.runner = function (options) {
+            runnerMode = true;
             options = options || {};
 
             if (envvars.file) {
@@ -1539,7 +1568,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             };
 
             var findAndPlan = function findAndPlan() {
-              runnerMode = true;
               return findFiles(options).then(resolveTests()).then(makePlans(test)).then(addPlanToContext());
             };
 
@@ -1555,8 +1583,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               },
               // run (browser|node)
               runTests: function runTests(planOrTests) {
-                runnerMode = true;
-
                 if (planOrTests && isPlan(planOrTests.plan)) {
                   return Promise.resolve(planOrTests).then(_run()).then(config.exit);
                 }
@@ -3184,7 +3210,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       reporters: ['LIST'],
       useColors: true,
       timeUnits: 'us',
-      reportOrder: REPORT_ORDERS.NON_DETERMINISTIC
+      reportOrder: REPORT_ORDERS.NON_DETERMINISTIC,
+      exit: function exit(results) {
+        return results;
+      }
     };
 
     var _module$factories$rep = module.factories.reporterFactoryFactory({}),
@@ -3201,8 +3230,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
     var config = makeSuiteConfig(options);
 
-    var clock = function clock() {
-      return time.clock(config.timeUnits);
+    var clock = function clock(timeUnits) {
+      return time.clock(timeUnits || config.timeUnits);
     };
 
     var duration = function duration(start, end) {
@@ -3421,6 +3450,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       makePlans: makePlans,
       Tally: Tally,
       TestEvent: TestEvent,
+      clock: clock,
       envvars: config
     }),
         Suite = _module$factories$Sui.Suite;
