@@ -24,9 +24,8 @@ module.exports = suite.runner({
   cwd: path.join(__dirname),
   matchesIgnoredConvention: /discoverer-meta-specs|node_modules/i
 })
-  .run()
-  .then((results) => process.exit(results.totals.failed))
   // .plan()
-  // .then((plan) => {
-  //   console.log(plan)
-  // })
+  // .then((plan) => { console.log(plan) })
+  .run()
+  // .then((results) => { console.log(results); return results })
+  .then((results) => process.exit(results.totals.failed))

@@ -217,9 +217,19 @@ module.exports = {
         })
     } // /batchRunner
 
-    const tester = (config, runBatch, runnerMode) => (plan) => {
+    const reportRegistrar = (config) => () => {
+      config.registerReporters()
+      config.reporters.forEach((reporter) => {
+        if (!pubsub.subscriptionExists(reporter.name)) {
+          pubsub.subscribe(reporter)
+        }
+      })
+      config.subscriptions = pubsub.allSubscriptions()
+    }
+
+    const tester = (config, registerReporters, runBatch, runnerMode) => (plan) => {
       if (!runnerMode) {
-        config.registerReporters()
+        registerReporters()
       }
 
       return Promise.resolve({ plan })
@@ -266,9 +276,9 @@ module.exports = {
         })
     }
 
-    const runner = (config, suite, publishOneBrokenTest, execute) => (planContext) => {
+    const runner = (config, registerReporters, suite, publishOneBrokenTest, execute) => (planContext) => {
       const { plan, files, broken } = planContext
-      config.registerReporters()
+      registerReporters()
 
       return pubsub.publish({
         type: TestEvent.types.START,
@@ -315,8 +325,8 @@ module.exports = {
         })
     }
 
-    const browserRunner = (config, test) => (options) => () => {
-      config.registerReporters()
+    const browserRunner = (config, registerReporters, test) => (options) => () => {
+      registerReporters()
 
       return Array.isArray(options.paths)
         ? runServer(test, options)(options)
@@ -347,6 +357,7 @@ module.exports = {
         pubsub.reset()
         pubsub.subscribe(reporterFactory.get(Tally.name))
         const config = makeSuiteConfig(_suiteConfig)
+        const registerReporters = reportRegistrar(config)
         const publishOneBrokenTest = brokenTestPublisher(config.name)
         const { makeBatch, makeBatchId } = new BatchComposer(config)
         const byMatcher = matcher(config)
@@ -358,7 +369,7 @@ module.exports = {
             return plan(description, assertions)
           } else {
             return planner(config, mapToBatch)(description, assertions) // new planner for each test execution
-              .then(tester(config, runBatch, runnerMode))
+              .then(tester(config, registerReporters, runBatch, runnerMode))
           }
         }
 
@@ -378,7 +389,7 @@ module.exports = {
             options.matchesNamingConvention = envvars.file
           }
 
-          const findAndStart = browserRunner(config, test)
+          const findAndStart = browserRunner(config, registerReporters, test)
           const addPlanToContext = () => (context) => {
             context.plan = plan.getPlan()
             return context
@@ -394,9 +405,10 @@ module.exports = {
           }
           const run = () => runner(
             config,
+            registerReporters,
             test,
             publishOneBrokenTest,
-            tester(config, runBatch, runnerMode)
+            tester(config, registerReporters, runBatch, runnerMode)
           )
 
           return {

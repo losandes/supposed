@@ -88,9 +88,17 @@ function Supposed (options) {
     })()
   }
 
-  const clock = () => time.clock(envvars.timeUnits)
-  const duration = (start, end) => time.duration(start, end, envvars.timeUnits)
-  const { TestEvent } = TestEventFactory({ clock })
+  const { ReporterFactory } = ReporterFactoryFactory({})
+  const reporterFactory = new ReporterFactory()
+  const { makeSuiteConfig } = makeSuiteConfigFactory({
+    envvars,
+    reporterFactory,
+    REPORT_ORDERS
+  })
+  const config = makeSuiteConfig(options)
+  const clock = () => time.clock(config.timeUnits)
+  const duration = (start, end) => time.duration(start, end, config.timeUnits)
+  const { TestEvent } = TestEventFactory({ clock, envvars: config })
   const { Pubsub } = pubsubFactory({
     allSettled,
     isPromise,
@@ -104,11 +112,9 @@ function Supposed (options) {
   const { runServer } = runServerFactory({})
   const { makePlans } = makePlansFactory({ allSettled })
 
-  const consoleStyles = consoleStylesFactory({ envvars }).consoleStyles
+  const consoleStyles = consoleStylesFactory({ envvars: config }).consoleStyles
   const consoleUtils = consoleUtilsFactory({}).consoleUtils
 
-  const { ReporterFactory } = ReporterFactoryFactory({})
-  const reporterFactory = new ReporterFactory()
   const { TallyFactory } = TallyFactoryFactory({ pubsub, TestEvent, clock, duration })
   const { Tally } = TallyFactory({})
   reporterFactory.add(Tally)
@@ -138,7 +144,7 @@ function Supposed (options) {
     return ConsoleReporterFactory({
       TestEvent,
       formatter: options.formatter,
-      envvars,
+      envvars: config,
       REPORT_ORDERS
     }).ConsoleReporter(options)
   }
@@ -251,12 +257,6 @@ function Supposed (options) {
   const { hash } = HashFactory()
   const { BatchComposer } = makeBatchFactory({ hash })
 
-  const { makeSuiteConfig } = makeSuiteConfigFactory({
-    envvars,
-    pubsub,
-    reporterFactory
-  })
-
   const { Suite } = SuiteFactory({
     allSettled,
     AsyncTest,
@@ -272,7 +272,7 @@ function Supposed (options) {
     TestEvent
   })
 
-  const suite = new Suite(options, envvars)
+  const suite = new Suite(options, config)
   suite.Suite = Supposed
 
   if (!suites[suite.config.name]) {

@@ -798,7 +798,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       'use strict';
 
       var envvars = dependencies.envvars,
-          pubsub = dependencies.pubsub,
           reporterFactory = dependencies.reporterFactory;
 
       var makeSuiteId = function makeSuiteId() {
@@ -960,12 +959,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           });
           addReporters(suiteConfig, envvars);
           addReporters(suiteConfig, options);
-          suiteConfig.reporters.forEach(function (reporter) {
-            if (!pubsub.subscriptionExists(reporter.name)) {
-              pubsub.subscribe(reporter);
-            }
-          });
-          suiteConfig.subscriptions = pubsub.allSubscriptions();
         };
 
         suiteConfig.makeTheoryConfig = function (theory) {
@@ -1299,10 +1292,22 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       }; // /batchRunner
 
 
-      var tester = function tester(config, runBatch, runnerMode) {
+      var reportRegistrar = function reportRegistrar(config) {
+        return function () {
+          config.registerReporters();
+          config.reporters.forEach(function (reporter) {
+            if (!pubsub.subscriptionExists(reporter.name)) {
+              pubsub.subscribe(reporter);
+            }
+          });
+          config.subscriptions = pubsub.allSubscriptions();
+        };
+      };
+
+      var tester = function tester(config, registerReporters, runBatch, runnerMode) {
         return function (plan) {
           if (!runnerMode) {
-            config.registerReporters();
+            registerReporters();
           }
 
           return Promise.resolve({
@@ -1360,12 +1365,12 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         };
       };
 
-      var runner = function runner(config, suite, publishOneBrokenTest, execute) {
+      var runner = function runner(config, registerReporters, suite, publishOneBrokenTest, execute) {
         return function (planContext) {
           var plan = planContext.plan,
               files = planContext.files,
               broken = planContext.broken;
-          config.registerReporters();
+          registerReporters();
           return pubsub.publish({
             type: TestEvent.types.START,
             suiteId: config.name,
@@ -1425,10 +1430,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         };
       };
 
-      var browserRunner = function browserRunner(config, test) {
+      var browserRunner = function browserRunner(config, registerReporters, test) {
         return function (options) {
           return function () {
-            config.registerReporters();
+            registerReporters();
             return Array.isArray(options.paths) ? runServer(test, options)(options) : findFiles(options).then(runServer(test, options));
           };
         };
@@ -1457,6 +1462,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           pubsub.reset();
           pubsub.subscribe(reporterFactory.get(Tally.name));
           var config = makeSuiteConfig(_suiteConfig);
+          var registerReporters = reportRegistrar(config);
           var publishOneBrokenTest = brokenTestPublisher(config.name);
 
           var _ref2 = new BatchComposer(config),
@@ -1473,7 +1479,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               return plan(description, assertions);
             } else {
               return planner(config, mapToBatch)(description, assertions) // new planner for each test execution
-              .then(tester(config, runBatch, runnerMode));
+              .then(tester(config, registerReporters, runBatch, runnerMode));
             }
           };
 
@@ -1495,7 +1501,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               options.matchesNamingConvention = envvars.file;
             }
 
-            var findAndStart = browserRunner(config, test);
+            var findAndStart = browserRunner(config, registerReporters, test);
 
             var addPlanToContext = function addPlanToContext() {
               return function (context) {
@@ -1510,7 +1516,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             };
 
             var _run = function run() {
-              return runner(config, test, publishOneBrokenTest, tester(config, runBatch, runnerMode));
+              return runner(config, registerReporters, test, publishOneBrokenTest, tester(config, registerReporters, runBatch, runnerMode));
             };
 
             return {
@@ -3153,16 +3159,30 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       reportOrder: REPORT_ORDERS.NON_DETERMINISTIC
     };
 
+    var _module$factories$rep = module.factories.reporterFactoryFactory({}),
+        ReporterFactory = _module$factories$rep.ReporterFactory;
+
+    var reporterFactory = new ReporterFactory();
+
+    var _module$factories$mak2 = module.factories.makeSuiteConfigFactory({
+      envvars: envvars,
+      reporterFactory: reporterFactory
+    }),
+        makeSuiteConfig = _module$factories$mak2.makeSuiteConfig;
+
+    var config = makeSuiteConfig(options);
+
     var clock = function clock() {
-      return time.clock(envvars.timeUnits);
+      return time.clock(config.timeUnits);
     };
 
     var duration = function duration(start, end) {
-      return time.duration(start, end, envvars.timeUnits);
+      return time.duration(start, end, config.timeUnits);
     };
 
     var _module$factories$Tes = module.factories.TestEventFactory({
-      clock: clock
+      clock: clock,
+      envvars: config
     }),
         TestEvent = _module$factories$Tes.TestEvent;
 
@@ -3175,7 +3195,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
     var pubsub = new Pubsub();
     var consoleStyles = module.factories.consoleStylesFactory({
-      envvars: envvars
+      envvars: config
     }).consoleStyles;
 
     var _module$factories$Tal = module.factories.TallyFactory({
@@ -3189,12 +3209,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     var _TallyFactory = TallyFactory({}),
         Tally = _TallyFactory.Tally;
 
-    var _module$factories$rep = module.factories.reporterFactoryFactory({}),
-        ReporterFactory = _module$factories$rep.ReporterFactory;
-
-    var reporterFactory = new ReporterFactory();
+    reporterFactory.add(Tally);
     var ArrayReporter = module.factories.ArrayReporterFactory({}).ArrayReporter;
-    reporterFactory.add(ArrayReporter);
+    reporterFactory.add(ArrayReporter); // @deprecated - legacy support
+
     reporterFactory.add(function QuietReporter() {
       // legacy
       return {
@@ -3202,7 +3220,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       };
     });
     reporterFactory.add(module.factories.NoopReporterFactory({}).NoopReporter);
-    reporterFactory.add(Tally);
 
     function DefaultFormatter(options) {
       return module.factories.DefaultFormatterFactory({
@@ -3222,7 +3239,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       return module.factories.DomReporterFactory({
         TestEvent: TestEvent,
         formatter: options.formatter,
-        envvars: envvars,
+        envvars: config,
         REPORT_ORDERS: REPORT_ORDERS
       }).DomReporter(options);
     }
@@ -3360,17 +3377,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     var _module$factories$has = module.factories.hashFactory(),
         hash = _module$factories$has.hash;
 
-    var _module$factories$mak2 = module.factories.makeBatchFactory({
+    var _module$factories$mak3 = module.factories.makeBatchFactory({
       hash: hash
     }),
-        BatchComposer = _module$factories$mak2.BatchComposer;
-
-    var _module$factories$mak3 = module.factories.makeSuiteConfigFactory({
-      envvars: envvars,
-      pubsub: pubsub,
-      reporterFactory: reporterFactory
-    }),
-        makeSuiteConfig = _module$factories$mak3.makeSuiteConfig;
+        BatchComposer = _module$factories$mak3.BatchComposer;
 
     var _module$factories$Sui = module.factories.SuiteFactory({
       allSettled: allSettled,

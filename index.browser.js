@@ -45,9 +45,17 @@
       reportOrder: REPORT_ORDERS.NON_DETERMINISTIC
     }
 
-    const clock = () => time.clock(envvars.timeUnits)
-    const duration = (start, end) => time.duration(start, end, envvars.timeUnits)
-    const { TestEvent } = module.factories.TestEventFactory({ clock })
+    const { ReporterFactory } = module.factories.reporterFactoryFactory({})
+    const reporterFactory = new ReporterFactory()
+    const { makeSuiteConfig } = module.factories.makeSuiteConfigFactory({
+      envvars,
+      reporterFactory,
+      REPORT_ORDERS
+    })
+    const config = makeSuiteConfig(options)
+    const clock = () => time.clock(config.timeUnits)
+    const duration = (start, end) => time.duration(start, end, config.timeUnits)
+    const { TestEvent } = module.factories.TestEventFactory({ clock, envvars: config })
     const { Pubsub } = module.factories.pubsubFactory({
       allSettled,
       isPromise,
@@ -55,19 +63,18 @@
     })
     const pubsub = new Pubsub()
 
-    const consoleStyles = module.factories.consoleStylesFactory({ envvars }).consoleStyles
+    const consoleStyles = module.factories.consoleStylesFactory({ envvars: config }).consoleStyles
 
     const { TallyFactory } = module.factories.TallyFactory({ pubsub, TestEvent, clock, duration })
     const { Tally } = TallyFactory({})
-    const { ReporterFactory } = module.factories.reporterFactoryFactory({})
-    const reporterFactory = new ReporterFactory()
+    reporterFactory.add(Tally)
     const ArrayReporter = module.factories.ArrayReporterFactory({}).ArrayReporter
     reporterFactory.add(ArrayReporter)
+    // @deprecated - legacy support
     reporterFactory.add(function QuietReporter () { // legacy
       return { write: new ArrayReporter().write }
     })
     reporterFactory.add(module.factories.NoopReporterFactory({}).NoopReporter)
-    reporterFactory.add(Tally)
 
     function DefaultFormatter (options) {
       return module.factories.DefaultFormatterFactory({
@@ -87,7 +94,7 @@
       return module.factories.DomReporterFactory({
         TestEvent,
         formatter: options.formatter,
-        envvars,
+        envvars: config,
         REPORT_ORDERS
       }).DomReporter(options)
     }
@@ -186,12 +193,6 @@
     })
     const { hash } = module.factories.hashFactory()
     const { BatchComposer } = module.factories.makeBatchFactory({ hash })
-
-    const { makeSuiteConfig } = module.factories.makeSuiteConfigFactory({
-      envvars,
-      pubsub,
-      reporterFactory
-    })
     const { Suite } = module.factories.SuiteFactory({
       allSettled,
       AsyncTest,

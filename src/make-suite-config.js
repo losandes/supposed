@@ -3,7 +3,7 @@ module.exports = {
   factory: (dependencies) => {
     'use strict'
 
-    const { envvars, pubsub, reporterFactory } = dependencies
+    const { envvars, reporterFactory, REPORT_ORDERS } = dependencies
     const makeSuiteId = () => `S${(Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase()}`
 
     const maybeOverrideValueFactory = (suiteConfig, options) => (name, factory) => {
@@ -40,10 +40,10 @@ module.exports = {
         : undefined
       )
       maybeOverrideValue('reportOrder', (options) => typeof options.reportOrder === 'string' &&
-        ['deterministic', 'non-deterministic'].indexOf(options.reportOrder.trim().toLowerCase())
+        [REPORT_ORDERS.DETERMINISTIC, REPORT_ORDERS.NON_DETERMINISTIC]
+          .indexOf(options.reportOrder.trim()) > -1
         ? options.reportOrder.trim().toLowerCase()
-        : undefined
-      )
+        : undefined)
       maybeOverrideValue('match', (options) => {
         if (typeof options.match === 'string') {
           return new RegExp(options.match)
@@ -154,12 +154,6 @@ module.exports = {
         addReporters(suiteConfig, { reporter: 'LIST' })
         addReporters(suiteConfig, envvars)
         addReporters(suiteConfig, options)
-        suiteConfig.reporters.forEach((reporter) => {
-          if (!pubsub.subscriptionExists(reporter.name)) {
-            pubsub.subscribe(reporter)
-          }
-        })
-        suiteConfig.subscriptions = pubsub.allSubscriptions()
       }
       suiteConfig.makeTheoryConfig = (theory) => {
         theory = { ...theory }
