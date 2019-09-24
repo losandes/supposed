@@ -18,8 +18,6 @@ module.exports = {
       TestEvent
     } = dependencies
 
-    const makeBatchId = () => `B${(Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase()}`
-
     const makeNormalBatch = (description, assertions) => {
       const batch = {}
       batch[description] = assertions
@@ -91,10 +89,10 @@ module.exports = {
      *     tests: IAsyncTest[]
      *   }
      */
-    const mapper = (config, makeBatch, byMatcher) => (batch) => {
+    const mapper = (config, makeBatch, makeBatchId, byMatcher) => (batch) => {
       const theories = makeBatch(batch)
         .filter(byMatcher)
-
+      console.log(theories.length)
       return {
         batchId: theories.length ? theories[0].id : makeBatchId(),
         theories
@@ -336,9 +334,9 @@ module.exports = {
         pubsub.subscribe(reporterFactory.get(Tally.name))
         const config = makeSuiteConfig(_suiteConfig)
         const publishOneBrokenTest = brokenTestPublisher(config.name)
-        const { makeBatch } = new BatchComposer(config)
+        const { makeBatch, makeBatchId } = new BatchComposer(config)
         const byMatcher = matcher(config)
-        const mapToBatch = mapper(config, makeBatch, byMatcher)
+        const mapToBatch = mapper(config, makeBatch, makeBatchId, byMatcher)
         const runBatch = batchRunner(config, publishOneBrokenTest)
         const plan = planner(config, mapToBatch)
         const test = (description, assertions) => {

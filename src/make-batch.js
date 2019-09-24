@@ -25,8 +25,12 @@ module.exports = {
         return typeof node === 'function' && actions.indexOf(key) === -1
       }
 
-      const makeBatchId = (behavior) => `B${hash(behavior)}`
-      const makeTestId = (behavior) => `T${hash(behavior)}`
+      const makeBatchId = (behavior) => typeof behavior === 'string' && behavior.trim().length
+        ? `B${hash(behavior.trim())}`
+        : `B${(Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase()}`
+      const makeTestId = (behavior) => typeof behavior === 'string' && behavior.trim().length
+        ? `T${hash(behavior.trim())}`
+        : `T${(Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase()}`
 
       const makeOneAssertion = (behavior, behaviors, node, skipped) => {
         const _behaviors = behavior && behavior.trim().length ? behaviors.concat([behavior]) : behaviors
@@ -234,7 +238,7 @@ module.exports = {
           }
         })
 
-      return { makeBatch }
+      return { makeBatch, makeBatchId, makeTestId }
     } // /BatchComposer
 
     return { BatchComposer }
