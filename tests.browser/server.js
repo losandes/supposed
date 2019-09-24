@@ -13,20 +13,20 @@ const suite = supposed.Suite({
 })
 
 const __projectdir = __dirname.split('tests.browser')[0]
-const reporters = (config) => {
-  try {
-    return config.reporters.map((reporter) => reporter.name).join(',') || 'list'
-  } catch (e) {
-    return 'tap'
-  }
-}
+// const reporters = (config) => {
+//   try {
+//     return config.reporters.map((reporter) => reporter.name).join(',') || 'list'
+//   } catch (e) {
+//     return 'tap'
+//   }
+// }
 
 module.exports = suite.runner({
   cwd: __projectdir,
   directories: ['./tests.browser'],
   title: 'supposed-browser-tests',
   port: 42002,
-  stringifiedSuiteConfig: `{ reporter: '${reporters(suite.config)}', assertionLibrary: browserTestAssert }`,
+  stringifiedSuiteConfig: '{ reporter: "event", assertionLibrary: browserTestAssert }', // `{ reporter: '${reporters(suite.config)}', assertionLibrary: browserTestAssert }`,
   dependencies: ['/tests.browser/assert.js'],
   supposedPath: path.join(__projectdir, 'dist/supposed.js')
   // styles: 'body { color: #2eb815; }' // #b0c9dc
@@ -39,7 +39,14 @@ module.exports = suite.runner({
     const page = await browser.newPage()
     page.on('console', (msg) => {
       const txt = msg.text()
-      console.log(txt)
+
+      try {
+        const json = JSON.parse(txt)
+        suite.config.reporters.forEach((reporter) => reporter.write(json))
+      } catch (e) {
+        console.log(txt)
+      }
+
       context.lastLine = txt
     })
     await page.goto(`http://localhost:${context.config.port}`, { waitUntil: 'networkidle2' })

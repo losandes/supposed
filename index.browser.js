@@ -119,6 +119,12 @@
           formatter: module.factories.BriefFormatterFactory({ consoleStyles, DefaultFormatter, TestEvent }).BriefFormatter()
         }).write
       }
+    }).add(function EventReporter () {
+      return {
+        write: ConsoleReporter({
+          formatter: { format: (event) => JSON.stringify(event, null, 2) }
+        }).write
+      }
     }).add(function JsonReporter () {
       return {
         write: ConsoleReporter({

@@ -3336,6 +3336,16 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           }).BriefFormatter()
         }).write
       };
+    }).add(function EventReporter() {
+      return {
+        write: ConsoleReporter({
+          formatter: {
+            format: function format(event) {
+              return JSON.stringify(event, null, 2);
+            }
+          }
+        }).write
+      };
     }).add(function JsonReporter() {
       return {
         write: ConsoleReporter({
