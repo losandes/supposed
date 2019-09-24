@@ -42,12 +42,12 @@ module.exports = suite.runner({
 
       try {
         const json = JSON.parse(txt)
+        context.lastEvent = json
         suite.config.reporters.forEach((reporter) => reporter.write(json))
       } catch (e) {
         console.log(txt)
+        context.lastEvent = txt
       }
-
-      context.lastLine = txt
     })
     await page.goto(`http://localhost:${context.config.port}`, { waitUntil: 'networkidle2' })
 
