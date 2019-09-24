@@ -30,11 +30,11 @@ const consoleStylesFactory = require('./src/formatters/console-styles.js').facto
 const consoleUtilsFactory = require('./src/formatters/console-utils.js').factory
 const DefaultFormatterFactory = require('./src/formatters/DefaultFormatter.js').factory
 const JsonFormatterFactory = require('./src/formatters/JsonFormatter.js').factory
+const ListFormatterFactory = require('./src/formatters/ListFormatter.js').factory
 const MarkdownFormatterFactory = require('./src/formatters/MarkdownFormatter.js').factory
 const PerformanceFormatterFactory = require('./src/formatters/PerformanceFormatter.js').factory
 const SpecFormatterFactory = require('./src/formatters/SpecFormatter.js').factory
 const SummaryFormatterFactory = require('./src/formatters/SummaryFormatter.js').factory
-const ListFormatterFactory = require('./src/formatters/ListFormatter.js').factory
 const TapFormatterFactory = require('./src/formatters/TapFormatter.js').factory
 
 // reporters

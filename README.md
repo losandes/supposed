@@ -16,7 +16,7 @@ Supposed is a test framework for Node.js, TypeScript, and the Browser. Supposed 
 * [Running Specific Files With The Runner](#arguments-and-envvars)
 * [Using Promises in Tests](#using-promises-in-tests)
 * [Using async-await in Tests](#using-async---await-in-tests)
-* [Measure Latency / Performance]()
+* [Measure Latency and Performance](#measure-latency-and-performance)
 * [Cookbook](#cookbook)
 
 ## Get Started With Node
@@ -239,7 +239,7 @@ $ node tests | npx tap-parser -j | jq
 * `markdown` - the test descriptions in markdown format _(deterministic order)_
 * `md` - (alias for markdown)
 * `nyan` - rainbows, and flying cats? check
-* `performance` - the total test duration, and the duration for each of: given, when, then accurate to the microsecond (these measurements are taken without other significant supposed operations being in scope, so should be close to measurements taken inside of those functions). _performance_ is designed to be used in combination with the _list_, and _tap_ reporters: `node tests -r list,performance`, or `node tests -r tap,performance`
+* `performance` - the total test duration, and the duration for each of: `given`, `when`, `then` (see [Measure Latency and Performance](#measure-latency-and-performance) for more information). _performance_ is designed to be used in combination with the _list_, and _tap_ reporters: `node tests -r list,performance`, or `node tests -r tap,performance`
 * `brief` - just the summary, and the output from any failing tests
 * `summary` - just the summary (no error output - useful in combination with `tap`)
 * `array` - no output, but you can read the test events from `suite.config.reporters[${indexOfArrayReporter}].events` (it's easier just to `suite.subscribe`, or `suite.runner().run().then((results) => {})` though - you probably don't need this - it's mostly for testing this library)
@@ -248,8 +248,6 @@ $ node tests | npx tap-parser -j | jq
 > Note the deterministic, and non-deterministic order comments. Supposed runs tests concurrently. Reporters that indicate "non-deterministic order" report the status of each test as soon as it completes, regardless of the order in which it was discovered. These are optimized for efficiency. You can override this with `-o deterministic`. See [Arguments and ENVVARS](#arguments-and-envvars) for more info.
 >
 > Reporters that indicate "deterministic" order report tests status after all tests have finished, so the results are printed in the order in which the tests were discovered. These are optimized for comprehension. Reporters that are deterministic by default do not support non-deterministic output.
->
-> Note that performance measurements are included for subjective observation. This library hasn't been tested as a purely performance testing library.
 
 ### Using Multiple Reporters
 Supposed uses pubsub to report, so there's no limit on the number of reporters that can be used. Some reporters when used in combination can cause problems (nyan isn't really compatible with anything else), but others can be helpful. Let's say you like the TAP output, but you want a summary:
@@ -318,11 +316,15 @@ Whether your using `supposed.configure({...})`, or creating a new `supposed.Suit
 * `reporter` {string|`(event: ITestEvent): Promise<void>`} - The reporter to use for test output (`list|tap|json|spec|markdown|md|nyan|performance|brief|summary|array|block|noop`), or a function
 * `reporters` {string[]} - A comma-separated list of reporters to use (by name) (`list|tap|json|spec|markdown|md|nyan|performance|brief|summary|array|block|noop`)
 * `match` {string|RegExp|`{ test (description: string): boolean; }`} - run only tests whose descriptions/behaviors match the regular expression, or pass this test
+* `file` {string|RegExp|`{ test (description: string): boolean; }`} - run only tests whose file name matches the regular expression, or pass this test
 * `useColors` {boolean} - whether or not to use color in the reporter output
 * `inject` {any} - when present this object will be available to tests via `suite.dependencies`. If your test files `module.exports = (suite, dependencies) => {}`, this object will also be passed as the second argument to your exported function.
 * `givenSynonyms` {string[]} - an array of words to be used in place of "given|arrange"
 * `whenSynonyms` {string[]} - an array of words to be used in place of "when|act|topic"
+* `timeUnits` {string} (`s|ms|us|ns`) (default is `us`) - the units to use for event timestamps
+* `reportOrder` {string}`deterministic|non-deterministic`)  - supposed runs tests concurrently, and some reporters report as tests complete (non-deterministically). _reportOrder_ lets you override that behavior and report deterministically
 * `exit` {function} - By default, the runner will `process.exit(1)` if any tests fail. This is to support normal behavior with CI, or git pre-commit, and pre-push hooks. You can override this by providing your own exit function
+* `planBuffer` {number} - the milliseconds after plans are created to wait before executing a plan. If you aren't using a suite, supposed doesn't know when all of the tests are planned, so it relies on a race condition that assumes if no plans have been created in a period of time, then all plans must be submitted. On slower machines, it may be possible for this race condition to be beat, so you can override it.
 
 > If neither `reporter`, nor `reporters` are present, the `default` reporter will be used
 
@@ -730,6 +732,14 @@ module.exports = require('supposed')
 // prints server is listening on 42001
 ```
 
+## Measuring Latency and Performance
+Supposed measures the the duration for each of: `given`, `when`, `then`. In NodeJS, it uses `process.hrtime`, and in the browser it uses `performance.now`, both of which are reported to be accurate to the microsecond.
+
+While supposed avoids including it's own operations in the measurements, it does nothing to isolate the measurements from event loop effects, such as other operations running concurrently in the same process. Because of this, the performance measurements should only be used for subjective analysis (i.e. approximate comparison, etc.).
+
+The easiest way to check these measurements out is to use the _performance_ formatter in conjunction with the _list_, and _tap_ reporters: `node tests -r list,performance`, or `node tests -r tap,performance`. For a more detailed example, checkout [Registering A Test Reporter](#registering-a-test-reporter).
+
+
 ## Cookbook
 
 * [Global Setup and Teardown](#global-setup-and-teardown)
@@ -748,10 +758,9 @@ module.exports = require('supposed')
 * [Writing a Test Reporter](#writing-a-test-reporter)
 * [Registering A Test Reporter](#registering-a-test-reporter)
 * [Streaming Output to a File](#streaming-output-to-a-file)
-- [] [Adding Information to Report Output (event.log)](#adding-information-to-report-output-event.log)
-- [] [Adding Context to Test Events (event.context)](#adding-context-to-test-events-event.context)
+* [Adding Information to Report Output (event.log)](#adding-information-to-report-output-event.log)
+* [Adding Context to Test Events (event.context)](#adding-context-to-test-events-event.context)
 * [Piping Browser Test Output to the Terminal](#piping-browser-test-output-to-the-terminal)
-- [] [Roll Your Own Browser Template](#roll-your-own-browser-template)
 * [Writing Your Own Test Runner](#writing-your-own-test-runner)
 
 ### Global Setup and Teardown
@@ -1473,6 +1482,60 @@ The following examples assumes you have a `./tests.js` file that executes your t
 
 ```Shell
 $ node tests -r md > tests.md
+```
+
+### Adding Information to Report Output (event.log)
+Sometimes it's helpful to include context in test output, such as details about the system under test, or the variables that were fed to the system under test. If you'd like reporters that support this feature to print the context inline with the test results, return `{ log: { ... } }` from your test.
+
+```JavaScript
+const test = require('supposed')
+
+module.exports = test('when dividing a number by zero', {
+  given: () => 42,
+  when: (number) => {
+    return {
+      given: number,
+      actual: number / 0
+    }
+  },
+  'it should return Infinity': (then) => (err, { given, actual }) => {
+    then.ifError(err)
+    then.strictEqual(actual, Infinity)
+    return {
+      log: {
+        given,
+        actual
+      }
+    }
+  }
+})
+```
+
+### Adding Context to Test Events (event.context)
+Sometimes it's helpful to include context in the test events _without_ it being added to report output. If you're subscribing to events, or writing your own reporter, and want additional context from a test, return `{ context: { ... } }` from your test.
+
+```JavaScript
+const test = require('supposed')
+
+module.exports = test('when dividing a number by zero', {
+  given: () => 42,
+  when: (number) => {
+    return {
+      given: number,
+      actual: number / 0
+    }
+  },
+  'it should return Infinity': (then) => (err, { given, actual }) => {
+    then.ifError(err)
+    then.strictEqual(actual, Infinity)
+    return {
+      context: {
+        given,
+        actual
+      }
+    }
+  }
+})
 ```
 
 ### Writing Your Own Test Runner
