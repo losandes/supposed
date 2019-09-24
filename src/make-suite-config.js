@@ -3,7 +3,7 @@ module.exports = {
   factory: (dependencies) => {
     'use strict'
 
-    const { envvars, subscribe, subscriptionExists, allSubscriptions, reporterFactory } = dependencies
+    const { envvars, pubsub, reporterFactory } = dependencies
     const makeSuiteId = () => `S${(Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase()}`
 
     const maybeOverrideValueFactory = (suiteConfig, options) => (name, factory) => {
@@ -133,8 +133,8 @@ module.exports = {
       addValues(suiteConfig, envvars)
       addValues(suiteConfig, options)
 
-      suiteConfig.reporters.forEach(subscribe)
-      suiteConfig.subscriptions = allSubscriptions()
+      suiteConfig.reporters.forEach(pubsub.subscribe)
+      suiteConfig.subscriptions = pubsub.allSubscriptions()
       suiteConfig.makeTheoryConfig = (theory) => {
         theory = { ...theory }
 

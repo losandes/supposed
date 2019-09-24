@@ -3,7 +3,8 @@ module.exports = {
   factory: (dependencies) => {
     'use strict'
 
-    const { isPromise, publish, TestEvent, clock, duration, addDurations } = dependencies
+    const { isPromise, pubsub, TestEvent, clock, duration, addDurations } = dependencies
+    const { publish } = pubsub
 
     function noop () { }
 

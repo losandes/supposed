@@ -96,7 +96,8 @@ function Supposed (options) {
     isPromise,
     TestEvent
   })
-  const { publish, subscribe, subscriptionExists, allSubscriptions, reset } = new Pubsub()
+  // const { publish, subscribe, subscriptionExists, allSubscriptions, reset } = new Pubsub()
+  const pubsub = new Pubsub()
 
   const { findFiles } = findFilesFactory({ fs, path })
   const { resolveTests } = resolveTestsFactory({})
@@ -106,17 +107,18 @@ function Supposed (options) {
   const consoleStyles = consoleStylesFactory({ envvars }).consoleStyles
   const consoleUtils = consoleUtilsFactory({}).consoleUtils
 
-  const { TallyFactory } = TallyFactoryFactory({ publish, TestEvent, clock, duration })
-  const { Tally } = TallyFactory({})
   const { ReporterFactory } = ReporterFactoryFactory({})
   const reporterFactory = new ReporterFactory()
+  const { TallyFactory } = TallyFactoryFactory({ pubsub, TestEvent, clock, duration })
+  const { Tally } = TallyFactory({})
+  reporterFactory.add(Tally)
   const ArrayReporter = ArrayReporterFactory({}).ArrayReporter
   reporterFactory.add(ArrayReporter)
-  reporterFactory.add(function QuietReporter () { // legacy
+  // @deprecated - legacy support
+  reporterFactory.add(function QuietReporter () {
     return { write: new ArrayReporter().write }
   })
   reporterFactory.add(NoopReporterFactory({}).NoopReporter)
-  reporterFactory.add(Tally)
 
   function DefaultFormatter (options) {
     return DefaultFormatterFactory({
@@ -240,7 +242,7 @@ function Supposed (options) {
 
   const { AsyncTest } = AsyncTestFactory({
     isPromise,
-    publish,
+    pubsub,
     TestEvent,
     clock,
     duration,
@@ -251,9 +253,7 @@ function Supposed (options) {
 
   const { makeSuiteConfig } = makeSuiteConfigFactory({
     envvars,
-    subscriptionExists,
-    subscribe,
-    allSubscriptions,
+    pubsub,
     reporterFactory
   })
 
@@ -263,9 +263,7 @@ function Supposed (options) {
     findFiles,
     BatchComposer,
     makeSuiteConfig,
-    publish,
-    subscribe,
-    clearSubscriptions: reset,
+    pubsub,
     reporterFactory,
     resolveTests,
     runServer,

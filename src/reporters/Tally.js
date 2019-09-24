@@ -3,7 +3,7 @@ module.exports = {
   factory: (dependencies) => {
     'use strict'
 
-    const { publish, TestEvent, clock, duration } = dependencies
+    const { pubsub, TestEvent, clock, duration } = dependencies
 
     function TallyFactory () {
       const now = () => clock()
@@ -35,7 +35,7 @@ module.exports = {
 
       const makeBatchTally = (event) => {
         if (totals.batches[event.batchId]) {
-          return publish({
+          return pubsub.publish({
             type: TestEvent.types.TEST,
             status: TestEvent.status.BROKEN,
             batchId: event.batchId,

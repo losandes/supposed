@@ -9,9 +9,7 @@ module.exports = {
       findFiles,
       BatchComposer,
       makeSuiteConfig,
-      publish,
-      subscribe,
-      clearSubscriptions,
+      pubsub,
       reporterFactory,
       resolveTests,
       runServer,
@@ -142,7 +140,7 @@ module.exports = {
       return addToPlan
     }
 
-    const brokenTestPublisher = (suiteId) => (error) => publish({
+    const brokenTestPublisher = (suiteId) => (error) => pubsub.publish({
       type: TestEvent.types.TEST,
       status: TestEvent.status.BROKEN,
       behavior: `Failed to load test: ${error.filePath}`,
@@ -165,7 +163,7 @@ module.exports = {
     const failedToOneArray = toOneArray('reason')
 
     const batchRunner = (config, publishOneBrokenTest) => (batch, plan) => {
-      return publish({
+      return pubsub.publish({
         type: TestEvent.types.START_BATCH,
         batchId: batch.batchId,
         suiteId: config.name
@@ -189,7 +187,7 @@ module.exports = {
             batchTotals: Tally.getTally().batches[batch.batchId]
           }
         }).then((context) => {
-          const publishEndBatch = () => publish({
+          const publishEndBatch = () => pubsub.publish({
             type: TestEvent.types.END_BATCH,
             batchId: batch.batchId,
             suiteId: config.name,
@@ -218,7 +216,7 @@ module.exports = {
       return Promise.resolve({ plan })
         .then((context) => {
           if (!runnerMode) {
-            return publish({
+            return pubsub.publish({
               type: TestEvent.types.START,
               suiteId: config.name,
               plan: context.plan
@@ -230,8 +228,8 @@ module.exports = {
           (batch) => runBatch(batch, context.plan)
         ))).then((context) => {
           if (!runnerMode) {
-            return publish({ type: TestEvent.types.END_TALLY, suiteId: config.name })
-              .then(() => publish({
+            return pubsub.publish({ type: TestEvent.types.END_TALLY, suiteId: config.name })
+              .then(() => pubsub.publish({
                 type: TestEvent.types.END,
                 suiteId: config.name,
                 totals: Tally.getSimpleTally(),
@@ -248,7 +246,7 @@ module.exports = {
 
           return context
         }).catch((e) => {
-          publish({
+          pubsub.publish({
             type: TestEvent.types.TEST,
             status: TestEvent.status.BROKEN,
             behavior: 'Failed to load test',
@@ -262,7 +260,7 @@ module.exports = {
     const runner = (config, suite, publishOneBrokenTest, execute) => (planContext) => {
       const { plan, files, broken } = planContext
 
-      return publish({
+      return pubsub.publish({
         type: TestEvent.types.START,
         suiteId: config.name,
         plan
@@ -273,11 +271,11 @@ module.exports = {
         }
       }).then(() => execute(plan))
         .then((output) =>
-          publish({ type: TestEvent.types.END_TALLY, suiteId: config.name })
+          pubsub.publish({ type: TestEvent.types.END_TALLY, suiteId: config.name })
             .then(() => output) // pass through
         )
         .then((output) =>
-          publish({
+          pubsub.publish({
             type: TestEvent.types.FINAL_TALLY,
             suiteId: config.name,
             totals: Tally.getTally()
@@ -289,7 +287,7 @@ module.exports = {
         }).then((context) => {
           plan.completed = context.tally.total
 
-          return publish({
+          return pubsub.publish({
             type: TestEvent.types.END,
             suiteId: config.name,
             totals: context.tally,
@@ -334,8 +332,8 @@ module.exports = {
             return cfg
           }, {})
 
-        clearSubscriptions()
-        subscribe(reporterFactory.get(Tally.name))
+        pubsub.reset()
+        pubsub.subscribe(reporterFactory.get(Tally.name))
         const config = makeSuiteConfig(_suiteConfig)
         const publishOneBrokenTest = brokenTestPublisher(config.name)
         const { makeBatch } = new BatchComposer(config)
@@ -359,7 +357,7 @@ module.exports = {
         test.dependencies = _suiteConfig && _suiteConfig.inject
         test.configure = configure
         test.subscribe = (subscription) => {
-          subscribe(subscription)
+          pubsub.subscribe(subscription)
           return test
         }
 
@@ -425,7 +423,7 @@ module.exports = {
 
         // @deprecated - may go away in the future
         test.printSummary = () => {
-          return publish({
+          return pubsub.publish({
             type: TestEvent.types.END,
             suiteId: config.name,
             totals: Tally.getSimpleTally()
