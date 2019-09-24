@@ -202,10 +202,11 @@
       reporterFactory,
       makePlans,
       Tally,
-      TestEvent
+      TestEvent,
+      envvars: config
     })
 
-    const suite = new Suite(options)
+    const suite = new Suite()
     suite.Suite = Supposed
 
     if (!suites[suite.config.name]) {

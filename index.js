@@ -269,10 +269,11 @@ function Supposed (options) {
     runServer,
     makePlans,
     Tally,
-    TestEvent
+    TestEvent,
+    envvars: config
   })
 
-  const suite = new Suite(options, config)
+  const suite = new Suite()
   suite.Suite = Supposed
 
   if (!suites[suite.config.name]) {

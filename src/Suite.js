@@ -15,7 +15,8 @@ module.exports = {
       runServer,
       makePlans,
       Tally,
-      TestEvent
+      TestEvent,
+      envvars
     } = dependencies
 
     const makeNormalBatch = (description, assertions) => {
@@ -334,29 +335,42 @@ module.exports = {
     }
 
     /**
+     * By default, use the envvars, which are a result of `makeSuiteConfig`
+     * in the composition root.
+     * If `Suite().configure({ ... })` was executed, use the config arg to
+     * the `configure` function.
+     * If `Suite({ ... })` was executed, use the config arg to the `Suite` function
+     *
+     * NOTE that merging the `configure` arg onto the `Suite` arg is not supported
+     * @param suiteConfig - the arg that was passed to Suite
+     * @param suiteDotConfigureOptions - the arg that was passed to `configure`
+     */
+    const makeConfig = (suiteConfig, suiteDotConfigureOptions) => {
+      if (!suiteConfig && !suiteDotConfigureOptions) {
+        return envvars // envvars is the default makeSuiteConfig
+      } else if (suiteDotConfigureOptions) {
+        // Suite().configure({ ... })
+        return makeSuiteConfig(suiteDotConfigureOptions)
+      } else if (suiteConfig) {
+        // Suite({ ... })
+        return makeSuiteConfig(suiteConfig)
+      }
+    }
+
+    /**
      * The test library
      * @param {Object} suiteConfig : optional configuration
     */
-    function Suite (suiteConfig, envvars) {
+    function Suite (suiteConfig) {
       let runnerMode = false
-      suiteConfig = { ...suiteConfig }
 
       /**
        * @param suiteDotConfigureOptions - configuration provided in line with `supposed.Suite().configure(suiteDotConfigureOptions)`
        */
       const configure = (suiteDotConfigureOptions) => {
-        suiteDotConfigureOptions = { ...suiteDotConfigureOptions }
-
-        const _suiteConfig = Object.keys(suiteConfig)
-          .concat(Object.keys(suiteDotConfigureOptions))
-          .reduce((cfg, key) => {
-            cfg[key] = typeof suiteDotConfigureOptions[key] !== 'undefined' ? suiteDotConfigureOptions[key] : suiteConfig[key]
-            return cfg
-          }, {})
-
         pubsub.reset()
         pubsub.subscribe(reporterFactory.get(Tally.name))
-        const config = makeSuiteConfig(_suiteConfig)
+        const config = makeConfig(suiteConfig, suiteDotConfigureOptions)
         const registerReporters = reportRegistrar(config)
         const publishOneBrokenTest = brokenTestPublisher(config.name)
         const { makeBatch, makeBatchId } = new BatchComposer(config)
@@ -376,7 +390,7 @@ module.exports = {
         test.id = config.name
         test.plan = plan
         test.config = config
-        test.dependencies = _suiteConfig && _suiteConfig.inject
+        test.dependencies = config.inject
         test.configure = configure
         test.subscribe = (subscription) => {
           pubsub.subscribe(subscription)
@@ -385,7 +399,7 @@ module.exports = {
 
         test.runner = (options) => {
           options = options || {}
-          if (envvars && envvars.file && typeof envvars.file.test === 'function') {
+          if (envvars.file) {
             options.matchesNamingConvention = envvars.file
           }
 

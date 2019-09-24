@@ -798,7 +798,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       'use strict';
 
       var envvars = dependencies.envvars,
-          reporterFactory = dependencies.reporterFactory;
+          reporterFactory = dependencies.reporterFactory,
+          REPORT_ORDERS = dependencies.REPORT_ORDERS;
 
       var makeSuiteId = function makeSuiteId() {
         return "S".concat((Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase());
@@ -819,6 +820,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         maybeOverrideValue('assertionLibrary', function (options) {
           return options.assertionLibrary;
         });
+        maybeOverrideValue('inject', function (options) {
+          return options.inject;
+        });
         maybeOverrideValue('name', function (options) {
           return typeof options.name === 'string' && options.name.trim().length ? options.name.trim() : undefined;
         });
@@ -835,7 +839,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           return typeof options.timeUnits === 'string' && options.timeUnits.trim().length ? options.timeUnits.trim().toLowerCase() : undefined;
         });
         maybeOverrideValue('reportOrder', function (options) {
-          return typeof options.reportOrder === 'string' && ['deterministic', 'non-deterministic'].indexOf(options.reportOrder.trim().toLowerCase()) ? options.reportOrder.trim().toLowerCase() : undefined;
+          return typeof options.reportOrder === 'string' && [REPORT_ORDERS.DETERMINISTIC, REPORT_ORDERS.NON_DETERMINISTIC].indexOf(options.reportOrder.trim()) > -1 ? options.reportOrder.trim().toLowerCase() : undefined;
         });
         maybeOverrideValue('match', function (options) {
           if (typeof options.match === 'string') {
@@ -845,6 +849,13 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           } else if (options.match === null) {
             // let hard coded options override (I use this in the tests)
             return options.match;
+          }
+        });
+        maybeOverrideValue('file', function (options) {
+          if (typeof options.file === 'string') {
+            return new RegExp(options.file);
+          } else if (options.file && typeof options.file.test === 'function') {
+            return options.file;
           }
         });
         maybeOverrideValue('givenSynonyms', function (options) {
@@ -1072,7 +1083,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           runServer = dependencies.runServer,
           makePlans = dependencies.makePlans,
           Tally = dependencies.Tally,
-          TestEvent = dependencies.TestEvent;
+          TestEvent = dependencies.TestEvent,
+          envvars = dependencies.envvars;
 
       var makeNormalBatch = function makeNormalBatch(description, assertions) {
         var batch = {};
@@ -1439,29 +1451,45 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         };
       };
       /**
+       * By default, use the envvars, which are a result of `makeSuiteConfig`
+       * in the composition root.
+       * If `Suite().configure({ ... })` was executed, use the config arg to
+       * the `configure` function.
+       * If `Suite({ ... })` was executed, use the config arg to the `Suite` function
+       *
+       * NOTE that merging the `configure` arg onto the `Suite` arg is not supported
+       * @param suiteConfig - the arg that was passed to Suite
+       * @param suiteDotConfigureOptions - the arg that was passed to `configure`
+       */
+
+
+      var makeConfig = function makeConfig(suiteConfig, suiteDotConfigureOptions) {
+        if (!suiteConfig && !suiteDotConfigureOptions) {
+          return envvars; // envvars is the default makeSuiteConfig
+        } else if (suiteDotConfigureOptions) {
+          // Suite().configure({ ... })
+          return makeSuiteConfig(suiteDotConfigureOptions);
+        } else if (suiteConfig) {
+          // Suite({ ... })
+          return makeSuiteConfig(suiteConfig);
+        }
+      };
+      /**
        * The test library
        * @param {Object} suiteConfig : optional configuration
       */
 
 
-      function Suite(suiteConfig, envvars) {
+      function Suite(suiteConfig) {
         var runnerMode = false;
-        suiteConfig = _objectSpread({}, suiteConfig);
         /**
          * @param suiteDotConfigureOptions - configuration provided in line with `supposed.Suite().configure(suiteDotConfigureOptions)`
          */
 
         var configure = function configure(suiteDotConfigureOptions) {
-          suiteDotConfigureOptions = _objectSpread({}, suiteDotConfigureOptions);
-
-          var _suiteConfig = Object.keys(suiteConfig).concat(Object.keys(suiteDotConfigureOptions)).reduce(function (cfg, key) {
-            cfg[key] = typeof suiteDotConfigureOptions[key] !== 'undefined' ? suiteDotConfigureOptions[key] : suiteConfig[key];
-            return cfg;
-          }, {});
-
           pubsub.reset();
           pubsub.subscribe(reporterFactory.get(Tally.name));
-          var config = makeSuiteConfig(_suiteConfig);
+          var config = makeConfig(suiteConfig, suiteDotConfigureOptions);
           var registerReporters = reportRegistrar(config);
           var publishOneBrokenTest = brokenTestPublisher(config.name);
 
@@ -1486,7 +1514,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           test.id = config.name;
           test.plan = plan;
           test.config = config;
-          test.dependencies = _suiteConfig && _suiteConfig.inject;
+          test.dependencies = config.inject;
           test.configure = configure;
 
           test.subscribe = function (subscription) {
@@ -1497,7 +1525,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           test.runner = function (options) {
             options = options || {};
 
-            if (envvars && envvars.file && typeof envvars.file.test === 'function') {
+            if (envvars.file) {
               options.matchesNamingConvention = envvars.file;
             }
 
@@ -3166,7 +3194,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
     var _module$factories$mak2 = module.factories.makeSuiteConfigFactory({
       envvars: envvars,
-      reporterFactory: reporterFactory
+      reporterFactory: reporterFactory,
+      REPORT_ORDERS: REPORT_ORDERS
     }),
         makeSuiteConfig = _module$factories$mak2.makeSuiteConfig;
 
@@ -3391,11 +3420,12 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       reporterFactory: reporterFactory,
       makePlans: makePlans,
       Tally: Tally,
-      TestEvent: TestEvent
+      TestEvent: TestEvent,
+      envvars: config
     }),
         Suite = _module$factories$Sui.Suite;
 
-    var suite = new Suite(options);
+    var suite = new Suite();
     suite.Suite = Supposed;
 
     if (!suites[suite.config.name]) {

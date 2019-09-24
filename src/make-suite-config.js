@@ -18,6 +18,7 @@ module.exports = {
       const maybeOverrideValue = maybeOverrideValueFactory(suiteConfig, { ...options })
 
       maybeOverrideValue('assertionLibrary', (options) => options.assertionLibrary)
+      maybeOverrideValue('inject', (options) => options.inject)
       maybeOverrideValue('name', (options) => typeof options.name === 'string' && options.name.trim().length
         ? options.name.trim()
         : undefined
@@ -52,6 +53,13 @@ module.exports = {
         } else if (options.match === null) {
           // let hard coded options override (I use this in the tests)
           return options.match
+        }
+      })
+      maybeOverrideValue('file', (options) => {
+        if (typeof options.file === 'string') {
+          return new RegExp(options.file)
+        } else if (options.file && typeof options.file.test === 'function') {
+          return options.file
         }
       })
       maybeOverrideValue('givenSynonyms', (options) => {
