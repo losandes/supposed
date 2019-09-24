@@ -92,7 +92,7 @@ module.exports = {
     const mapper = (config, makeBatch, makeBatchId, byMatcher) => (batch) => {
       const theories = makeBatch(batch)
         .filter(byMatcher)
-      console.log(theories.length)
+
       return {
         batchId: theories.length ? theories[0].id : makeBatchId(),
         theories
@@ -211,6 +211,10 @@ module.exports = {
     } // /batchRunner
 
     const tester = (config, runBatch, runnerMode) => (plan) => {
+      if (!runnerMode) {
+        config.registerReporters()
+      }
+
       return Promise.resolve({ plan })
         .then((context) => {
           if (!runnerMode) {
@@ -257,6 +261,7 @@ module.exports = {
 
     const runner = (config, suite, publishOneBrokenTest, execute) => (planContext) => {
       const { plan, files, broken } = planContext
+      config.registerReporters()
 
       return pubsub.publish({
         type: TestEvent.types.START,
@@ -304,6 +309,8 @@ module.exports = {
     }
 
     const browserRunner = (config, test) => (options) => () => {
+      config.registerReporters()
+
       return Array.isArray(options.paths)
         ? runServer(test, options)(options)
         : findFiles(options).then(runServer(test, options))
@@ -350,7 +357,6 @@ module.exports = {
 
         test.id = config.name
         test.plan = plan
-        test.reporters = config.reporters
         test.config = config
         test.dependencies = _suiteConfig && _suiteConfig.inject
         test.configure = configure

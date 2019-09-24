@@ -11,7 +11,7 @@ module.exports = (describe) => {
         const sut = describe.Suite({ reporter: 'ARRAY', match: null })
         const expectedBehavior = 'returns-log'
         await sut(expectedBehavior, (t) => expectedLog)
-        return { events: sut.reporters[0].events, expectedBehavior }
+        return { events: sut.config.reporters[0].events, expectedBehavior }
       },
       'it should include the log in the event': (t) => (err, actual) => {
         t.ifError(err)
@@ -26,7 +26,7 @@ module.exports = (describe) => {
         const sut = describe.Suite({ reporter: 'ARRAY', match: null })
         const expectedBehavior = 'returns-log'
         await sut(expectedBehavior, (t) => Promise.resolve(expectedLog))
-        return { events: sut.reporters[0].events, expectedBehavior }
+        return { events: sut.config.reporters[0].events, expectedBehavior }
       },
       'it should include the log in the event': (t) => (err, actual) => {
         t.ifError(err)

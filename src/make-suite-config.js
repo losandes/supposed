@@ -71,6 +71,11 @@ module.exports = {
           }
         }
       })
+    }
+
+    const addReporters = (suiteConfig, options) => {
+      const maybeOverrideValue = maybeOverrideValueFactory(suiteConfig, { ...options })
+
       maybeOverrideValue('reporters', (options) => {
         const reporters = []
 
@@ -123,7 +128,7 @@ module.exports = {
       const suiteConfig = {
         name: makeSuiteId(),
         timeout: 2000,
-        reporters: [reporterFactory.get('LIST')],
+        reporters: [],
         givenSynonyms: ['given', 'arrange'],
         whenSynonyms: ['when', 'act', 'topic']
       }
@@ -133,8 +138,17 @@ module.exports = {
       addValues(suiteConfig, envvars)
       addValues(suiteConfig, options)
 
-      suiteConfig.reporters.forEach(pubsub.subscribe)
-      suiteConfig.subscriptions = pubsub.allSubscriptions()
+      suiteConfig.registerReporters = () => {
+        addReporters(suiteConfig, { reporter: 'LIST' })
+        addReporters(suiteConfig, envvars)
+        addReporters(suiteConfig, options)
+        suiteConfig.reporters.forEach((reporter) => {
+          if (!pubsub.subscriptionExists(reporter.name)) {
+            pubsub.subscribe(reporter)
+          }
+        })
+        suiteConfig.subscriptions = pubsub.allSubscriptions()
+      }
       suiteConfig.makeTheoryConfig = (theory) => {
         theory = { ...theory }
 

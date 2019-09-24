@@ -49,7 +49,7 @@ module.exports = function (test, dependencies) {
         })
 
         await sut(expectedBehavior, (t) => { t.strictEqual(1, 1) })
-        return { events: sut.reporters[0].events, expectedBehavior }
+        return { events: sut.config.reporters[0].events, expectedBehavior }
       },
       'it should use the configured reporter': (t) => (err, actual) => {
         t.ifError(err)
@@ -72,8 +72,8 @@ module.exports = function (test, dependencies) {
 
         await sut(expectedBehavior, (t) => { t.strictEqual(1, 1) })
         return {
-          events1: sut.reporters[0].events,
-          events2: sut.reporters[1].events,
+          events1: sut.config.reporters[0].events,
+          events2: sut.config.reporters[1].events,
           expectedBehavior
         }
       },
