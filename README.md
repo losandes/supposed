@@ -591,6 +591,81 @@ Unless you provide a `paths` property on the runner config, the browser test ser
 * `stringifiedSuiteConfig` {string} - the config for supposed _in_ the browser (you have one to run everything, but our browser tests can have their own configuration) i.e. `{ reporter: 'tap' }`
 * `page` {string} - full control over the page and generation of it - if you're using this, you might be better off just writing your own browser test runner
 
+#### Piping Browser Test Output to the Terminal
+If you're going to use supposed with a headless browser for testing, this example demonstrates how to get the output from the browser into your terminal, and `process.exit(1)`, if any of the tests fail. The examples use puppeteer as the headless browser.
+
+If you break the setup into two files, it's easy to use with CI, as well as manually. This example includes a "server" file, which starts the server, and runs the tests, as well as an "index" which executes the "server" module, then closes the server, and exits with an appropriate status code. CI, or pre-commit/pre-push hooks can use the "index", and you can call "server" directly to test manually, or debug.
+
+> See [Configuring the Browser Test Server](#configuring-the-browser-test-server) for more information on how to configure `suite.runner()`
+
+```JavaScript
+// ./first-spec.js
+module.exports = (test) => test('given first-module, when...', {
+  'it ...': (t) => {
+    t.strictEqual(42 / 0, Infinity)
+  }
+})
+
+// ./second-spec.js
+module.exports = (test) => test('given second-module, when... it...', (t) => {
+  t.strictEqual(42 / 0, Infinity)
+})
+
+// ./server.js
+const path = require('path')
+const puppeteer = require('puppeteer')
+const supposed = require('supposed')
+const __projectdir = process.cwd()
+const suite = supposed.Suite({
+  name: 'browser-tests'
+})
+
+module.exports = suite.runner({
+  // the title of the HTML page
+  title: 'browser-tests',
+  // the directories where your tests are
+  directories: ['./tests.documentation/browser-tests'],
+  // NOTE the "event" reporter - this is required for JSON.parse to work (below)
+  stringifiedSuiteConfig: '{ reporter: "event", assertionLibrary: assert }',
+  // any libraries your app, library, or tests depend on
+  dependencies: ['/node_modules/some-assertion-lib/assert.js']
+}).startServer()
+  .then(async (context) => {
+    const browser = await puppeteer.launch()
+    const page = await browser.newPage()
+
+    page.on('console', async (msg) => {
+      const txt = msg.text()
+
+      try {
+        const json = JSON.parse(txt)
+        context.lastEvent = json
+        suite.config.reporters.forEach((reporter) => reporter.write(json))
+
+        if (json.type === 'END' && json.totals.failed > 0) {
+          // maybe print a PDF that someone can review if this is being automated
+          await page.pdf({ path: path.join(__projectdir, `test-log.${Date.now()}.pdf`), format: 'A4' })
+        }
+      } catch (e) {
+        console.log(txt)
+        context.lastEvent = txt
+      }
+    })
+
+    await page.goto(`http://localhost:${context.config.port}`, { waitUntil: 'networkidle2' })
+    await browser.close()
+
+    return context
+  })
+
+
+// ./index.js
+require('./server').then((context) => {
+  context.server.close()
+  process.exit(context.lastEvent.totals.failed)
+})
+```
+
 #### Skipping File Discovery With the Browser Test Server
 If you pass an array of `paths` to the runner, `startServer` will skip file discovery, and load all of the paths:
 
@@ -675,7 +750,7 @@ module.exports = require('supposed')
 * [Streaming Output to a File](#streaming-output-to-a-file)
 - [] [Adding Information to Report Output (event.log)](#adding-information-to-report-output-event.log)
 - [] [Adding Context to Test Events (event.context)](#adding-context-to-test-events-event.context)
-- [] [Piping Browser Test Output to the Terminal](#piping-browser-test-output-to-the-terminal)
+* [Piping Browser Test Output to the Terminal](#piping-browser-test-output-to-the-terminal)
 - [] [Roll Your Own Browser Template](#roll-your-own-browser-template)
 * [Writing Your Own Test Runner](#writing-your-own-test-runner)
 
