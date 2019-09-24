@@ -70,7 +70,6 @@ function Supposed (options) {
   const envvars = {
     ...{
       assertionLibrary: assert,
-      reporters: ['LIST'],
       useColors: process.stdout.isTTY, // use colors by default if running in a text terminal
       timeUnits: 'us',
       reportOrder: REPORT_ORDERS.NON_DETERMINISTIC
@@ -251,7 +250,7 @@ function Supposed (options) {
   const { BatchComposer } = makeBatchFactory({ hash })
 
   const { makeSuiteConfig } = makeSuiteConfigFactory({
-    defaults: envvars,
+    envvars,
     subscriptionExists,
     subscribe,
     allSubscriptions,

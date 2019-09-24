@@ -188,7 +188,7 @@
     const { BatchComposer } = module.factories.makeBatchFactory({ hash })
 
     const { makeSuiteConfig } = module.factories.makeSuiteConfigFactory({
-      defaults: envvars,
+      envvars,
       subscriptionExists,
       subscribe,
       allSubscriptions,

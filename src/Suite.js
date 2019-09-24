@@ -126,10 +126,11 @@ module.exports = {
           .then((context) => {
             if (context.theories.length) {
               plan.batches.push(context)
-              plan.count += context.theories.reduce((count, item) => {
-                item.assertions.forEach((assertion) => plan.order.push(assertion.id))
-                return count + item.assertions.length
-              }, 0)
+              context.theories.forEach((theory) => {
+                theory.assertions.forEach((assertion) => plan.order.push(assertion.id))
+              })
+
+              plan.count = plan.order.length
             }
 
             return plan
@@ -167,8 +168,7 @@ module.exports = {
       return publish({
         type: TestEvent.types.START_BATCH,
         batchId: batch.batchId,
-        suiteId: config.name,
-        plan
+        suiteId: config.name
       }).then(() => {
         // map the batch theories to tests
         return batch.theories.map((theory) => new AsyncTest(
@@ -221,7 +221,7 @@ module.exports = {
             return publish({
               type: TestEvent.types.START,
               suiteId: config.name,
-              plan: { count: context.plan.count, completed: 0 }
+              plan: context.plan
             }).then(() => context)
           }
 
@@ -265,7 +265,7 @@ module.exports = {
       return publish({
         type: TestEvent.types.START,
         suiteId: config.name,
-        plan: { count: plan.count, completed: 0 }
+        plan
       }).then(() => {
         if (broken && broken.length) {
           // these tests failed during the planning stage
@@ -286,14 +286,16 @@ module.exports = {
         .then((output) => {
           // only get the tally _after_ END_TALLY was emitted
           return { output, tally: Tally.getSimpleTally() }
-        }).then((context) =>
-          publish({
+        }).then((context) => {
+          plan.completed = context.tally.total
+
+          return publish({
             type: TestEvent.types.END,
             suiteId: config.name,
             totals: context.tally,
             plan
           }).then(() => context) // pass through
-        ).then(({ output, tally }) => {
+        }).then(({ output, tally }) => {
           return {
             files: files,
             results: output.results,

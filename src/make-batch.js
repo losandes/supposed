@@ -203,9 +203,36 @@ module.exports = {
         return layers
       }
 
-      const makeBatch = (tests) => Object.keys(tests).reduce((batch, key) => {
-        return batch.concat(new FlattenedTests({ behavior: key, node: tests[key] }))
-      }, [])
+      const makeBatch = (tests) => Object.keys(tests)
+        .reduce((batch, key) => {
+          return batch.concat(new FlattenedTests({ behavior: key, node: tests[key] }))
+        }, []).map((theory) => {
+          // // example theory
+          // { id: 'B787763104',
+          //   behaviors: [ 'given first-module, when... it...' ],
+          //   behavior: 'given first-module, when... it...',
+          //   given: undefined,
+          //   when: undefined,
+          //   assertions:
+          //    [ { id: 'T787763104',
+          //        behaviors: [Array],
+          //        behavior: 'given first-module, when... it...',
+          //        test: [Function],
+          //        skipped: false } ],
+          //   skipped: false,
+          //   timeout: undefined,
+          //   assertionLibrary: undefined,
+          //   whenIsInheritedGiven: false }
+          return {
+            id: theory.id,
+            given: theory.given,
+            when: theory.when,
+            assertions: theory.assertions,
+            skipped: theory.skipped,
+            timeout: theory.timeout,
+            assertionLibrary: theory.assertionLibrary
+          }
+        })
 
       return { makeBatch }
     } // /BatchComposer

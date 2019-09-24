@@ -10,6 +10,10 @@ const suite = supposed.Suite({
   }
 })
 
+// suite.subscribe((event) => {
+//   console.log(event)
+// })
+
 module.exports = suite.runner({
   cwd: path.join(__dirname),
   matchesIgnoredConvention: /discoverer-meta-specs|node_modules/i
