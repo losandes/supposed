@@ -53,11 +53,11 @@
       isPromise,
       TestEvent
     })
-    const { publish, subscribe, subscriptionExists, allSubscriptions, reset } = new Pubsub()
+    const pubsub = new Pubsub()
 
     const consoleStyles = module.factories.consoleStylesFactory({ envvars }).consoleStyles
 
-    const { TallyFactory } = module.factories.TallyFactory({ publish, TestEvent, clock, duration })
+    const { TallyFactory } = module.factories.TallyFactory({ pubsub, TestEvent, clock, duration })
     const { Tally } = TallyFactory({})
     const { ReporterFactory } = module.factories.reporterFactoryFactory({})
     const reporterFactory = new ReporterFactory()
@@ -178,7 +178,7 @@
 
     const { AsyncTest } = module.factories.AsyncTestFactory({
       isPromise,
-      publish,
+      pubsub,
       TestEvent,
       clock,
       duration,
@@ -189,9 +189,7 @@
 
     const { makeSuiteConfig } = module.factories.makeSuiteConfigFactory({
       envvars,
-      subscriptionExists,
-      subscribe,
-      allSubscriptions,
+      pubsub,
       reporterFactory
     })
     const { Suite } = module.factories.SuiteFactory({
@@ -199,9 +197,7 @@
       AsyncTest,
       BatchComposer,
       makeSuiteConfig,
-      publish,
-      subscribe,
-      clearSubscriptions: reset,
+      pubsub,
       reporterFactory,
       makePlans,
       Tally,

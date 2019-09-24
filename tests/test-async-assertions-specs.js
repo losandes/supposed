@@ -1,4 +1,6 @@
-module.exports = function (describe) {
+module.exports = function (describe, dependencies) {
+  const { defaultConfig } = dependencies
+
   return describe('async tests', {
     'when given returns a promise': {
       given: () => Promise.resolve(42),
@@ -34,7 +36,7 @@ module.exports = function (describe) {
       when: () => {
         var promiseFinished = false
 
-        return describe.Suite({ name: 'assertion-promise', reporter: 'QUIET', match: null })({
+        return describe.Suite({ ...defaultConfig, ...{ name: 'assertion-promise' } })({
           t1: (t) => {
             return new Promise((resolve, reject) => {
               setTimeout(() => {
@@ -62,7 +64,7 @@ module.exports = function (describe) {
       when: () => {
         var promiseFinished = false
 
-        return describe.Suite({ name: 'assertion-async-await', reporter: 'QUIET', match: null })({
+        return describe.Suite({ ...defaultConfig, ...{ name: 'assertion-async-await' } })({
           t1: async t => {
             const actual = await new Promise((resolve, reject) => {
               setTimeout(() => {

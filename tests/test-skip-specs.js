@@ -1,5 +1,5 @@
-module.exports = function (describe) {
-  // const sut = describe.Suite({ reporter: 'QUIET', match: null })
+module.exports = function (describe, dependencies) {
+  const { defaultConfig } = dependencies
 
   return describe('skipping tests', {
     'when a behavior is skipped': {
@@ -140,7 +140,7 @@ module.exports = function (describe) {
     var assertion1Ran = false
     var assertion2Ran = false
 
-    return describe.Suite({ name: 'behavior-is-skipped', reporter: 'QUIET', match: null })({
+    return describe.Suite({ ...defaultConfig, ...{ name: 'behavior-is-skipped' } })({
       '// when behavior': {
         when: () => {
           behaviorRan = true
@@ -167,7 +167,7 @@ module.exports = function (describe) {
     var assertion1Ran = false
     var assertion2Ran = false
 
-    return describe.Suite({ name: 'named-behavior-is-skipped', reporter: 'QUIET', match: null })('named', {
+    return describe.Suite({ ...defaultConfig, ...{ name: 'named-behavior-is-skipped' } })('named', {
       '// when behavior': {
         when: () => {
           behaviorRan = true
@@ -194,7 +194,7 @@ module.exports = function (describe) {
     var assertion1Ran = false
     var assertion2Ran = false
 
-    return describe.Suite({ name: 'assertion-is-skipped', reporter: 'QUIET', match: null })({
+    return describe.Suite({ ...defaultConfig, ...{ name: 'assertion-is-skipped' } })({
       'when behavior': {
         when: () => {
           behaviorRan = true
@@ -221,7 +221,7 @@ module.exports = function (describe) {
     var assertion1Ran = false
     var assertion2Ran = false
 
-    return describe.Suite({ name: 'tap-skip-directive', reporter: 'QUIET', match: null })({
+    return describe.Suite({ ...defaultConfig, ...{ name: 'tap-skip-directive' } })({
       'when behavior': {
         when: () => {
           behaviorRan = true
@@ -248,7 +248,7 @@ module.exports = function (describe) {
     var assertion1Ran = false
     var assertion2Ran = false
 
-    return describe.Suite({ name: 'tap-todo-directive', reporter: 'QUIET', match: null })({
+    return describe.Suite({ ...defaultConfig, ...{ name: 'tap-todo-directive' } })({
       'when behavior': {
         when: () => {
           behaviorRan = true

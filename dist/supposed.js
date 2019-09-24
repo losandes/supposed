@@ -80,11 +80,12 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       'use strict';
 
       var isPromise = dependencies.isPromise,
-          publish = dependencies.publish,
+          pubsub = dependencies.pubsub,
           TestEvent = dependencies.TestEvent,
           clock = dependencies.clock,
           duration = dependencies.duration,
           addDurations = dependencies.addDurations;
+      var publish = pubsub.publish;
 
       function noop() {}
       /**
@@ -539,11 +540,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         };
 
         var makeBatchId = function makeBatchId(behavior) {
-          return "B".concat(hash(behavior));
+          return typeof behavior === 'string' && behavior.trim().length ? "B".concat(hash(behavior.trim())) : "B".concat((Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase());
         };
 
         var makeTestId = function makeTestId(behavior) {
-          return "T".concat(hash(behavior));
+          return typeof behavior === 'string' && behavior.trim().length ? "T".concat(hash(behavior.trim())) : "T".concat((Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase());
         };
 
         var makeOneAssertion = function makeOneAssertion(behavior, behaviors, node, skipped) {
@@ -747,11 +748,39 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               behavior: key,
               node: tests[key]
             }));
-          }, []);
+          }, []).map(function (theory) {
+            // // example theory
+            // { id: 'B787763104',
+            //   behaviors: [ 'given first-module, when... it...' ],
+            //   behavior: 'given first-module, when... it...',
+            //   given: undefined,
+            //   when: undefined,
+            //   assertions:
+            //    [ { id: 'T787763104',
+            //        behaviors: [Array],
+            //        behavior: 'given first-module, when... it...',
+            //        test: [Function],
+            //        skipped: false } ],
+            //   skipped: false,
+            //   timeout: undefined,
+            //   assertionLibrary: undefined,
+            //   whenIsInheritedGiven: false }
+            return {
+              id: theory.id,
+              given: theory.given,
+              when: theory.when,
+              assertions: theory.assertions,
+              skipped: theory.skipped,
+              timeout: theory.timeout,
+              assertionLibrary: theory.assertionLibrary
+            };
+          });
         };
 
         return {
-          makeBatch: makeBatch
+          makeBatch: makeBatch,
+          makeBatchId: makeBatchId,
+          makeTestId: makeTestId
         };
       } // /BatchComposer
 
@@ -768,134 +797,176 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     factory: function factory(dependencies) {
       'use strict';
 
-      var defaults = dependencies.defaults,
-          subscribe = dependencies.subscribe,
-          subscriptionExists = dependencies.subscriptionExists,
-          allSubscriptions = dependencies.allSubscriptions,
+      var envvars = dependencies.envvars,
+          pubsub = dependencies.pubsub,
           reporterFactory = dependencies.reporterFactory;
 
       var makeSuiteId = function makeSuiteId() {
         return "S".concat((Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase());
       };
 
+      var maybeOverrideValueFactory = function maybeOverrideValueFactory(suiteConfig, options) {
+        return function (name, factory) {
+          var value = factory(options);
+
+          if (typeof value !== 'undefined') {
+            suiteConfig[name] = value;
+          }
+        };
+      };
+
+      var addValues = function addValues(suiteConfig, options) {
+        var maybeOverrideValue = maybeOverrideValueFactory(suiteConfig, _objectSpread({}, options));
+        maybeOverrideValue('assertionLibrary', function (options) {
+          return options.assertionLibrary;
+        });
+        maybeOverrideValue('name', function (options) {
+          return typeof options.name === 'string' && options.name.trim().length ? options.name.trim() : undefined;
+        });
+        maybeOverrideValue('timeout', function (options) {
+          return typeof options.timeout === 'number' && options.timeout > 0 ? options.timeout : undefined;
+        });
+        maybeOverrideValue('exit', function (options) {
+          return typeof options.exit === 'function' ? options.exit : undefined;
+        });
+        maybeOverrideValue('useColors', function (options) {
+          return typeof options.useColors === 'boolean' ? options.useColors : undefined;
+        });
+        maybeOverrideValue('timeUnits', function (options) {
+          return typeof options.timeUnits === 'string' && options.timeUnits.trim().length ? options.timeUnits.trim().toLowerCase() : undefined;
+        });
+        maybeOverrideValue('reportOrder', function (options) {
+          return typeof options.reportOrder === 'string' && ['deterministic', 'non-deterministic'].indexOf(options.reportOrder.trim().toLowerCase()) ? options.reportOrder.trim().toLowerCase() : undefined;
+        });
+        maybeOverrideValue('match', function (options) {
+          if (typeof options.match === 'string') {
+            return new RegExp(options.match);
+          } else if (options.match && typeof options.match.test === 'function') {
+            return options.match;
+          } else if (options.match === null) {
+            // let hard coded options override (I use this in the tests)
+            return options.match;
+          }
+        });
+        maybeOverrideValue('givenSynonyms', function (options) {
+          if (Array.isArray(options.givenSynonyms)) {
+            var synonyms = options.givenSynonyms.filter(function (synonym) {
+              return typeof synonym === 'string' && synonym.trim().length;
+            }).map(function (synonym) {
+              return synonym.trim();
+            });
+
+            if (synonyms.length) {
+              return synonyms;
+            }
+          }
+        });
+        maybeOverrideValue('whenSynonyms', function (options) {
+          if (Array.isArray(options.whenSynonyms)) {
+            var synonyms = options.whenSynonyms.filter(function (synonym) {
+              return typeof synonym === 'string' && synonym.trim().length;
+            }).map(function (synonym) {
+              return synonym.trim();
+            });
+
+            if (synonyms.length) {
+              return synonyms;
+            }
+          }
+        });
+      };
+
+      var addReporters = function addReporters(suiteConfig, options) {
+        var maybeOverrideValue = maybeOverrideValueFactory(suiteConfig, _objectSpread({}, options));
+        maybeOverrideValue('reporters', function (options) {
+          var reporters = [];
+
+          var makeReporterArray = function makeReporterArray(input) {
+            return input.split(',').map(function (reporter) {
+              return reporter.trim().toUpperCase();
+            });
+          };
+
+          var addReporter = function addReporter(nameOrFunc) {
+            if (typeof nameOrFunc === 'string') {
+              var reporter = reporterFactory.get(nameOrFunc);
+              reporters.push(reporter);
+            } else {
+              reporterFactory.add(nameOrFunc);
+              addReporter(nameOrFunc.name);
+            }
+          }; // reporter: accept strings, functions, or objects
+
+
+          if (typeof options.reporter === 'string') {
+            makeReporterArray(options.reporter).forEach(addReporter);
+          } else if (typeof options.reporter === 'function') {
+            addReporter(function CustomReporter() {
+              return {
+                write: options.reporter
+              };
+            });
+          } else if (options.reporter && typeof options.reporter.report === 'function') {
+            // legacy
+            addReporter(function CustomReporter() {
+              return {
+                write: options.reporter.report
+              };
+            });
+          } else if (options.reporter && typeof options.reporter.write === 'function') {
+            addReporter(function CustomReporter() {
+              return {
+                write: options.reporter.write
+              };
+            });
+          } // reporters: accept strings, or arrays
+
+
+          if (typeof options.reporters === 'string') {
+            makeReporterArray(options.reporters).forEach(addReporter);
+          } else if (Array.isArray(options.reporters)) {
+            options.reporters.forEach(addReporter);
+          }
+
+          if (reporters.length) {
+            return reporters;
+          }
+        });
+      };
+
       var makeSuiteConfig = function makeSuiteConfig(options) {
         var suiteConfig = {
-          assertionLibrary: defaults.assertionLibrary,
-          match: defaults.match,
           name: makeSuiteId(),
           timeout: 2000,
           reporters: [],
           givenSynonyms: ['given', 'arrange'],
-          whenSynonyms: ['when', 'act', 'topic']
-        };
-        options = _objectSpread({}, options);
-
-        if (options.assertionLibrary) {
-          suiteConfig.assertionLibrary = options.assertionLibrary;
-        }
-
-        if (typeof options.match === 'string') {
-          suiteConfig.match = new RegExp(options.match);
-        } else if (options.match && typeof options.match.test === 'function') {
-          suiteConfig.match = options.match;
-        } else if (options.match === null) {
-          // let hard coded options override (I use this in the tests)
-          suiteConfig.match = options.match;
-        }
-
-        if (typeof options.name === 'string' && options.name.trim().length) {
-          suiteConfig.name = options.name.trim();
-        }
-
-        if (typeof options.timeout === 'number' && options.timeout > 0) {
-          suiteConfig.timeout = options.timeout;
-        }
-
-        if (typeof options.useColors === 'boolean') {
-          suiteConfig.useColors = options.useColors;
-        }
-
-        if (Array.isArray(options.givenSynonyms)) {
-          var synonyms = options.givenSynonyms.filter(function (synonym) {
-            return typeof synonym === 'string' && synonym.trim().length;
-          }).map(function (synonym) {
-            return synonym.trim();
-          });
-
-          if (synonyms.length) {
-            suiteConfig.givenSynonyms = synonyms;
-          }
-        }
-
-        if (Array.isArray(options.whenSynonyms)) {
-          var _synonyms = options.whenSynonyms.filter(function (synonym) {
-            return typeof synonym === 'string' && synonym.trim().length;
-          }).map(function (synonym) {
-            return synonym.trim();
-          });
-
-          if (_synonyms.length) {
-            suiteConfig.whenSynonyms = _synonyms;
-          }
-        }
-
-        var makeReporterArray = function makeReporterArray(input) {
-          return input.split(',').map(function (reporter) {
-            return reporter.trim().toUpperCase();
-          });
-        };
-
-        var addReporter = function addReporter(nameOrFunc) {
-          if (typeof nameOrFunc === 'string') {
-            var reporter = reporterFactory.get(nameOrFunc);
-
-            if (!subscriptionExists(reporter.name)) {
-              subscribe(reporter);
+          whenSynonyms: ['when', 'act', 'topic'],
+          exit: function exit(results) {
+            if (results.totals.failed > 0) {
+              process.exit(1);
+            } else {
+              return results;
             }
-
-            suiteConfig.reporters.push(reporter);
-          } else {
-            reporterFactory.add(nameOrFunc);
-            addReporter(nameOrFunc.name);
           }
-        }; // reporters: accept strings, functions, or objects
+        }; // TODO: support flipping the priority, and make envvars the top of the hierarchy
+        // this will require that we set the priority in all of the tests for this library
 
+        addValues(suiteConfig, envvars);
+        addValues(suiteConfig, options);
 
-        if (typeof options.reporter === 'string') {
-          makeReporterArray(options.reporter).forEach(addReporter);
-        } else if (typeof options.reporter === 'function') {
-          addReporter(function CustomReporter() {
-            return {
-              write: options.reporter
-            };
+        suiteConfig.registerReporters = function () {
+          addReporters(suiteConfig, {
+            reporter: 'LIST'
           });
-        } else if (options.reporter && typeof options.reporter.report === 'function') {
-          // legacy
-          addReporter(function CustomReporter() {
-            return {
-              write: options.reporter.report
-            };
+          addReporters(suiteConfig, envvars);
+          addReporters(suiteConfig, options);
+          suiteConfig.reporters.forEach(function (reporter) {
+            if (!pubsub.subscriptionExists(reporter.name)) {
+              pubsub.subscribe(reporter);
+            }
           });
-        } else if (options.reporter && typeof options.reporter.write === 'function') {
-          addReporter(function CustomReporter() {
-            return {
-              write: options.reporter.write
-            };
-          });
-        } // reporters: accept strings, or arrays
-
-
-        if (typeof options.reporters === 'string') {
-          makeReporterArray(options.reporters).forEach(addReporter);
-        } else if (Array.isArray(options.reporters)) {
-          options.reporters.forEach(addReporter);
-        }
-
-        if (!suiteConfig.reporters.length) {
-          defaults.reporters.forEach(addReporter);
-        }
-
-        suiteConfig.subscriptions = allSubscriptions();
+          suiteConfig.subscriptions = pubsub.allSubscriptions();
+        };
 
         suiteConfig.makeTheoryConfig = function (theory) {
           theory = _objectSpread({}, theory);
@@ -1002,19 +1073,13 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           findFiles = dependencies.findFiles,
           BatchComposer = dependencies.BatchComposer,
           makeSuiteConfig = dependencies.makeSuiteConfig,
-          publish = dependencies.publish,
-          subscribe = dependencies.subscribe,
-          clearSubscriptions = dependencies.clearSubscriptions,
+          pubsub = dependencies.pubsub,
           reporterFactory = dependencies.reporterFactory,
           resolveTests = dependencies.resolveTests,
           runServer = dependencies.runServer,
           makePlans = dependencies.makePlans,
           Tally = dependencies.Tally,
           TestEvent = dependencies.TestEvent;
-
-      var makeBatchId = function makeBatchId() {
-        return "B".concat((Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase());
-      };
 
       var makeNormalBatch = function makeNormalBatch(description, assertions) {
         var batch = {};
@@ -1097,7 +1162,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
        */
 
 
-      var mapper = function mapper(config, makeBatch, byMatcher) {
+      var mapper = function mapper(config, makeBatch, makeBatchId, byMatcher) {
         return function (batch) {
           var theories = makeBatch(batch).filter(byMatcher);
           return {
@@ -1112,23 +1177,27 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       };
 
       var planner = function planner(config, mapToBatch) {
-        var plan = {
-          count: 0,
-          completed: 0,
-          batches: [],
-          order: []
+        var makeEmptyPlan = function makeEmptyPlan() {
+          return {
+            count: 0,
+            completed: 0,
+            batches: [],
+            order: []
+          };
         };
+
+        var plan = makeEmptyPlan();
 
         var addToPlan = function addToPlan(description, assertions) {
           return normalizeBatch(description, assertions).then(mapToBatch).then(function (context) {
             if (context.theories.length) {
               plan.batches.push(context);
-              plan.count += context.theories.reduce(function (count, item) {
-                item.assertions.forEach(function (assertion) {
+              context.theories.forEach(function (theory) {
+                theory.assertions.forEach(function (assertion) {
                   return plan.order.push(assertion.id);
                 });
-                return count + item.assertions.length;
-              }, 0);
+              });
+              plan.count = plan.order.length;
             }
 
             return plan;
@@ -1139,12 +1208,16 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           return plan;
         };
 
+        addToPlan.resetPlan = function () {
+          plan = makeEmptyPlan();
+        };
+
         return addToPlan;
       };
 
       var brokenTestPublisher = function brokenTestPublisher(suiteId) {
         return function (error) {
-          return publish({
+          return pubsub.publish({
             type: TestEvent.types.TEST,
             status: TestEvent.status.BROKEN,
             behavior: "Failed to load test: ".concat(error.filePath),
@@ -1171,11 +1244,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
       var batchRunner = function batchRunner(config, publishOneBrokenTest) {
         return function (batch, plan) {
-          return publish({
+          return pubsub.publish({
             type: TestEvent.types.START_BATCH,
             batchId: batch.batchId,
-            suiteId: config.name,
-            plan: plan
+            suiteId: config.name
           }).then(function () {
             // map the batch theories to tests
             return batch.theories.map(function (theory) {
@@ -1197,7 +1269,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             };
           }).then(function (context) {
             var publishEndBatch = function publishEndBatch() {
-              return publish({
+              return pubsub.publish({
                 type: TestEvent.types.END_BATCH,
                 batchId: batch.batchId,
                 suiteId: config.name,
@@ -1229,17 +1301,18 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
       var tester = function tester(config, runBatch, runnerMode) {
         return function (plan) {
+          if (!runnerMode) {
+            config.registerReporters();
+          }
+
           return Promise.resolve({
             plan: plan
           }).then(function (context) {
             if (!runnerMode) {
-              return publish({
+              return pubsub.publish({
                 type: TestEvent.types.START,
                 suiteId: config.name,
-                plan: {
-                  count: context.plan.count,
-                  completed: 0
-                }
+                plan: context.plan
               }).then(function () {
                 return context;
               });
@@ -1252,11 +1325,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             }));
           }).then(function (context) {
             if (!runnerMode) {
-              return publish({
+              return pubsub.publish({
                 type: TestEvent.types.END_TALLY,
                 suiteId: config.name
               }).then(function () {
-                return publish({
+                return pubsub.publish({
                   type: TestEvent.types.END,
                   suiteId: config.name,
                   totals: Tally.getSimpleTally(),
@@ -1275,7 +1348,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
             return context;
           }).catch(function (e) {
-            publish({
+            pubsub.publish({
               type: TestEvent.types.TEST,
               status: TestEvent.status.BROKEN,
               behavior: 'Failed to load test',
@@ -1292,13 +1365,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           var plan = planContext.plan,
               files = planContext.files,
               broken = planContext.broken;
-          return publish({
+          config.registerReporters();
+          return pubsub.publish({
             type: TestEvent.types.START,
             suiteId: config.name,
-            plan: {
-              count: plan.count,
-              completed: 0
-            }
+            plan: plan
           }).then(function () {
             if (broken && broken.length) {
               // these tests failed during the planning stage
@@ -1307,7 +1378,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           }).then(function () {
             return execute(plan);
           }).then(function (output) {
-            return publish({
+            return pubsub.publish({
               type: TestEvent.types.END_TALLY,
               suiteId: config.name
             }).then(function () {
@@ -1315,7 +1386,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             });
           } // pass through
           ).then(function (output) {
-            return publish({
+            return pubsub.publish({
               type: TestEvent.types.FINAL_TALLY,
               suiteId: config.name,
               totals: Tally.getTally()
@@ -1330,16 +1401,16 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               tally: Tally.getSimpleTally()
             };
           }).then(function (context) {
-            return publish({
+            plan.completed = context.tally.total;
+            return pubsub.publish({
               type: TestEvent.types.END,
               suiteId: config.name,
               totals: context.tally,
               plan: plan
             }).then(function () {
               return context;
-            });
-          } // pass through
-          ).then(function (_ref) {
+            }); // pass through
+          }).then(function (_ref) {
             var output = _ref.output,
                 tally = _ref.tally;
             return {
@@ -1357,6 +1428,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       var browserRunner = function browserRunner(config, test) {
         return function (options) {
           return function () {
+            config.registerReporters();
             return Array.isArray(options.paths) ? runServer(test, options)(options) : findFiles(options).then(runServer(test, options));
           };
         };
@@ -1382,16 +1454,17 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             return cfg;
           }, {});
 
-          clearSubscriptions();
-          subscribe(reporterFactory.get(Tally.name));
+          pubsub.reset();
+          pubsub.subscribe(reporterFactory.get(Tally.name));
           var config = makeSuiteConfig(_suiteConfig);
           var publishOneBrokenTest = brokenTestPublisher(config.name);
 
           var _ref2 = new BatchComposer(config),
-              makeBatch = _ref2.makeBatch;
+              makeBatch = _ref2.makeBatch,
+              makeBatchId = _ref2.makeBatchId;
 
           var byMatcher = matcher(config);
-          var mapToBatch = mapper(config, makeBatch, byMatcher);
+          var mapToBatch = mapper(config, makeBatch, makeBatchId, byMatcher);
           var runBatch = batchRunner(config, publishOneBrokenTest);
           var plan = planner(config, mapToBatch);
 
@@ -1399,19 +1472,19 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             if (runnerMode) {
               return plan(description, assertions);
             } else {
-              return plan(description, assertions).then(tester(config, runBatch, runnerMode));
+              return planner(config, mapToBatch)(description, assertions) // new planner for each test execution
+              .then(tester(config, runBatch, runnerMode));
             }
           };
 
           test.id = config.name;
           test.plan = plan;
-          test.reporters = config.reporters;
           test.config = config;
           test.dependencies = _suiteConfig && _suiteConfig.inject;
           test.configure = configure;
 
           test.subscribe = function (subscription) {
-            subscribe(subscription);
+            pubsub.subscribe(subscription);
             return test;
           };
 
@@ -1436,19 +1509,22 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               return findFiles(options).then(resolveTests()).then(makePlans(test)).then(addPlanToContext());
             };
 
+            var _run = function run() {
+              return runner(config, test, publishOneBrokenTest, tester(config, runBatch, runnerMode));
+            };
+
             return {
               plan: findAndPlan,
               // find and run (node)
               run: function run() {
-                return findAndPlan().then(runner(config, test, publishOneBrokenTest, tester(config, runBatch, runnerMode)));
+                return findAndPlan().then(_run()).then(config.exit);
               },
               // run (browser|node)
               runTests: function runTests(planOrTests) {
                 runnerMode = true;
-                var run = runner(config, test, publishOneBrokenTest, tester(config, runBatch, runnerMode));
 
                 if (planOrTests && isPlan(planOrTests.plan)) {
-                  return Promise.resolve(planOrTests).then(run);
+                  return Promise.resolve(planOrTests).then(_run()).then(config.exit);
                 }
 
                 if (Array.isArray(planOrTests)) {
@@ -1457,7 +1533,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
                   options.tests = planOrTests();
                 }
 
-                return makePlans(test)(options).then(addPlanToContext()).then(run);
+                return makePlans(test)(options).then(addPlanToContext()).then(_run()).then(config.exit);
               },
               // start test server (browser)
               startServer: findAndStart(options)
@@ -1466,7 +1542,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
 
           test.printSummary = function () {
-            return publish({
+            return pubsub.publish({
               type: TestEvent.types.END,
               suiteId: config.name,
               totals: Tally.getSimpleTally()
@@ -2907,7 +2983,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     factory: function factory(dependencies) {
       'use strict';
 
-      var publish = dependencies.publish,
+      var pubsub = dependencies.pubsub,
           TestEvent = dependencies.TestEvent,
           clock = dependencies.clock,
           duration = dependencies.duration;
@@ -2946,7 +3022,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
         var makeBatchTally = function makeBatchTally(event) {
           if (totals.batches[event.batchId]) {
-            return publish({
+            return pubsub.publish({
               type: TestEvent.types.TEST,
               status: TestEvent.status.BROKEN,
               batchId: event.batchId,
@@ -3097,19 +3173,13 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }),
         Pubsub = _module$factories$pub.Pubsub;
 
-    var _ref5 = new Pubsub(),
-        publish = _ref5.publish,
-        subscribe = _ref5.subscribe,
-        subscriptionExists = _ref5.subscriptionExists,
-        allSubscriptions = _ref5.allSubscriptions,
-        reset = _ref5.reset;
-
+    var pubsub = new Pubsub();
     var consoleStyles = module.factories.consoleStylesFactory({
       envvars: envvars
     }).consoleStyles;
 
     var _module$factories$Tal = module.factories.TallyFactory({
-      publish: publish,
+      pubsub: pubsub,
       TestEvent: TestEvent,
       clock: clock,
       duration: duration
@@ -3279,7 +3349,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
     var _module$factories$Asy = module.factories.AsyncTestFactory({
       isPromise: isPromise,
-      publish: publish,
+      pubsub: pubsub,
       TestEvent: TestEvent,
       clock: clock,
       duration: duration,
@@ -3296,10 +3366,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         BatchComposer = _module$factories$mak2.BatchComposer;
 
     var _module$factories$mak3 = module.factories.makeSuiteConfigFactory({
-      defaults: envvars,
-      subscriptionExists: subscriptionExists,
-      subscribe: subscribe,
-      allSubscriptions: allSubscriptions,
+      envvars: envvars,
+      pubsub: pubsub,
       reporterFactory: reporterFactory
     }),
         makeSuiteConfig = _module$factories$mak3.makeSuiteConfig;
@@ -3309,9 +3377,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       AsyncTest: AsyncTest,
       BatchComposer: BatchComposer,
       makeSuiteConfig: makeSuiteConfig,
-      publish: publish,
-      subscribe: subscribe,
-      clearSubscriptions: reset,
+      pubsub: pubsub,
       reporterFactory: reporterFactory,
       makePlans: makePlans,
       Tally: Tally,

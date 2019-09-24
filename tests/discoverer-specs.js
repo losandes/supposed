@@ -1,10 +1,10 @@
 module.exports = function (describe, dependencies) {
-  const { chai, path } = dependencies
+  const { chai, path, defaultConfig } = dependencies
 
   return describe('DefaultDiscoverer', {
     'when a runner is configured to match a different working directory': {
       when: () => {
-        const sut = describe.Suite({ reporter: 'QUIET' })
+        const sut = describe.Suite(defaultConfig)
         const runner = sut.runner({
           cwd: path.join(process.cwd(), '/tests/discoverer-meta-specs'),
           matchesNamingConvention: /.\/namingspec\.js$/i,
@@ -29,7 +29,7 @@ module.exports = function (describe, dependencies) {
     },
     'when a runner is configured to match a different naming convention, using a regular expression': {
       when: () => {
-        const sut = describe.Suite({ reporter: 'QUIET' })
+        const sut = describe.Suite(defaultConfig)
         const runner = sut.runner({
           directories: ['./tests/discoverer-meta-specs'],
           matchesNamingConvention: /.\/namingspec\.js$/i,
@@ -53,7 +53,7 @@ module.exports = function (describe, dependencies) {
     },
     'when a runner is configured to match a different naming convention, using a test function': {
       when: () => {
-        const sut = describe.Suite({ reporter: 'QUIET' })
+        const sut = describe.Suite(defaultConfig)
         const runner = sut.runner({
           directories: ['./tests/discoverer-meta-specs'],
           matchesNamingConvention: {
@@ -74,7 +74,7 @@ module.exports = function (describe, dependencies) {
     },
     'it should inject the suite that is being run': {
       when: () => {
-        const sut = describe.Suite({ reporter: 'QUIET', assertionLibrary: chai.expect })
+        const sut = describe.Suite({ ...defaultConfig, ...{ assertionLibrary: chai.expect } })
         const runner = sut.runner({
           directories: ['./tests/discoverer-meta-specs'],
           matchesNamingConvention: /.\/injectionspec\.js$/i
@@ -91,7 +91,7 @@ module.exports = function (describe, dependencies) {
     },
     'when a runner is configured to ignore a directory, using a regular expression': {
       when: () => {
-        const sut = describe.Suite({ reporter: 'QUIET' })
+        const sut = describe.Suite(defaultConfig)
         const runner = sut.runner({
           directories: ['./tests/discoverer-meta-specs'],
           matchesNamingConvention: /.\/ignorespec\.js$/i,
@@ -109,7 +109,7 @@ module.exports = function (describe, dependencies) {
     },
     'when a runner is configured to ignore a directory, using a test function': {
       when: () => {
-        const sut = describe.Suite({ reporter: 'QUIET' })
+        const sut = describe.Suite(defaultConfig)
         const runner = sut.runner({
           directories: ['./tests/discoverer-meta-specs'],
           matchesNamingConvention: /.\/ignorespec\.js$/i,
@@ -131,7 +131,7 @@ module.exports = function (describe, dependencies) {
     },
     'when a runner is configured to ignore a file path': {
       when: () => {
-        const sut = describe.Suite({ reporter: 'QUIET' })
+        const sut = describe.Suite(defaultConfig)
         const runner = sut.runner({
           directories: ['./tests/discoverer-meta-specs'],
           matchesNamingConvention: /.\/ignorespec\.js$/i,
@@ -150,7 +150,7 @@ module.exports = function (describe, dependencies) {
     },
     'when the runner executes a test that doesn\'t support injection': {
       when: () => {
-        const sut = describe.Suite({ reporter: 'QUIET' })
+        const sut = describe.Suite(defaultConfig)
         const runner = sut.runner({
           directories: ['./tests/discoverer-meta-specs'],
           matchesNamingConvention: /.\/no-injectionspec\.js$/i
@@ -167,7 +167,7 @@ module.exports = function (describe, dependencies) {
     },
     'when the runner executes a test that doesn\'t return a promise': {
       when: () => {
-        const sut = describe.Suite({ reporter: 'QUIET' })
+        const sut = describe.Suite(defaultConfig)
         const runner = sut.runner({
           directories: ['./tests/discoverer-meta-specs'],
           matchesNamingConvention: /.\/no-promisespec\.js$/i
@@ -184,7 +184,7 @@ module.exports = function (describe, dependencies) {
     },
     'it should walk the tree': {
       when: () => {
-        const sut = describe.Suite({ reporter: 'QUIET' })
+        const sut = describe.Suite(defaultConfig)
         const runner = sut.runner({
           directories: ['./tests/discoverer-meta-specs'],
           matchesNamingConvention: /.\/nestspec\.js$/i

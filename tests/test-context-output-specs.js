@@ -1,4 +1,5 @@
-module.exports = (describe) => {
+module.exports = (describe, dependencies) => {
+  const { defaultConfig } = dependencies
   const expectedContext = {
     context: {
       foo: 'bar'
@@ -8,7 +9,7 @@ module.exports = (describe) => {
   return describe('assertion output', {
     'when an assertion passes, and returns an object with a `context` property': {
       when: async () => {
-        const sut = describe.Suite({ reporter: 'ARRAY', match: null })
+        const sut = describe.Suite({ ...defaultConfig, ...{ name: 'context-output-1' } })
         const expectedBehavior = 'returns-context'
         await sut(expectedBehavior, (t) => expectedContext)
         return { events: sut.config.reporters[0].events, expectedBehavior }
@@ -23,7 +24,7 @@ module.exports = (describe) => {
     },
     'when an assertion passes, and returns a Promise with a `context` property': {
       when: async () => {
-        const sut = describe.Suite({ reporter: 'ARRAY', match: null })
+        const sut = describe.Suite({ ...defaultConfig, ...{ name: 'context-output-2' } })
         const expectedBehavior = 'returns-context'
         await sut(expectedBehavior, (t) => Promise.resolve(expectedContext))
         return { events: sut.config.reporters[0].events, expectedBehavior }

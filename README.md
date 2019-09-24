@@ -322,7 +322,7 @@ Whether your using `supposed.configure({...})`, or creating a new `supposed.Suit
 * `inject` {any} - when present this object will be available to tests via `suite.dependencies`. If your test files `module.exports = (suite, dependencies) => {}`, this object will also be passed as the second argument to your exported function.
 * `givenSynonyms` {string[]} - an array of words to be used in place of "given|arrange"
 * `whenSynonyms` {string[]} - an array of words to be used in place of "when|act|topic"
-
+* `exit` {function} - By default, the runner will `process.exit(1)` if any tests fail. This is to support normal behavior with CI, or git pre-commit, and pre-push hooks. You can override this by providing your own exit function
 
 > If neither `reporter`, nor `reporters` are present, the `default` reporter will be used
 
@@ -339,8 +339,25 @@ const suite = require('supposed').Suite({
   useColors: false,
   inject: { databaseConnection },
   givenSynonyms: ['cause'],
-  whenSynonyms: ['effect']
+  whenSynonyms: ['effect'],
+  exit: (results) => process.exit(results.totals.failed)
 })
+```
+
+`exit` can be used to _avoid_ exiting the process, and always return the results:
+
+```JavaScript
+const supposed = require('supposed')
+
+supposed.Suite({
+  exit: (results) => results
+}).runner()
+  .run()
+  .then((results) => {
+    // do something with the results
+    return results
+  })
+  .then((results) => process.exit(results.totals.failed))
 ```
 
 ## Tests
@@ -506,9 +523,9 @@ module.exports = test('given second-module, when... it...', (t) => {
 // ./tests.js
 module.exports = require('supposed')
   .runner()
-  .runTests([
-    () => require('./first-spec'),
-    () => require('./second-spec')
+  .runTests(() => [
+    require('./first-spec'),
+    require('./second-spec')
   ])
 ```
 

@@ -3,10 +3,16 @@ const path = require('path')
 const supposed = require('../index.js')
 const suite = supposed.Suite({
   name: 'supposed-tests',
+  exit: (results) => results,
   inject: {
     describe: supposed,
     chai,
-    path
+    path,
+    defaultConfig: {
+      reporter: 'ARRAY',
+      exit: (results) => results,
+      match: null
+    }
   }
 })
 
@@ -19,6 +25,7 @@ module.exports = suite.runner({
   matchesIgnoredConvention: /discoverer-meta-specs|node_modules/i
 })
   .run()
+  .then((results) => process.exit(results.totals.failed))
   // .plan()
   // .then((plan) => {
   //   console.log(plan)

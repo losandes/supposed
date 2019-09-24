@@ -1,9 +1,10 @@
-module.exports = function (describe) {
-  const sut = describe.Suite({ reporter: 'QUIET', match: null })
+module.exports = function (describe, dependencies) {
+  const { defaultConfig } = dependencies
 
   return describe('missing when', {
     'when there is no when function': {
       when: () => {
+        const sut = describe.Suite({ ...defaultConfig, ...{ name: 'missing when' } })
         return sut('supposed', {
           'when there is no when function': {
             'it should still execute the assertions': t => {

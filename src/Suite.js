@@ -109,12 +109,16 @@ module.exports = {
     }
 
     const planner = (config, mapToBatch) => {
-      const plan = {
-        count: 0,
-        completed: 0,
-        batches: [],
-        order: []
+      const makeEmptyPlan = () => {
+        return {
+          count: 0,
+          completed: 0,
+          batches: [],
+          order: []
+        }
       }
+
+      let plan = makeEmptyPlan()
 
       const addToPlan = (description, assertions) => {
         return normalizeBatch(description, assertions)
@@ -134,6 +138,9 @@ module.exports = {
       }
 
       addToPlan.getPlan = () => plan
+      addToPlan.resetPlan = () => {
+        plan = makeEmptyPlan()
+      }
 
       return addToPlan
     }
@@ -350,7 +357,7 @@ module.exports = {
           if (runnerMode) {
             return plan(description, assertions)
           } else {
-            return plan(description, assertions)
+            return planner(config, mapToBatch)(description, assertions) // new planner for each test execution
               .then(tester(config, runBatch, runnerMode))
           }
         }
@@ -385,29 +392,27 @@ module.exports = {
               .then(makePlans(test))
               .then(addPlanToContext())
           }
+          const run = () => runner(
+            config,
+            test,
+            publishOneBrokenTest,
+            tester(config, runBatch, runnerMode)
+          )
 
           return {
             plan: findAndPlan,
             // find and run (node)
             run: () => findAndPlan()
-              .then(runner(
-                config,
-                test,
-                publishOneBrokenTest,
-                tester(config, runBatch, runnerMode)
-              )),
+              .then(run())
+              .then(config.exit),
             // run (browser|node)
             runTests: (planOrTests) => {
               runnerMode = true
-              const run = runner(
-                config,
-                test,
-                publishOneBrokenTest,
-                tester(config, runBatch, runnerMode)
-              )
 
               if (planOrTests && isPlan(planOrTests.plan)) {
-                return Promise.resolve(planOrTests).then(run)
+                return Promise.resolve(planOrTests)
+                  .then(run())
+                  .then(config.exit)
               }
 
               if (Array.isArray(planOrTests)) {
@@ -418,7 +423,8 @@ module.exports = {
 
               return makePlans(test)(options)
                 .then(addPlanToContext())
-                .then(run)
+                .then(run())
+                .then(config.exit)
             },
             // start test server (browser)
             startServer: findAndStart(options)

@@ -1,10 +1,10 @@
 module.exports = function (test, dependencies) {
-  const { chai } = dependencies
+  const { chai, defaultConfig } = dependencies
 
   return test('Suite', {
     'when a new suite is created with a timeout': {
       when: () => {
-        const sut = test.Suite({ reporter: 'QUIET', timeout: 5, match: null })
+        const sut = test.Suite({ ...defaultConfig, ...{ timeout: 5 } })
 
         return sut('sut', {
           'sut-description': {
@@ -23,7 +23,7 @@ module.exports = function (test, dependencies) {
     },
     'when a new suite is created with an assertion library': {
       when: () => {
-        const sut = test.Suite({ reporter: 'QUIET', assertionLibrary: chai.expect, match: null })
+        const sut = test.Suite({ ...defaultConfig, ...{ assertionLibrary: chai.expect } })
         return sut('sut', {
           'sut-description': {
             when: () => { return 42 },
@@ -42,11 +42,7 @@ module.exports = function (test, dependencies) {
     'when a new suite is created with a reporter name': {
       when: async () => {
         const expectedBehavior = 'legacy-reporter'
-
-        const sut = test.Suite({
-          match: null,
-          reporter: 'ARRAY'
-        })
+        const sut = test.Suite(defaultConfig)
 
         await sut(expectedBehavior, (t) => { t.strictEqual(1, 1) })
         return { events: sut.config.reporters[0].events, expectedBehavior }
@@ -64,11 +60,7 @@ module.exports = function (test, dependencies) {
     'when a new suite is created with multiple reporters': {
       when: async () => {
         const expectedBehavior = 'legacy-reporter'
-
-        const sut = test.Suite({
-          match: null,
-          reporters: ['ARRAY', 'QUIET']
-        })
+        const sut = test.Suite({ ...defaultConfig, ...{ reporter: null, reporters: ['ARRAY', 'QUIET'] } })
 
         await sut(expectedBehavior, (t) => { t.strictEqual(1, 1) })
         return {
@@ -90,11 +82,12 @@ module.exports = function (test, dependencies) {
       when: async () => {
         const events = []
         const expectedBehavior = 'legacy-reporter'
-
         const sut = test.Suite({
-          match: null,
-          reporter: {
-            report: (event) => events.push(event)
+          ...defaultConfig,
+          ...{
+            reporter: {
+              report: (event) => events.push(event)
+            }
           }
         })
 
@@ -111,11 +104,12 @@ module.exports = function (test, dependencies) {
       when: async () => {
         const events = []
         const expectedBehavior = 'legacy-reporter'
-
         const sut = test.Suite({
-          match: null,
-          reporter: {
-            write: (event) => events.push(event)
+          ...defaultConfig,
+          ...{
+            reporter: {
+              write: (event) => events.push(event)
+            }
           }
         })
 
@@ -132,10 +126,11 @@ module.exports = function (test, dependencies) {
       when: async () => {
         const events = []
         const expectedBehavior = 'legacy-reporter'
-
         const sut = test.Suite({
-          match: null,
-          reporter: (event) => events.push(event)
+          ...defaultConfig,
+          ...{
+            reporter: (event) => events.push(event)
+          }
         })
 
         await sut(expectedBehavior, (t) => { t.strictEqual(1, 1) })
@@ -150,10 +145,11 @@ module.exports = function (test, dependencies) {
     'when a new suite is created with given and when synonyms': {
       when: () => {
         const sut = test.Suite({
-          reporter: 'QUIET',
-          match: null,
-          givenSynonyms: ['before', 'setup'],
-          whenSynonyms: ['execute', 'run']
+          ...defaultConfig,
+          ...{
+            givenSynonyms: ['before', 'setup'],
+            whenSynonyms: ['execute', 'run']
+          }
         })
 
         return sut('sut', {
@@ -199,10 +195,11 @@ module.exports = function (test, dependencies) {
       'and the synonyms include empty strings': {
         when: () => {
           const sut = test.Suite({
-            reporter: 'QUIET',
-            match: null,
-            givenSynonyms: [''],
-            whenSynonyms: ['  ']
+            ...defaultConfig,
+            ...{
+              givenSynonyms: [''],
+              whenSynonyms: ['  ']
+            }
           })
 
           return sut
@@ -216,10 +213,11 @@ module.exports = function (test, dependencies) {
       'and the synonyms include non-strings': {
         when: () => {
           const sut = test.Suite({
-            reporter: 'QUIET',
-            match: null,
-            givenSynonyms: [42],
-            whenSynonyms: [() => {}]
+            ...defaultConfig,
+            ...{
+              givenSynonyms: [42],
+              whenSynonyms: [() => {}]
+            }
           })
 
           return sut

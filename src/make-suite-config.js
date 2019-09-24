@@ -26,11 +26,16 @@ module.exports = {
         ? options.timeout
         : undefined
       )
+      maybeOverrideValue('exit', (options) => typeof options.exit === 'function'
+        ? options.exit
+        : undefined
+      )
       maybeOverrideValue('useColors', (options) => typeof options.useColors === 'boolean'
         ? options.useColors
         : undefined
       )
-      maybeOverrideValue('timeUnits', (options) => typeof options.timeUnits === 'string' && options.timeUnits.trim().length
+      maybeOverrideValue('timeUnits', (options) => typeof options.timeUnits === 'string' &&
+        options.timeUnits.trim().length
         ? options.timeUnits.trim().toLowerCase()
         : undefined
       )
@@ -130,7 +135,14 @@ module.exports = {
         timeout: 2000,
         reporters: [],
         givenSynonyms: ['given', 'arrange'],
-        whenSynonyms: ['when', 'act', 'topic']
+        whenSynonyms: ['when', 'act', 'topic'],
+        exit: (results) => {
+          if (results.totals.failed > 0) {
+            process.exit(1)
+          } else {
+            return results
+          }
+        }
       }
 
       // TODO: support flipping the priority, and make envvars the top of the hierarchy

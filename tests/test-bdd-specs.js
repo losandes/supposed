@@ -1,4 +1,6 @@
-module.exports = function (describe) {
+module.exports = function (describe, dependencies) {
+  const { defaultConfig } = dependencies
+
   return describe('given different styles', {
     AAA: {
       'when arrange, act, and assert(s) exist': {
@@ -59,7 +61,7 @@ module.exports = function (describe) {
         })
       }
 
-      return describe.Suite({ name: 'bdd-gwt', reporter: 'QUIET', match: null })('test-bdd-specs.whenGivenWhenAndThen', test)
+      return describe.Suite({ ...defaultConfig, ...{ name: 'bdd-gwt' } })('test-bdd-specs.whenGivenWhenAndThen', test)
     }
   }
 
@@ -85,7 +87,7 @@ module.exports = function (describe) {
         })
       }
 
-      return describe.Suite({ name: 'bdd-gt', reporter: 'QUIET', match: null })('test-bdd-specs.whenGivenThenAndNoWhen', test)
+      return describe.Suite({ ...defaultConfig, ...{ name: 'bdd-gt' } })('test-bdd-specs.whenGivenThenAndNoWhen', test)
     }
   }
 }
