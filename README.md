@@ -10,7 +10,7 @@ Supposed is a fast, hackable test framework for Node.js, TypeScript, and the Bro
 * [Get Started with the Browser](#get-started-with-the-browser)
 * [Get Started with TypeScript](#typescript-support)
 * [Test Syntax and DSLs](#test-syntax-and-domain-service-languages-dsls))
-* [Built in Reporters](#built-in-reporters): list|tap|json|spec|markdown|md|nyan|performance|brief|summary|array|block|noop
+* [Built in Reporters](#built-in-reporters): list|tap|json|spec|markdown|md|csv|nyan|performance|brief|summary|array|block|noop
 * [Suites, & Configuring Suites](#suites)
 * [Tests, & Configuring Tests](#tests)
 * [Discovering and Running NodeJS Tests](#using-the-nodejs-runner)
@@ -271,7 +271,7 @@ module.exports = test('when dividing numbers by 0', {
 ## Arguments and ENVVARS
 Supposed has options that can be set with command-line arguments, or envvars. They are described here, and then the actual arguments, and envvars are listed and shown in examples below.
 
-* **reporters**: choose reporter(s) by name (`list|tap|json|spec|markdown|md|nyan|performance|brief|summary|array|block|noop`) (comma-separated)
+* **reporters**: choose reporter(s) by name (`list|tap|json|spec|markdown|md|csv|nyan|performance|brief|summary|array|block|noop`) (comma-separated)
 * **match description**: run only tests whose descriptions/behaviors match the regular expression
 * **match file name**: run only tests whose file names match the regular expression (only used with runner)
 * **no-color**: (default is based on TTY) force supposed to display all output without color
@@ -411,8 +411,8 @@ Whether your using `supposed.configure({...})`, or creating a new `supposed.Suit
 * `name` {string} (default is generated) - A name for the suite (suites can be retrieved by name: `require('supposed').suites.mySuite`)
 * `timeout` {number} (default is 2000ms) - The amount of time in milliseconds that _Supposed_ waits, before it cancels a long-running test
 * `assertionLibrary` {object} (default for nodeJS is `assert`; no default for browsers) - The assertion library that will be passed to the tests
-* `reporter` {string|`(event: ITestEvent): Promise<void>`} - The reporter to use for test output (`list|tap|json|spec|markdown|md|nyan|performance|brief|summary|array|block|noop`), or a function
-* `reporters` {string[]} - A comma-separated list of reporters to use (by name) (`list|tap|json|spec|markdown|md|nyan|performance|brief|summary|array|block|noop`)
+* `reporter` {string|`(event: ITestEvent): Promise<void>`} - The reporter to use for test output (`list|tap|json|spec|markdown|md|csv|nyan|performance|brief|summary|array|block|noop`), or a function
+* `reporters` {string[]} - A comma-separated list of reporters to use (by name) (`list|tap|json|spec|markdown|md|csv|nyan|performance|brief|summary|array|block|noop`)
 * `match` {string|RegExp|`{ test (description: string): boolean; }`} - run only tests whose descriptions/behaviors match the regular expression, or pass this test
 * `file` {string|RegExp|`{ test (description: string): boolean; }`} - run only tests whose file name matches the regular expression, or pass this test
 * `useColors` {boolean} (default is based on TTY) - whether or not to use color in the reporter output

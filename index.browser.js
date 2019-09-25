@@ -119,6 +119,12 @@
           formatter: module.factories.BriefFormatterFactory({ consoleStyles, DefaultFormatter, TestEvent }).BriefFormatter()
         }).write
       }
+    }).add(function CsvReporter () {
+      return {
+        write: ConsoleReporter({
+          formatter: module.factories.CsvFormatterFactory({ TestEvent }).CsvFormatter()
+        }).write
+      }
     }).add(function EventReporter () {
       return {
         write: ConsoleReporter({

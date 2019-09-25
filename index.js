@@ -28,6 +28,7 @@ const BlockFormatterFactory = require('./src/formatters/BlockFormatter.js').fact
 const BriefFormatterFactory = require('./src/formatters/BriefFormatter.js').factory
 const consoleStylesFactory = require('./src/formatters/console-styles.js').factory
 const consoleUtilsFactory = require('./src/formatters/console-utils.js').factory
+const CsvFormatterFactory = require('./src/formatters/CsvFormatter.js').factory
 const DefaultFormatterFactory = require('./src/formatters/DefaultFormatter.js').factory
 const JsonFormatterFactory = require('./src/formatters/JsonFormatter.js').factory
 const ListFormatterFactory = require('./src/formatters/ListFormatter.js').factory
@@ -173,6 +174,12 @@ function Supposed (options) {
     return {
       write: ConsoleReporter({
         formatter: BriefFormatterFactory({ consoleStyles, DefaultFormatter, TestEvent }).BriefFormatter()
+      }).write
+    }
+  }).add(function CsvReporter () {
+    return {
+      write: ConsoleReporter({
+        formatter: CsvFormatterFactory({ TestEvent }).CsvFormatter()
       }).write
     }
   }).add(function EventReporter () {

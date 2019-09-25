@@ -224,6 +224,7 @@ module.exports = function (test, dependencies) {
           t.strictEqual(err.message, 'Invalid givenSynonym: expected {number} to be a non-empty {string}, Invalid whenSynonym: expected {function} to be a non-empty {string}')
         }
       }
-    }
+    },
+    'test out how "quoted fields" work': () => {}
   })
 }
