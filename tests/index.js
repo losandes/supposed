@@ -11,7 +11,8 @@ const suite = supposed.Suite({
     defaultConfig: {
       reporter: 'ARRAY',
       exit: (results) => results,
-      match: null
+      match: null,
+      verbosity: 'info'
     }
   }
 })

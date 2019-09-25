@@ -22,7 +22,7 @@ Supposed is a fast, hackable test framework for Node.js, TypeScript, and the Bro
 * [Using async-await in Tests](#using-async-await-in-tests)
 
 <details>
-  <summary>Full Table of Contents</summary>
+  <summary>Full Table of Contents (click to expand)</summary>
 
   * [Test Syntax and DSLs](#test-syntax-and-domain-service-languages-dsls))
     * [The BDD DSL (Given, When, Then)](#the-bdd-dsl-given-when-then)
@@ -274,9 +274,10 @@ Supposed has options that can be set with command-line arguments, or envvars. Th
 * **reporters**: choose reporter(s) by name (`list|tap|json|spec|markdown|md|nyan|performance|brief|summary|array|block|noop`) (comma-separated)
 * **match description**: run only tests whose descriptions/behaviors match the regular expression
 * **match file name**: run only tests whose file names match the regular expression (only used with runner)
-* **no-color**: force supposed to display all output without color
-* **report-order**: Some reporters print test outcomes in a non-deterministic order because tests run concurrently. You can override this by setting the order to "deterministic"
-* **time-units**: the units to use for event timestamps (`s|ms|us|ns`) (default is `us`)
+* **no-color**: (default is based on TTY) force supposed to display all output without color
+* **report-order**: (`deterministic|non-deterministic`) (default is per-reporter) Some reporters print test outcomes in a non-deterministic order because tests run concurrently. You can override this by setting the order to "deterministic"
+* **time-units**: (`s|ms|us|ns`) (default is `us`) the units to use for event timestamps
+* **verbosity**: (`info|debug`) (default is `info`) TestEvents that include plans, and totals can be very verbose - enough to overwhelm `jq` with the `json` reporter (use `node tests -r tap -v debug | npx tap-parser -j | jq` to get around that). By default the TestEvents just expose metrics, but if you need to glean more information from the events, such as the planned tests, test order, or the results of the tests, set the verbosity to 'debug'
 
 > When running in the terminal (NodeJS), Supposed detects whether it is in TTY and automatically turns colors off when it is not (i.e. if you pipe the output of supposed to another command)
 >
@@ -289,6 +290,7 @@ Supposed has options that can be set with command-line arguments, or envvars. Th
 * `-f` or `--file` (matches file name)
 * `-o` or `--report-order` (whether the report order is deterministic, or non-deterministic)
 * `-u` or `--time-units` (the units to use for timestamps)
+* `-v` or `--verbosity` (how much detail is included in TestEvents)
 * `--no-color` (b+w terminal output)
 
 
@@ -298,6 +300,8 @@ $ node tests -m foo -r tap -u ms -o deterministic | npx tap-parser -j | jq
 ```
 
 > In that example, we run tests that have the word "foo" in their descriptions, using TAP output, and milliseconds for timestamps. We pipe the output of the tests into another package, [tap-parser](https://www.npmjs.com/package/tap-parser), and then pipe the output of that package into [jq](https://stedolan.github.io/jq/).
+
+> _tip_: if you need `debug` verbosity, and want to use `jq`, run it through a tap parser: `node tests -r tap -v debug | npx tap-parser -j | jq`
 
 ```Shell
 $ node tests --no-color
@@ -310,6 +314,7 @@ $ node tests --no-color
 * `SUPPOSED_FILE` (matches file name)
 * `SUPPOSED_REPORT_ORDER` (whether the report order is deterministic, or non-deterministic)
 * `SUPPOSED_TIME_UNITS` (the units to use for timestamps)
+* `SUPPOSED_VERBOSITY` (how much detail is included in TestEvents)
 * `SUPPOSED_NO_COLOR` (b+w terminal output)
 
 ```Shell
@@ -318,8 +323,9 @@ $ export SUPPOSED_REPORTERS=tap
 $ export SUPPOSED_MATCH=continuous-integration
 $ export SUPPOSED_REPORT_ORDER=deterministic
 $ export SUPPOSED_TIME_UNITS=ms
+$ export SUPPOSED_VERBOSITY=info
 $ export SUPPOSED_NO_COLOR=true
-$ node tests | npx tap-parser -j | jq
+$ node tests -r tap | npx tap-parser -j | jq
 ```
 
 > In that example, we run tests that have the word "continuous-integration" in their descriptions, using TAP output. We pipe the output of the tests into another package, [tap-parser](https://www.npmjs.com/package/tap-parser), and then pipe the output of that package into [jq](https://stedolan.github.io/jq/).
@@ -409,12 +415,13 @@ Whether your using `supposed.configure({...})`, or creating a new `supposed.Suit
 * `reporters` {string[]} - A comma-separated list of reporters to use (by name) (`list|tap|json|spec|markdown|md|nyan|performance|brief|summary|array|block|noop`)
 * `match` {string|RegExp|`{ test (description: string): boolean; }`} - run only tests whose descriptions/behaviors match the regular expression, or pass this test
 * `file` {string|RegExp|`{ test (description: string): boolean; }`} - run only tests whose file name matches the regular expression, or pass this test
-* `useColors` {boolean} - whether or not to use color in the reporter output
+* `useColors` {boolean} (default is based on TTY) - whether or not to use color in the reporter output
 * `inject` {any} - when present this object will be available to tests via `suite.dependencies`. If your test files `module.exports = (suite, dependencies) => {}`, this object will also be passed as the second argument to your exported function.
 * `givenSynonyms` {string[]} - an array of words to be used in place of "given|arrange"
 * `whenSynonyms` {string[]} - an array of words to be used in place of "when|act|topic"
 * `timeUnits` {string} (`s|ms|us|ns`) (default is `us`) - the units to use for event timestamps
-* `reportOrder` {string}`deterministic|non-deterministic`)  - supposed runs tests concurrently, and some reporters report as tests complete (non-deterministically). _reportOrder_ lets you override that behavior and report deterministically
+* `reportOrder` {string} (`deterministic|non-deterministic`)  - supposed runs tests concurrently, and some reporters report as tests complete (non-deterministically). _reportOrder_ lets you override that behavior and report deterministically
+* `verbosity` {string} (`info|debug`; default is `info`) TestEvents that include plans, and totals can be very verbose - enough to overwhelm `jq` with the `json` reporter (use `node tests -r tap -v debug | npx tap-parser -j | jq` to get around that). By default the TestEvents just expose metrics, but if you need to glean more information from the events, such as the planned tests, test order, or the results of the tests, set the verbosity to 'debug'
 * `exit` {function} - By default, the runner will `process.exit(1)` if any tests fail. This is to support normal behavior with CI, or git pre-commit, and pre-push hooks. You can override this by providing your own exit function
 * `planBuffer` {number} - the milliseconds after plans are created to wait before executing a plan. If you aren't using a suite, supposed doesn't know when all of the tests are planned, so it relies on a race condition that assumes if no plans have been created in a period of time, then all plans must be submitted. On slower machines, it may be possible for this race condition to be beat, so you can override it.
 

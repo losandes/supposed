@@ -3,7 +3,7 @@ module.exports = {
   factory: (dependencies) => {
     'use strict'
 
-    const { clock } = dependencies
+    const { clock, envvars } = dependencies
     const TYPE_EXPRESSION = /(^START$)|(^START_BATCH$)|(^START_TEST$)|(^TEST$)|(^END_BATCH$)|(^END_TALLY$)|(^FINAL_TALLY$)|(^END$)/
     const STATUS_EXPRESSION = /(^PASSED$)|(^SKIPPED$)|(^FAILED$)|(^BROKEN$)/
     let testCount = 0
@@ -71,7 +71,10 @@ module.exports = {
       }
 
       if (event.plan) {
-        self.plan = event.plan
+        self.plan = envvars.verbosity === 'debug' ? event.plan : {
+          count: event.plan.count,
+          completed: event.plan.completed
+        }
       }
 
       if (event.error) {
@@ -91,11 +94,29 @@ module.exports = {
       }
 
       if (event.tally) {
-        self.tally = event.tally
+        self.tally = envvars.verbosity === 'debug' ? event.tally : {
+          total: event.tally.total,
+          passed: event.tally.passed,
+          skipped: event.tally.skipped,
+          failed: event.tally.failed,
+          broken: event.tally.broken,
+          startTime: event.tally.startTime,
+          endTime: event.tally.endTime,
+          duration: event.tally.duration
+        }
       }
 
       if (event.totals) {
-        self.totals = event.totals
+        self.totals = envvars.verbosity === 'debug' ? event.totals : {
+          total: event.totals.total,
+          passed: event.totals.passed,
+          skipped: event.totals.skipped,
+          failed: event.totals.failed,
+          broken: event.totals.broken,
+          startTime: event.totals.startTime,
+          endTime: event.totals.endTime,
+          duration: event.totals.duration
+        }
       }
 
       return Object.freeze(self)
