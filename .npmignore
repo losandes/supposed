@@ -6,7 +6,10 @@ archive
 npm-debug.log
 tests
 tests.browser
+tests.examples
 tests.manual
+tests.typescript
 build.browser.js
 index.browser.js
 pre-push.js
+tsconfig.json
