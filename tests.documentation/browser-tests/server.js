@@ -14,7 +14,8 @@ module.exports = suite.runner({
   // NOTE the "event" reporter - this is required for JSON.parse to work (below)
   stringifiedSuiteConfig: '{ reporter: "event", assertionLibrary: browserTestAssert }',
   // any libraries your app, library, or tests depend on
-  dependencies: ['/tests.browser/assert.js']
+  dependencies: ['/tests.browser/assert.js'],
+  port: 42003
 }).startServer()
   .then(async (context) => {
     const browser = await puppeteer.launch()
