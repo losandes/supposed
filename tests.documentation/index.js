@@ -10,6 +10,7 @@ const suites = [
   './custom-reporters/index.js',
   './custom-reporters/reporter-factory.js',
   './reporter-order/index.js',
+  './runners/manipulate-plan',
   './runners/multiple-suites/index.js',
   './runners/named-suites/index.js',
   './runners/setup-teardown/index.js',
@@ -62,6 +63,15 @@ Promise.all(promises)
     // const noMatchRows = results.filter((result) => !result.match)
     // console.log(noMatchRows.map((result) => result.stdout))
     console.table(rows)
+
+    const errors = results
+      .filter((result) => result.match && result.match.failed > 0)
+
+    if (errors.length) {
+      console.log(errors)
+      process.exit(1)
+    }
   }).catch((err) => {
-    throw err
+    console.log(err)
+    process.exit(1)
   })

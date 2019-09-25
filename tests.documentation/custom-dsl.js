@@ -1,6 +1,7 @@
 const test = require('supposed').Suite({
   givenSynonyms: ['cause', 'before', 'setup'],
-  whenSynonyms: ['effect', 'execute', 'run']
+  whenSynonyms: ['effect', 'execute', 'run'],
+  exit: (results) => results
 })
 
 module.exports = test('when dividing numbers by 0', {

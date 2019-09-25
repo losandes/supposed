@@ -45,7 +45,7 @@ module.exports = suite.runner({
         context.lastEvent = txt
       }
     })
-    await page.goto(`http://localhost:${context.config.port}`, { waitUntil: 'networkidle2' })
+    await page.goto(`http://localhost:${context.runConfig.port}`, { waitUntil: 'networkidle2' })
 
     // await page.pdf({path: 'hn.pdf', format: 'A4'});
 

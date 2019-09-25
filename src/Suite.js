@@ -238,32 +238,10 @@ module.exports = {
       }
 
       return Promise.resolve({ plan })
-        .then((context) => {
-          if (!runnerMode) {
-            return pubsub.publish({
-              type: TestEvent.types.START,
-              suiteId: config.name,
-              plan: context.plan
-            }).then(() => context)
-          }
-
-          return Promise.resolve(context)
-        }).then((context) => Promise.all(context.plan.batches.map(
+        .then((context) => Promise.all(context.plan.batches.map(
           (batch) => runBatch(batch, context.plan)
-        ))).then((context) => {
-          if (!runnerMode) {
-            return pubsub.publish({ type: TestEvent.types.END_TALLY, suiteId: config.name })
-              .then(() => pubsub.publish({
-                type: TestEvent.types.END,
-                suiteId: config.name,
-                totals: Tally.getSimpleTally(),
-                plan
-              }))
-              .then(() => context)
-          }
-
-          return Promise.resolve(context)
-        }).then((context) => {
+        )))
+        .then((context) => {
           if (Array.isArray(context) && context.length === 1) {
             return context[0]
           }
