@@ -27,5 +27,5 @@ module.exports = suite.runner({
   // .plan()
   // .then((plan) => { console.log(plan) })
   .run()
-  // .then((results) => { console.log(results); return results })
+  .then((results) => { console.log(results); return results })
   .then((results) => process.exit(results.totals.failed))

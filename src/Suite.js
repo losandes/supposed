@@ -375,14 +375,14 @@ module.exports = {
       const configure = (suiteDotConfigureOptions) => {
         pubsub.reset()
         pubsub.subscribe(reporterFactory.get(Tally.name))
-        const config = makeConfig(suiteConfig, suiteDotConfigureOptions)
-        const registerReporters = reportRegistrar(config)
-        const publishOneBrokenTest = brokenTestPublisher(config.name)
-        const { makeBatch, makeBatchId } = new BatchComposer(config)
-        const byMatcher = matcher(config)
-        const mapToBatch = mapper(config, makeBatch, makeBatchId, byMatcher)
-        const runBatch = batchRunner(config, publishOneBrokenTest)
-        const plan = planner(config, mapToBatch)
+        const _suiteConfig = makeConfig(suiteConfig, suiteDotConfigureOptions)
+        const registerReporters = reportRegistrar(_suiteConfig)
+        const publishOneBrokenTest = brokenTestPublisher(_suiteConfig.name)
+        const { makeBatch, makeBatchId } = new BatchComposer(_suiteConfig)
+        const byMatcher = matcher(_suiteConfig)
+        const mapToBatch = mapper(_suiteConfig, makeBatch, makeBatchId, byMatcher)
+        const runBatch = batchRunner(_suiteConfig, publishOneBrokenTest)
+        const plan = planner(_suiteConfig, mapToBatch)
         const waitToRun = () => new Promise((resolve, reject) => {
           if (waitingToRun) {
             return
@@ -393,12 +393,12 @@ module.exports = {
             const lastPlanEntry = plan.lastPlanEntry()
             const now = clock('ms')
 
-            if (lastPlanEntry && (now - lastPlanEntry) > config.planBuffer) {
+            if (lastPlanEntry && (now - lastPlanEntry) > _suiteConfig.planBuffer) {
               test.runner().runTests({ plan: plan.getPlan() }).then(resolve).catch(reject)
             } else {
               waitToRun()
             }
-          }, config.planBuffer * 2)
+          }, _suiteConfig.planBuffer * 2)
         })
         const test = (description, assertions) => {
           if (runnerMode) {
@@ -409,10 +409,10 @@ module.exports = {
           }
         }
 
-        test.id = config.name
+        test.id = _suiteConfig.name
         test.plan = plan
-        test.config = config
-        test.dependencies = config.inject
+        test.config = _suiteConfig
+        test.dependencies = _suiteConfig.inject
         test.configure = configure
         test.reporterFactory = reporterFactory
         test.subscribe = (subscription) => {
@@ -420,50 +420,53 @@ module.exports = {
           return test
         }
 
-        test.runner = (options) => {
+        test.runner = (runnerConfig) => {
           runnerMode = true
-          options = options || {}
+          runnerConfig = runnerConfig || {}
           if (envvars.file) {
-            options.matchesNamingConvention = envvars.file
+            runnerConfig.matchesNamingConvention = envvars.file
           }
 
-          const findAndStart = browserRunner(config, registerReporters, test)
+          const findAndStart = browserRunner(_suiteConfig, registerReporters, test)
           const addPlanToContext = () => (context) => {
             context.plan = plan.getPlan()
-            return context
+            Object.freeze(context.files)
+            Object.freeze(context.config)
+            return Object.freeze(context)
           }
 
           const findAndPlan = () => {
-            return findFiles(options)
+            return findFiles(runnerConfig)
               .then(resolveTests())
               .then(makePlans(test))
               .then(addPlanToContext())
           }
+
           const run = () => runner(
-            config,
+            _suiteConfig,
             registerReporters,
             test,
             publishOneBrokenTest,
-            tester(config, registerReporters, runBatch, runnerMode)
+            tester(_suiteConfig, registerReporters, runBatch, runnerMode)
           )
 
           const runTests = (planOrTests) => {
             if (planOrTests && isPlan(planOrTests.plan)) {
               return Promise.resolve(planOrTests)
                 .then(run())
-                .then(config.exit)
+                .then(_suiteConfig.exit)
             }
 
             if (Array.isArray(planOrTests)) {
-              options.tests = planOrTests
+              runnerConfig.tests = planOrTests
             } else if (typeof planOrTests === 'function') {
-              options.tests = planOrTests()
+              runnerConfig.tests = planOrTests()
             }
 
-            return makePlans(test)(options)
+            return makePlans(test)(runnerConfig)
               .then(addPlanToContext())
               .then(run())
-              .then(config.exit)
+              .then(_suiteConfig.exit)
           }
 
           return {
@@ -474,7 +477,7 @@ module.exports = {
             // run (browser|node)
             runTests,
             // start test server (browser)
-            startServer: findAndStart(options)
+            startServer: findAndStart(runnerConfig)
           }
         }
 
@@ -482,7 +485,7 @@ module.exports = {
         test.printSummary = () => {
           return pubsub.publish({
             type: TestEvent.types.END,
-            suiteId: config.name,
+            suiteId: _suiteConfig.name,
             totals: Tally.getSimpleTally()
           })
         }
