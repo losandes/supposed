@@ -1,5 +1,5 @@
-// ./second-module/second-spec.js
 /* eslint-disable */
+// ./second-module/second-spec.js
 (function (root) {
   // eslint-disable-line no-extra-semi
   'use strict';

@@ -4,7 +4,7 @@ Supposed is a test framework for Node.js, TypeScript, and the Browser. Supposed 
 
 * [Get Started with Node](#get-started-with-node)
 * [Get Started with the Browser](#get-started-with-the-browser)
-* [Get Started with TypeScript](#typescript-support)
+- [ ] [Get Started with TypeScript](#typescript-support)
 * [Test Syntax and DSLs](#test-syntax-and-domain-service-languages-dsls))
 * [Built in Reporters](#built-in-reporters): list|tap|json|spec|markdown|md|nyan|performance|brief|summary|array|block|noop
 * [Suites, & Configuring Suites](#suites)
@@ -15,7 +15,7 @@ Supposed is a test framework for Node.js, TypeScript, and the Browser. Supposed 
 * [Running Specific Tests](#arguments-and-envvars)
 * [Running Specific Files With The Runner](#arguments-and-envvars)
 * [Using Promises in Tests](#using-promises-in-tests)
-* [Using async-await in Tests](#using-async---await-in-tests)
+* [Using async-await in Tests](#using-async-await-in-tests)
 * [Measure Latency and Performance](#measure-latency-and-performance)
 * [Cookbook](#cookbook)
 
@@ -63,7 +63,7 @@ npm install --save-dev supposed
 ## Test Syntax and Domain Service Languages (DSLs)
 
 * [The BDD DSL (Given, When, Then)](#the-bdd-dsl-given-when-then)
-* [The AAA DSL (Arrange, Act, Assert)](#the-aaa-dsl-arrange-act-assert)
+* [The TDD DSL (Arrange, Act, Assert)](##the-tdd-dsl-arrange-act-assert)
 * [The xunit DSL (atomic)](#the-xunit-dsl-atomic)
 * [Custom DSLs](#custom-dsls)
 
@@ -583,10 +583,10 @@ module.exports = require('supposed')
 #### Configuring the Browser Test Server
 Unless you provide a `paths` property on the runner config, the browser test server will use the runner configurations from [Configuring the NodeJS Runner](#configuring-the-nodejs-runner) to find the test files, and pass them to the runner. So in addition to all of the configurations in [Configuring the NodeJS Runner](#configuring-the-nodejs-runner), the browser server supports the following configurations, all of which are optional:
 
-* `title` {string} (default: "supposed") - the HTML <title> and <h1> for the test page
+* `title` {string} (default: "supposed") - the HTML _title_ and _h1_ for the test page
 * `port` {number} (default: 42001) - the port number to host the server on
 * `dependencies` {string[]} - an array of paths to scripts that your library depends on - these precede the tests in the resulting web page
-* `paths` {string[]} - an array of file paths to the files you want the server to concatenate - this will [Skip File Discovery With the Browser Test Server](skipping-file-discovery-with-the-browser-test-server). There's no need to set both `dependencies` _and_ `paths`
+* `paths` {string[]} - an array of file paths to the files you want the server to concatenate - this will [Skip File Discovery With the Browser Test Server](#skipping-file-discovery-with-the-browser-test-server). There's no need to set both `dependencies` _and_ `paths`
 * `styles` {string} - CSS to customize the test view
 * `supposed` {string} - the path to this library, if you have it somewhere special, or if your cwd isn't the directory where your node_modules are
 * `template` {string} - your own [test-browser-template](src/runners/test-browser-template.js) if the default one doesn't meet your needs. Note that `// {{TEST_MODULES}}` is where the discovered tests get injected, so if you omit, or change that line, no tests will be printed to the page
@@ -734,7 +734,7 @@ module.exports = require('supposed')
 // prints server is listening on 42001
 ```
 
-## Measuring Latency and Performance
+## Measure Latency and Performance
 Supposed measures the the duration for each of: `given`, `when`, `then`. In NodeJS, it uses `process.hrtime`, and in the browser it uses `performance.now`, both of which are reported to be accurate to the microsecond.
 
 While supposed avoids including it's own operations in the measurements, it does nothing to isolate the measurements from event loop effects, such as other operations running concurrently in the same process. Because of this, the performance measurements should only be used for subjective analysis (i.e. approximate comparison, etc.) unless you are running only one test.
@@ -750,21 +750,23 @@ The easiest way to check these measurements out is to use the _performance_ form
 * [Naming Suites](#naming-suites)
 * [Running Multiple Suites](#running-multiple-suites)
 * [Using Promises in Tests](#using-promises-in-tests)
-* [Using async-await in Tests](#using-async---await-in-tests)
+* [Using async-await in Tests](#using-async-await-in-tests)
 * [Running Tests Serially](#running-tests-serially)
 * [Skipping Tests](#skipping-tests)
 * [Marking Tests as TODO](#skipping-tests)
 * [Running Specific Tests (only)](#running-specific-tests-only)
-* [Nest/Branch Inheritance](#nest-branch-inheritance)
+* [Nest/Branch Inheritance](#nestbranch-inheritance)
+* [About Test Events](#about-test-events)
 * [Subscribing to Test Events](#subscribing-to-test-events)
 * [Writing a Test Reporter](#writing-a-test-reporter)
 * [Registering A Test Reporter](#registering-a-test-reporter)
 * [Streaming Output to a File](#streaming-output-to-a-file)
-* [Adding Information to Report Output (event.log)](#adding-information-to-report-output-event.log)
-* [Adding Context to Test Events (event.context)](#adding-context-to-test-events-event.context)
+* [Adding Information to Report Output (event.log)](#adding-context-to-test-events-eventlog)
+* [Adding Context to Test Events (event.context)](#adding-context-to-test-events-eventcontext)
 * [Piping Browser Test Output to the Terminal](#piping-browser-test-output-to-the-terminal)
 * [Custom Browser Template](#custom-browser-template)
 * [Writing Your Own Test Runner](#writing-your-own-test-runner)
+* [Programmatic Report Consumption](#programmatic-report-consumption)
 
 ### Global Setup and Teardown
 The runner returns a Promise, which returns the context: the results of each test file, the test file paths, the configuration that was used to execute the tests, and the suite. If you want to run an operation (i.e. teardown) after all tests pass, your tests have to both accept suite injection, and return a promise that resolves after all assertions in that file are complete. This can be accomplished by nesting all of your tests under one grouping, and returning that (e.g. like _describe_ in mocha, jasmine, etc.).
