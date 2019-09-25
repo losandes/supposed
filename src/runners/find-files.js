@@ -73,9 +73,20 @@ module.exports = {
       const walker = new Walker(config)
 
       const paths = config.directories.reduce((testPaths, directory) => {
-        return testPaths.concat(walker.walkSync(path.join(config.cwd, directory))
-          .filter(file => config.matchesNamingConvention.test(file))
-        )
+        let dirExists = false
+
+        try {
+          fs.statSync(directory)
+          dirExists = true
+        } catch (e) {}
+
+        if (dirExists) {
+          return testPaths.concat(walker.walkSync(path.join(config.cwd, directory))
+            .filter(file => config.matchesNamingConvention.test(file))
+          )
+        } else {
+          return testPaths
+        }
       }, [])
 
       // return a promise in case we decide to make the walker async

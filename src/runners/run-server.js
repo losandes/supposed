@@ -13,7 +13,7 @@ module.exports = {
     }
     const makeTestBundle = ({ paths, template, stringifiedSuiteConfig }) => {
       const beginning = template[0]
-      const end = template[1]
+      const end = template.length >= 2 ? template[1] : ''
       const modules = [beginning]
       paths.forEach((file) => modules.push(makeIIFE(fs.readFileSync(file).toString())))
       modules.push(end.replace(/\/\*{{suiteConfig}}\*\//, stringifiedSuiteConfig))

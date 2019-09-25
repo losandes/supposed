@@ -1,31 +1,32 @@
 const { execFile } = require('child_process')
 const path = require('path')
 
-const suites = []
-// suites.push('./browser-tests/index.js')
-suites.push('./coalescing-to-md/index.js')
-suites.push('./custom-reporters/index.js')
-suites.push('./custom-reporters/reporter-factory.js')
-suites.push('./reporter-order/index.js')
-suites.push('./runners/multiple-suites/index.js')
-suites.push('./runners/named-suites/index.js')
-suites.push('./runners/setup-teardown/index.js')
-suites.push('./runners/skipping-file-discovery/index.js')
-// suites.push('./runners/skipping-file-discovery-browser/index.js')
-suites.push('./runners/skipping-file-discovery-plan/index.js')
-// suites.push('./runners/using-browser-test-server/index.js')
-suites.push('./runners/using-nodejs-runner/index.js')
-suites.push('./runners/using-nodejs-runner-with-injection/index.js')
-suites.push('./Suites-setup-teardown/index.js')
-suites.push('./writing-a-reporter/index.js')
-
-suites.push('./custom-dsl.js')
-suites.push('./event-context.js')
-suites.push('./event-log.js')
-suites.push('./no-suite.js')
-suites.push('./Suites.js')
-suites.push('./using-async-await.js')
-suites.push('./using-promises.js')
+const suites = [
+  // './browser-tests/index.js',
+  // './runners/skipping-file-discovery-browser/index.js',
+  // './runners/using-browser-test-server/index.js',
+  // './runners/using-browser-test-server-custom-template/index.js',
+  './coalescing-to-md/index.js',
+  './custom-reporters/index.js',
+  './custom-reporters/reporter-factory.js',
+  './reporter-order/index.js',
+  './runners/multiple-suites/index.js',
+  './runners/named-suites/index.js',
+  './runners/setup-teardown/index.js',
+  './runners/skipping-file-discovery/index.js',
+  './runners/skipping-file-discovery-plan/index.js',
+  './runners/using-nodejs-runner/index.js',
+  './runners/using-nodejs-runner-with-injection/index.js',
+  './Suites-setup-teardown/index.js',
+  './writing-a-reporter/index.js',
+  './custom-dsl.js',
+  './event-context.js',
+  './event-log.js',
+  './no-suite.js',
+  './Suites.js',
+  './using-async-await.js',
+  './using-promises.js'
+]
 
 const promises = suites.map((suite) => new Promise((resolve, reject) => {
   execFile('node', [path.join(__dirname, suite)], (error, stdout, stderr) => {

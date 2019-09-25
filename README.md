@@ -588,10 +588,12 @@ Unless you provide a `paths` property on the runner config, the browser test ser
 * `dependencies` {string[]} - an array of paths to scripts that your library depends on - these precede the tests in the resulting web page
 * `paths` {string[]} - an array of file paths to the files you want the server to concatenate - this will [Skip File Discovery With the Browser Test Server](skipping-file-discovery-with-the-browser-test-server). There's no need to set both `dependencies` _and_ `paths`
 * `styles` {string} - CSS to customize the test view
-* `supposed` {string} - the path to this library, if you have it somewhere special
-* `template` {string} - your own [test-browser-template](src/runners/test-browser-template.js) if the default one doesn't meet your needs. Note that `// {{TEST_MODULES}}` is where the tests get injected, so if you omit, or change that line, no tests will be printed to the page
-* `stringifiedSuiteConfig` {string} - the config for supposed _in_ the browser (you have one to run everything, but our browser tests can have their own configuration) i.e. `{ reporter: 'tap' }`
+* `supposed` {string} - the path to this library, if you have it somewhere special, or if your cwd isn't the directory where your node_modules are
+* `template` {string} - your own [test-browser-template](src/runners/test-browser-template.js) if the default one doesn't meet your needs. Note that `// {{TEST_MODULES}}` is where the discovered tests get injected, so if you omit, or change that line, no tests will be printed to the page
+* `stringifiedSuiteConfig` {string} - the config for supposed _in_ the browser (you have one to run everything, but our browser tests can have their own configuration) i.e. `{ reporter: 'tap' }` (if your config is much more than the reporter, you might opt for a custom template instead)
 * `page` {string} - full control over the page and generation of it - if you're using this, you might be better off just writing your own browser test runner
+
+> Also see [Custom Browser Template](#custom-browser-template) for an example
 
 #### Piping Browser Test Output to the Terminal
 If you're going to use supposed with a headless browser for testing, this example demonstrates how to get the output from the browser into your terminal, and `process.exit(1)`, if any of the tests fail. The examples use puppeteer as the headless browser.
@@ -735,7 +737,7 @@ module.exports = require('supposed')
 ## Measuring Latency and Performance
 Supposed measures the the duration for each of: `given`, `when`, `then`. In NodeJS, it uses `process.hrtime`, and in the browser it uses `performance.now`, both of which are reported to be accurate to the microsecond.
 
-While supposed avoids including it's own operations in the measurements, it does nothing to isolate the measurements from event loop effects, such as other operations running concurrently in the same process. Because of this, the performance measurements should only be used for subjective analysis (i.e. approximate comparison, etc.).
+While supposed avoids including it's own operations in the measurements, it does nothing to isolate the measurements from event loop effects, such as other operations running concurrently in the same process. Because of this, the performance measurements should only be used for subjective analysis (i.e. approximate comparison, etc.) unless you are running only one test.
 
 The easiest way to check these measurements out is to use the _performance_ formatter in conjunction with the _list_, and _tap_ reporters: `node tests -r list,performance`, or `node tests -r tap,performance`. For a more detailed example, checkout [Registering A Test Reporter](#registering-a-test-reporter).
 
@@ -761,6 +763,7 @@ The easiest way to check these measurements out is to use the _performance_ form
 * [Adding Information to Report Output (event.log)](#adding-information-to-report-output-event.log)
 * [Adding Context to Test Events (event.context)](#adding-context-to-test-events-event.context)
 * [Piping Browser Test Output to the Terminal](#piping-browser-test-output-to-the-terminal)
+* [Custom Browser Template](#custom-browser-template)
 * [Writing Your Own Test Runner](#writing-your-own-test-runner)
 
 ### Global Setup and Teardown
@@ -1536,6 +1539,113 @@ module.exports = test('when dividing a number by zero', {
     }
   }
 })
+```
+
+### Custom Browser Template
+The browser runner is optimized for testing libraries, and it doesn't do any packaging. There are only so many assumptions it can make. This example demonstrates how you can take advantage of the tooling around the browser runner, but with a custom template. In this example, we:
+
+* Hard code the test paths
+* Disable test discovery
+* Use a custom template for executing the suite
+
+> This example doesn't get involved with packaging (i.e. webpack/babel/browserify), but this is likely the best way to use the library if you are using packaging technologies.
+
+```JavaScript
+// ./first-module/first-spec.js
+(function (root) {
+  // eslint-disable-line no-extra-semi
+  'use strict';
+
+  root.firstSpec = (test) => test('given first-spec, when...', {
+    given: () => 42,
+    when: (given) => given / 0,
+    'it...': () => (err, actual) => {
+      if (err) {
+        throw err
+      }
+
+      if (actual !== Infinity) {
+        throw new Error(`Expected ${actual} === Infinity`)
+      }
+    }
+  })
+})(window);
+
+// ./second-module/second-spec.js
+(function (root) {
+  // eslint-disable-line no-extra-semi
+  'use strict';
+
+  root.secondSpec = (test) => test('given second-spec, when...', {
+    given: () => 42,
+    when: (given) => given / 0,
+    'it...': () => (err, actual) => {
+      if (err) {
+        throw err
+      }
+
+      if (actual !== Infinity) {
+        throw new Error(`Expected ${actual} === Infinity`)
+      }
+    }
+  })
+})(window)
+
+// ./test-template.js
+(function (root) {
+  'use strict';
+
+  root.supposed
+    .Suite({
+      reporter: 'event'
+    })
+    .runner()
+    .runTests([
+      root.firstSpec,
+      root.secondSpec
+    ])
+})(window);
+
+
+// ./browser-tests.js
+const fs = require('fs')
+const path = require('path')
+
+module.exports = require('supposed')
+  .runner({
+    // give your test screen a title
+    title: 'custom-template',
+    // set the current working directory, if necessary
+    // this should be the directory where your node_modules are
+    cwd: process.cwd(),
+    // set the port if you want to
+    port: 42006,
+    // providing a directory that doesn't exist circumvents test discovery
+    // because no tests will be found there
+    directories: ['./deadend'],
+    // put some paths to the tests here, since we circumvented test discovery
+    // you can also add any other libraries your code depends on here
+    // _tip_: add the path to supposed here if you chose a cwd other than where
+    // your node_modules are
+    // _tip_: if you packaged your app, and/or tests, this is where you would
+    // refererence the output bundle
+    dependencies: [
+      'first-module/first-spec.js',
+      'second-module/second-spec.js'
+    ],
+    /*
+     * Alternatively you can load them yourself with the `scripts` property.
+     * This is particularly useful if the paths aren't relative
+     scripts: [
+       fs.readFileSync(path.join(__dirname, 'first-spec.js')).toString(),
+       fs.readFileSync(path.join(__dirname, 'second-spec.js')).toString()
+     ],      
+     */   
+    // The template will run after all of the dependencies, and/or scripts,
+    // so it's safe to compose whatever you need to, and run the suite
+    template: fs.readFileSync(path.join(__dirname, 'test-template.js')).toString()
+  })
+  .startServer()
 ```
 
 ### Writing Your Own Test Runner
