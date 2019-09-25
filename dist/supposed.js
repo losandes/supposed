@@ -1742,7 +1742,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     factory: function factory(dependencies) {
       'use strict';
 
-      var clock = dependencies.clock;
+      var clock = dependencies.clock,
+          envvars = dependencies.envvars;
       var TYPE_EXPRESSION = /(^START$)|(^START_BATCH$)|(^START_TEST$)|(^TEST$)|(^END_BATCH$)|(^END_TALLY$)|(^FINAL_TALLY$)|(^END$)/;
       var STATUS_EXPRESSION = /(^PASSED$)|(^SKIPPED$)|(^FAILED$)|(^BROKEN$)/;
       var testCount = 0;
@@ -1808,7 +1809,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         }
 
         if (event.plan) {
-          self.plan = event.plan;
+          self.plan = envvars.verbosity === 'debug' ? event.plan : {
+            count: event.plan.count,
+            completed: event.plan.completed
+          };
         }
 
         if (event.error) {
@@ -1828,11 +1832,29 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         }
 
         if (event.tally) {
-          self.tally = event.tally;
+          self.tally = envvars.verbosity === 'debug' ? event.tally : {
+            total: event.tally.total,
+            passed: event.tally.passed,
+            skipped: event.tally.skipped,
+            failed: event.tally.failed,
+            broken: event.tally.broken,
+            startTime: event.tally.startTime,
+            endTime: event.tally.endTime,
+            duration: event.tally.duration
+          };
         }
 
         if (event.totals) {
-          self.totals = event.totals;
+          self.totals = envvars.verbosity === 'debug' ? event.totals : {
+            total: event.totals.total,
+            passed: event.totals.passed,
+            skipped: event.totals.skipped,
+            failed: event.totals.failed,
+            broken: event.totals.broken,
+            startTime: event.totals.startTime,
+            endTime: event.totals.endTime,
+            duration: event.totals.duration
+          };
         }
 
         return Object.freeze(self);
@@ -2289,6 +2311,53 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
       return {
         BriefFormatter: BriefFormatter
+      };
+    }
+  };
+  module.exports = {
+    name: 'CsvFormatter',
+    factory: function factory(dependencies) {
+      'use strict';
+
+      var TestEvent = dependencies.TestEvent;
+      var SYMBOLS = {
+        PASSED: 'PASS',
+        FAILED: 'FAIL',
+        BROKEN: '!!!!',
+        SKIPPED: 'SKIP',
+        INFO: 'INFO'
+      };
+      var COLUMNS = 'STATUS,BEHAVIOR';
+
+      var formatBehavior = function formatBehavior(behavior) {
+        return "\"".concat(behavior.replace('"', '""'), "\"");
+      };
+
+      function CsvFormatter() {
+        var _format = function _format(event) {
+          if (event.type === TestEvent.types.START) {
+            return COLUMNS;
+          } else if (event.type === TestEvent.types.TEST) {
+            return "".concat(SYMBOLS[event.status], ",").concat(formatBehavior(event.behavior));
+          }
+        };
+
+        var format = function format(event) {
+          if (event.isDeterministicOutput) {
+            return event.testEvents.map(_format).concat([_format(event.endEvent)]).join('\n');
+          } else {
+            return _format(event);
+          }
+        }; // /format
+
+
+        return {
+          format: format
+        };
+      }
+
+      return {
+        CsvFormatter: CsvFormatter
       };
     }
   };
@@ -3443,6 +3512,14 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             DefaultFormatter: DefaultFormatter,
             TestEvent: TestEvent
           }).BriefFormatter()
+        }).write
+      };
+    }).add(function CsvReporter() {
+      return {
+        write: ConsoleReporter({
+          formatter: module.factories.CsvFormatterFactory({
+            TestEvent: TestEvent
+          }).CsvFormatter()
         }).write
       };
     }).add(function EventReporter() {
