@@ -21,10 +21,10 @@ module.exports = function (describe, dependencies) {
       },
       'the config that is returned should have the overrides': (t) => (err, actual) => {
         t.ifError(err)
-        t.strictEqual(actual.config.cwd.indexOf('tests/discoverer-meta-specs') > -1, true)
-        t.deepStrictEqual(actual.config.directories, ['.'])
-        t.strictEqual(actual.config.matchesNamingConvention.toString(), '/.\\/namingspec\\.js$/i')
-        t.strictEqual(actual.config.matchesIgnoredConvention.toString(), '/^ignore$/i')
+        t.strictEqual(actual.runConfig.cwd.indexOf('tests/discoverer-meta-specs') > -1, true)
+        t.deepStrictEqual(actual.runConfig.directories, ['.'])
+        t.strictEqual(actual.runConfig.matchesNamingConvention.toString(), '/.\\/namingspec\\.js$/i')
+        t.strictEqual(actual.runConfig.matchesIgnoredConvention.toString(), '/^ignore$/i')
       }
     },
     'when a runner is configured to match a different naming convention, using a regular expression': {
@@ -46,9 +46,9 @@ module.exports = function (describe, dependencies) {
       },
       'the config that is returned should have the overrides': (t) => (err, actual) => {
         t.ifError(err)
-        t.deepStrictEqual(actual.config.directories, ['./tests/discoverer-meta-specs'])
-        t.strictEqual(actual.config.matchesNamingConvention.toString(), '/.\\/namingspec\\.js$/i')
-        t.strictEqual(actual.config.matchesIgnoredConvention.toString(), '/^ignore$/i')
+        t.deepStrictEqual(actual.runConfig.directories, ['./tests/discoverer-meta-specs'])
+        t.strictEqual(actual.runConfig.matchesNamingConvention.toString(), '/.\\/namingspec\\.js$/i')
+        t.strictEqual(actual.runConfig.matchesIgnoredConvention.toString(), '/^ignore$/i')
       }
     },
     'when a runner is configured to match a different naming convention, using a test function': {

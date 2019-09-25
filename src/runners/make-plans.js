@@ -54,10 +54,10 @@ module.exports = {
       }
     }
 
-    const mapToResults = (config, paths = []) => (results) => {
+    const mapToResults = (runConfig, paths = []) => (results) => {
       return {
         files: paths,
-        config,
+        runConfig,
         broken: results
           .filter((result) => result.status !== 'fullfilled')
           .map((result) => result.reason)
@@ -65,15 +65,15 @@ module.exports = {
     }
 
     const makePlans = (suite) => (context) => {
-      const { config, tests, paths } = context
+      const { runConfig, tests, paths } = context
 
       if (!tests) {
         throw new Error('run-tests expects tests to be provided')
       }
 
-      return Promise.resolve(tests.map(toPromise(config || context, suite)))
+      return Promise.resolve(tests.map(toPromise(runConfig || context, suite)))
         .then(allSettled)
-        .then(mapToResults(config, paths))
+        .then(mapToResults(runConfig, paths))
     }
 
     return { makePlans }

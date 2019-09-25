@@ -323,7 +323,7 @@ module.exports = {
             files: files,
             results: output.results,
             broken,
-            config: planContext.config,
+            runConfig: planContext.runConfig,
             suite,
             totals: tally
           }
@@ -420,11 +420,11 @@ module.exports = {
           return test
         }
 
-        test.runner = (runnerConfig) => {
+        test.runner = (runConfig) => {
           runnerMode = true
-          runnerConfig = runnerConfig || {}
+          runConfig = runConfig || {}
           if (envvars.file) {
-            runnerConfig.matchesNamingConvention = envvars.file
+            runConfig.matchesNamingConvention = envvars.file
           }
 
           const findAndStart = browserRunner(_suiteConfig, registerReporters, test)
@@ -436,7 +436,7 @@ module.exports = {
           }
 
           const findAndPlan = () => {
-            return findFiles(runnerConfig)
+            return findFiles(runConfig)
               .then(resolveTests())
               .then(makePlans(test))
               .then(addPlanToContext())
@@ -458,12 +458,12 @@ module.exports = {
             }
 
             if (Array.isArray(planOrTests)) {
-              runnerConfig.tests = planOrTests
+              runConfig.tests = planOrTests
             } else if (typeof planOrTests === 'function') {
-              runnerConfig.tests = planOrTests()
+              runConfig.tests = planOrTests()
             }
 
-            return makePlans(test)(runnerConfig)
+            return makePlans(test)(runConfig)
               .then(addPlanToContext())
               .then(run())
               .then(_suiteConfig.exit)
@@ -477,7 +477,7 @@ module.exports = {
             // run (browser|node)
             runTests,
             // start test server (browser)
-            startServer: findAndStart(runnerConfig)
+            startServer: findAndStart(runConfig)
           }
         }
 

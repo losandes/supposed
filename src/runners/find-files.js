@@ -90,7 +90,7 @@ module.exports = {
       }, [])
 
       // return a promise in case we decide to make the walker async
-      return Promise.resolve({ config, paths })
+      return Promise.resolve({ runConfig: config, paths })
     }
 
     return { findFiles }
