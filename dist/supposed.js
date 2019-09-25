@@ -1571,30 +1571,33 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               return findFiles(options).then(resolveTests()).then(makePlans(test)).then(addPlanToContext());
             };
 
-            var _run = function run() {
+            var run = function run() {
               return runner(config, registerReporters, test, publishOneBrokenTest, tester(config, registerReporters, runBatch, runnerMode));
             };
 
+            var runTests = function runTests(planOrTests) {
+              if (planOrTests && isPlan(planOrTests.plan)) {
+                return Promise.resolve(planOrTests).then(run()).then(config.exit);
+              }
+
+              if (Array.isArray(planOrTests)) {
+                options.tests = planOrTests;
+              } else if (typeof planOrTests === 'function') {
+                options.tests = planOrTests();
+              }
+
+              return makePlans(test)(options).then(addPlanToContext()).then(run()).then(config.exit);
+            };
+
             return {
+              // find and plan (node)
               plan: findAndPlan,
               // find and run (node)
               run: function run() {
-                return findAndPlan().then(_run()).then(config.exit);
+                return findAndPlan().then(runTests);
               },
               // run (browser|node)
-              runTests: function runTests(planOrTests) {
-                if (planOrTests && isPlan(planOrTests.plan)) {
-                  return Promise.resolve(planOrTests).then(_run()).then(config.exit);
-                }
-
-                if (Array.isArray(planOrTests)) {
-                  options.tests = planOrTests;
-                } else if (typeof planOrTests === 'function') {
-                  options.tests = planOrTests();
-                }
-
-                return makePlans(test)(options).then(addPlanToContext()).then(_run()).then(config.exit);
-              },
+              runTests: runTests,
               // start test server (browser)
               startServer: findAndStart(options)
             };

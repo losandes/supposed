@@ -447,31 +447,32 @@ module.exports = {
             tester(config, registerReporters, runBatch, runnerMode)
           )
 
-          return {
-            plan: findAndPlan,
-            // find and run (node)
-            run: () => findAndPlan()
-              .then(run())
-              .then(config.exit),
-            // run (browser|node)
-            runTests: (planOrTests) => {
-              if (planOrTests && isPlan(planOrTests.plan)) {
-                return Promise.resolve(planOrTests)
-                  .then(run())
-                  .then(config.exit)
-              }
-
-              if (Array.isArray(planOrTests)) {
-                options.tests = planOrTests
-              } else if (typeof planOrTests === 'function') {
-                options.tests = planOrTests()
-              }
-
-              return makePlans(test)(options)
-                .then(addPlanToContext())
+          const runTests = (planOrTests) => {
+            if (planOrTests && isPlan(planOrTests.plan)) {
+              return Promise.resolve(planOrTests)
                 .then(run())
                 .then(config.exit)
-            },
+            }
+
+            if (Array.isArray(planOrTests)) {
+              options.tests = planOrTests
+            } else if (typeof planOrTests === 'function') {
+              options.tests = planOrTests()
+            }
+
+            return makePlans(test)(options)
+              .then(addPlanToContext())
+              .then(run())
+              .then(config.exit)
+          }
+
+          return {
+            // find and plan (node)
+            plan: findAndPlan,
+            // find and run (node)
+            run: () => findAndPlan().then(runTests),
+            // run (browser|node)
+            runTests,
             // start test server (browser)
             startServer: findAndStart(options)
           }
