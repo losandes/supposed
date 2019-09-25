@@ -281,6 +281,24 @@ module.exports = {
         })
     }
 
+    const reduceOutputToResults = (output) => {
+      if (!Array.isArray(output) && output && output.results) {
+        return output.results
+      } else if (!Array.isArray(output) && output) {
+        return [output.results]
+      } else if (!Array.isArray(output)) {
+        return []
+      } else {
+        return output.reduce((results, batchResult) => {
+          if (batchResult) {
+            return results.concat(batchResult.results)
+          } else {
+            return results
+          }
+        }, [])
+      }
+    }
+
     const runner = (config, registerReporters, suite, publishOneBrokenTest, execute) => (planContext) => {
       const { plan, files, broken } = planContext
       registerReporters()
@@ -309,7 +327,8 @@ module.exports = {
         .then((output) => {
           // only get the tally _after_ END_TALLY was emitted
           return { output, tally: Tally.getSimpleTally() }
-        }).then((context) => {
+        })
+        .then((context) => {
           plan.completed = context.tally.total
 
           return pubsub.publish({
@@ -318,15 +337,30 @@ module.exports = {
             totals: context.tally,
             plan
           }).then(() => context) // pass through
-        }).then(({ output, tally }) => {
+        })
+        .then((context) => {
+          context.results = reduceOutputToResults(context.output)
+          return context
+        })
+        .then((context) => {
           return {
-            files: files,
-            results: output.results,
-            broken,
+            files: files || [],
+            results: context.results,
+            broken: broken || [],
             runConfig: planContext.runConfig,
             suite,
-            totals: tally
+            totals: context.tally
           }
+        })
+        .catch((e) => {
+          pubsub.publish({
+            type: TestEvent.types.TEST,
+            status: TestEvent.status.BROKEN,
+            behavior: 'Failed to load test',
+            suiteId: config.name,
+            error: e
+          })
+          throw e
         })
     }
 
@@ -349,7 +383,7 @@ module.exports = {
      * @param suiteConfig - the arg that was passed to Suite
      * @param suiteDotConfigureOptions - the arg that was passed to `configure`
      */
-    const makeConfig = (suiteConfig, suiteDotConfigureOptions) => {
+    const _makeSuiteConfig = (suiteConfig, suiteDotConfigureOptions) => {
       if (!suiteConfig && !suiteDotConfigureOptions) {
         return envvars // envvars is the default makeSuiteConfig
       } else if (suiteDotConfigureOptions) {
@@ -375,7 +409,7 @@ module.exports = {
       const configure = (suiteDotConfigureOptions) => {
         pubsub.reset()
         pubsub.subscribe(reporterFactory.get(Tally.name))
-        const _suiteConfig = makeConfig(suiteConfig, suiteDotConfigureOptions)
+        const _suiteConfig = _makeSuiteConfig(suiteConfig, suiteDotConfigureOptions)
         const registerReporters = reportRegistrar(_suiteConfig)
         const publishOneBrokenTest = brokenTestPublisher(_suiteConfig.name)
         const { makeBatch, makeBatchId } = new BatchComposer(_suiteConfig)
