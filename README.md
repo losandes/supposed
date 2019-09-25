@@ -2,7 +2,10 @@ Supposed
 ========
 Supposed is a fast, hackable test framework for Node.js, TypeScript, and the Browser. Supposed runs tests concurrently, so test suites complete as quickly as possible. It has 0 dependencies (not counting dev-dependencies), and supports many Domain Service Languages DSLs: BDD, TDD, xunit, custom.
 
-## Highlights
+## TOC
+
+#### Highlights
+
 * [Get Started with Node](#get-started-with-node)
 * [Get Started with the Browser](#get-started-with-the-browser)
 * [Get Started with TypeScript](#typescript-support)
@@ -19,7 +22,7 @@ Supposed is a fast, hackable test framework for Node.js, TypeScript, and the Bro
 * [Using async-await in Tests](#using-async-await-in-tests)
 
 <details>
-  <summary>TOC</summary>
+  <summary>Full Table of Contents</summary>
 
   * [Test Syntax and DSLs](#test-syntax-and-domain-service-languages-dsls))
     * [The BDD DSL (Given, When, Then)](#the-bdd-dsl-given-when-then)
