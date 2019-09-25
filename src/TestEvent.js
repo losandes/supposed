@@ -73,7 +73,8 @@ module.exports = {
       if (event.plan) {
         self.plan = envvars.verbosity === 'debug' ? event.plan : {
           count: event.plan.count,
-          completed: event.plan.completed
+          completed: event.plan.completed,
+          order: event.plan.order
         }
       }
 

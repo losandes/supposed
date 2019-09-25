@@ -1,5 +1,8 @@
 ## ignore built typescript files
 tests.typescript/*.js
+log.json
+log.md
+log.csv
 
 tests/manual
 .DS_Store

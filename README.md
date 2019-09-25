@@ -277,7 +277,7 @@ Supposed has options that can be set with command-line arguments, or envvars. Th
 * **no-color**: (default is based on TTY) force supposed to display all output without color
 * **report-order**: (`deterministic|non-deterministic`) (default is per-reporter) Some reporters print test outcomes in a non-deterministic order because tests run concurrently. You can override this by setting the order to "deterministic"
 * **time-units**: (`s|ms|us|ns`) (default is `us`) the units to use for event timestamps
-* **verbosity**: (`info|debug`) (default is `info`) TestEvents that include plans, and totals can be very verbose - enough to overwhelm `jq` with the `json` reporter (use `node tests -r tap -v debug | npx tap-parser -j | jq` to get around that). By default the TestEvents just expose metrics, but if you need to glean more information from the events, such as the planned tests, test order, or the results of the tests, set the verbosity to 'debug'
+* **verbosity**: (`info|debug`) (default is `info`) TestEvents that include plans, and totals can be very verbose. By default the TestEvents just expose metrics, but if you need to glean more information from the events, such as the planned tests, or the results of the tests, set the verbosity to 'debug'
 
 > When running in the terminal (NodeJS), Supposed detects whether it is in TTY and automatically turns colors off when it is not (i.e. if you pipe the output of supposed to another command)
 >
@@ -301,7 +301,7 @@ $ node tests -m foo -r tap -u ms -o deterministic | npx tap-parser -j | jq
 
 > In that example, we run tests that have the word "foo" in their descriptions, using TAP output, and milliseconds for timestamps. We pipe the output of the tests into another package, [tap-parser](https://www.npmjs.com/package/tap-parser), and then pipe the output of that package into [jq](https://stedolan.github.io/jq/).
 
-> _tip_: if you need `debug` verbosity, and want to use `jq`, run it through a tap parser: `node tests -r tap -v debug | npx tap-parser -j | jq`
+> _tip_: deterministic reporting can overwhelm `jq`. If you have the luxury of filesysem I/O, it can work better with a trip to the disk `node tests -r json -o deterministic > log.json && cat log.json | jq`
 
 ```Shell
 $ node tests --no-color
@@ -421,7 +421,7 @@ Whether your using `supposed.configure({...})`, or creating a new `supposed.Suit
 * `whenSynonyms` {string[]} - an array of words to be used in place of "when|act|topic"
 * `timeUnits` {string} (`s|ms|us|ns`) (default is `us`) - the units to use for event timestamps
 * `reportOrder` {string} (`deterministic|non-deterministic`)  - supposed runs tests concurrently, and some reporters report as tests complete (non-deterministically). _reportOrder_ lets you override that behavior and report deterministically
-* `verbosity` {string} (`info|debug`; default is `info`) TestEvents that include plans, and totals can be very verbose - enough to overwhelm `jq` with the `json` reporter (use `node tests -r tap -v debug | npx tap-parser -j | jq` to get around that). By default the TestEvents just expose metrics, but if you need to glean more information from the events, such as the planned tests, test order, or the results of the tests, set the verbosity to 'debug'
+* `verbosity` {string} (`info|debug`; default is `info`) TestEvents that include plans, and totals can be very verbose. By default the TestEvents just expose metrics, but if you need to glean more information from the events, such as the planned tests, or the results of the tests, set the verbosity to 'debug'
 * `exit` {function} - By default, the runner will `process.exit(1)` if any tests fail. This is to support normal behavior with CI, or git pre-commit, and pre-push hooks. You can override this by providing your own exit function
 * `planBuffer` {number} - the milliseconds after plans are created to wait before executing a plan. If you aren't using a suite, supposed doesn't know when all of the tests are planned, so it relies on a race condition that assumes if no plans have been created in a period of time, then all plans must be submitted. On slower machines, it may be possible for this race condition to be beat, so you can override it.
 

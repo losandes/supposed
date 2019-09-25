@@ -1811,7 +1811,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         if (event.plan) {
           self.plan = envvars.verbosity === 'debug' ? event.plan : {
             count: event.plan.count,
-            completed: event.plan.completed
+            completed: event.plan.completed,
+            order: event.plan.order
           };
         }
 
@@ -2507,29 +2508,41 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
       var TestEvent = dependencies.TestEvent;
 
+      var cloneWithoutOrder = function cloneWithoutOrder(event) {
+        var clone = JSON.parse(JSON.stringify(event));
+
+        if (clone.plan && Array.isArray(clone.plan.order)) {
+          delete clone.plan.order;
+        }
+
+        return clone;
+      };
+
+      var stringify = function stringify(event) {
+        var _event = event;
+
+        if ([TestEvent.types.START, TestEvent.types.END].indexOf(event.type) > -1) {
+          _event = cloneWithoutOrder(event);
+        }
+
+        return "".concat(JSON.stringify({
+          event: _event
+        }, null, 2));
+      };
+
       function JsonFormatter() {
         var format = function format(event) {
           if (event.type === TestEvent.types.START) {
-            return "[".concat(JSON.stringify({
-              event: event
-            }, null, 2), ",");
+            return "[".concat(stringify(event), ",");
           } else if (event.type === TestEvent.types.END) {
-            return "".concat(JSON.stringify({
-              event: event
-            }, null, 2), "]");
+            return "".concat(stringify(event), "]");
           } else if ([TestEvent.types.START_TEST, TestEvent.types.END_TALLY].indexOf(event.type) === -1 && !event.isDeterministicOutput) {
-            return "".concat(JSON.stringify({
-              event: event
-            }, null, 2), ",");
+            return "".concat(stringify(event), ",");
           } else if (event.isDeterministicOutput) {
             var output = event.testEvents.map(function (_event) {
-              return "".concat(JSON.stringify({
-                event: _event
-              }, null, 2));
+              return stringify(_event);
             }).join(',\n');
-            output += ",\n".concat(JSON.stringify({
-              event: event.endEvent
-            }, null, 2), "]");
+            output += ",\n".concat(stringify(event.endEvent), "]");
             return output;
           }
         };
