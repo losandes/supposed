@@ -1,11 +1,14 @@
 {
   "name": "supposed",
-  "version": "0.3.1",
+  "version": "1.0.0-beta.1",
   "description": "a test library for node.js",
   "main": "index.js",
   "scripts": {
-    "test": "node tests/index.js",
-    "pre-push": "npm test",
+    "build": "node build.browser.js",
+    "pre-push": "npm test && node pre-push.js",
+    "test": "npm run test:ts && node tests.browser && node tests.examples && node tests -r nyan",
+    "test:ts": "tsc -p ./tsconfig.json && node tests.typescript/index.js",
+    "test:tap": "node tests -r tap | npx tap-parser -j | jq",
     "watch": "nodemon -e js --exec 'node tests/index.js --tap | tap-nyan'"
   },
   "pre-push": [
@@ -40,13 +43,21 @@
   },
   "homepage": "https://github.com/losandes/supposed#readme",
   "devDependencies": {
+    "@babel/core": "~7.6.0",
+    "@babel/preset-env": "~7.6.0",
+    "@types/chai": "~4.2.3",
+    "@types/node": "~12.7.5",
     "chai": "~4.2.0",
-    "eslint": "~6.1.0",
-    "eslint-config-standard": "~13.0.1",
+    "eslint": "~6.4.0",
+    "eslint-config-standard": "~14.1.0",
     "eslint-plugin-import": "~2.18.2",
-    "eslint-plugin-node": "~9.1.0",
+    "eslint-plugin-node": "~10.0.0",
     "eslint-plugin-promise": "~4.2.1",
-    "eslint-plugin-standard": "~4.0.0",
-    "pre-push": "~0.1.1"
+    "eslint-plugin-standard": "~4.0.1",
+    "pre-push": "~0.1.1",
+    "puppeteer": "~1.20.0",
+    "supposed": ".",
+    "tap-parser": "~9.3.3",
+    "typescript": "~3.6.3"
   }
 }

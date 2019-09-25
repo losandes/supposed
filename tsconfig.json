@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "es2017",
+    "lib": ["ES2017", "DOM"],
+    "outDir": "./tests.typescript",
+    "sourceMap": false,
+    "strict": true
+  },
+  "include": ["./tests.typescript/*.ts"],
+  "exclude": []
+}
