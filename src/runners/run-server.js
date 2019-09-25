@@ -198,7 +198,7 @@ module.exports = {
           return console.log('something bad happened', err)
         }
 
-        console.log(`# supposed server is listening on ${port}`)
+        console.log(`# supposed server is listening at http://localhost:${port}`)
       })
 
       return server

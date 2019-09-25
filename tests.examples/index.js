@@ -9,6 +9,7 @@ const suites = [
   './coalescing-to-md/index.js',
   './custom-reporters/index.js',
   './custom-reporters/reporter-factory.js',
+  './manual-test-requires/index.js',
   './reporter-order/index.js',
   './runners/manipulate-plan',
   './runners/multiple-suites/index.js',

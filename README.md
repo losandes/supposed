@@ -1,6 +1,6 @@
 Supposed
 ========
-Supposed is a test framework for Node.js, TypeScript, and the Browser. Supposed runs tests concurrently, so test suites complete as quickly as possible. It has 0 dependencies (not counting dev-dependencies), and supports many Domain Service Languages DSLs: BDD, TDD, xunit, custom.
+Supposed is a fast, hackable test framework for Node.js, TypeScript, and the Browser. Supposed runs tests concurrently, so test suites complete as quickly as possible. It has 0 dependencies (not counting dev-dependencies), and supports many Domain Service Languages DSLs: BDD, TDD, xunit, custom.
 
 * [Get Started with Node](#get-started-with-node)
 * [Get Started with the Browser](#get-started-with-the-browser)
@@ -59,6 +59,8 @@ npm install --save-dev supposed
 })(supposed)
 </script>
 ```
+
+Supposed also has a lot of [browser tooling for more comprehensive testing](#using-the-browser-test-server). You might also be interested in [piping browser test output to the terminal](#piping-browser-test-output-to-the-terminal), and creating [custom browser templates](#custom-browser-template).
 
 ## Test Syntax and Domain Service Languages (DSLs)
 
@@ -656,7 +658,7 @@ module.exports = suite.runner({
       }
     })
 
-    await page.goto(`http://localhost:${context.config.port}`, { waitUntil: 'networkidle2' })
+    await page.goto(`http://localhost:${context.runConfig.port}`, { waitUntil: 'networkidle2' })
     await browser.close()
 
     return context

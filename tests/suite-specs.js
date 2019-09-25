@@ -204,10 +204,8 @@ module.exports = function (test, dependencies) {
 
           return sut
         },
-        'it should NOT use the configured synonyms': (t) => (err, actual) => {
-          t.ifError(err)
-          t.deepStrictEqual(actual.config.givenSynonyms, ['given', 'arrange'])
-          t.deepStrictEqual(actual.config.whenSynonyms, ['when', 'act', 'topic'])
+        'it should throw': (t) => (err, actual) => {
+          t.strictEqual(err.message, 'Invalid givenSynonym: expected {string} to be a non-empty {string}, Invalid whenSynonym: expected {string} to be a non-empty {string}')
         }
       },
       'and the synonyms include non-strings': {
@@ -222,10 +220,8 @@ module.exports = function (test, dependencies) {
 
           return sut
         },
-        'it should NOT use the configured synonyms': (t) => (err, actual) => {
-          t.ifError(err)
-          t.deepStrictEqual(actual.config.givenSynonyms, ['given', 'arrange'])
-          t.deepStrictEqual(actual.config.whenSynonyms, ['when', 'act', 'topic'])
+        'it should throw': (t) => (err, actual) => {
+          t.strictEqual(err.message, 'Invalid givenSynonym: expected {number} to be a non-empty {string}, Invalid whenSynonym: expected {function} to be a non-empty {string}')
         }
       }
     }

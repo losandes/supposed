@@ -815,8 +815,34 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         };
       };
 
+      var getType = function getType(obj) {
+        return Object.prototype.toString.call(obj).replace(/(^\[object )|(\]$)/g, '').toLowerCase();
+      };
+
+      var isDefined = function isDefined(obj) {
+        return typeof obj !== 'undefined' && obj !== null;
+      };
+
+      var parseSynonyms = function parseSynonyms(propName, input) {
+        var synonyms = input.filter(function (synonym) {
+          return typeof synonym === 'string' && synonym.trim().length;
+        }).map(function (synonym) {
+          return synonym.trim();
+        });
+        var errors = input.filter(function (synonym) {
+          return typeof synonym !== 'string' || !synonym.trim().length;
+        }).map(function (synonym) {
+          return "Invalid ".concat(propName, ": expected {").concat(_typeof(synonym), "} to be a non-empty {string}");
+        });
+        return {
+          synonyms: synonyms,
+          errors: errors
+        };
+      };
+
       var addValues = function addValues(suiteConfig, options) {
         var maybeOverrideValue = maybeOverrideValueFactory(suiteConfig, _objectSpread({}, options));
+        var validationErrors = [];
         maybeOverrideValue('assertionLibrary', function (options) {
           return options.assertionLibrary;
         });
@@ -824,25 +850,58 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           return options.inject;
         });
         maybeOverrideValue('name', function (options) {
-          return typeof options.name === 'string' && options.name.trim().length ? options.name.trim() : undefined;
+          if (typeof options.name === 'string' && options.name.trim().length) {
+            return options.name.trim();
+          } else if (isDefined(options.name)) {
+            validationErrors.push("Invalid name: expected {".concat(_typeof(options.name), "} to be a {string}"));
+          }
         });
         maybeOverrideValue('timeout', function (options) {
-          return typeof options.timeout === 'number' && options.timeout > 0 ? options.timeout : undefined;
+          if (typeof options.timeout === 'number' && options.timeout > 0) {
+            return options.timeout;
+          } else if (isDefined(options.timeout)) {
+            validationErrors.push("Invalid timeout: expected {".concat(_typeof(options.timeout), "} to be a {number} greater than 0"));
+          }
         });
         maybeOverrideValue('planBuffer', function (options) {
-          return typeof options.planBuffer === 'number' && options.planBuffer > 0 ? options.planBuffer : undefined;
-        });
-        maybeOverrideValue('exit', function (options) {
-          return typeof options.exit === 'function' ? options.exit : undefined;
+          if (typeof options.planBuffer === 'number' && options.planBuffer > 0) {
+            return options.planBuffer;
+          } else if (isDefined(options.planBuffer)) {
+            validationErrors.push("Invalid planBuffer: expected {".concat(_typeof(options.planBuffer), "} to be a {number} greater than 0"));
+          }
         });
         maybeOverrideValue('useColors', function (options) {
-          return typeof options.useColors === 'boolean' ? options.useColors : undefined;
+          if (typeof options.useColors === 'boolean') {
+            return options.useColors;
+          } else if (options.useColors === 0) {
+            return false;
+          } else if (options.useColors === 1) {
+            return true;
+          } else if (isDefined(options.useColors)) {
+            validationErrors.push("Invalid useColors: expected {".concat(_typeof(options.useColors), "} to be {boolean}"));
+          }
         });
         maybeOverrideValue('timeUnits', function (options) {
-          return typeof options.timeUnits === 'string' && options.timeUnits.trim().length ? options.timeUnits.trim().toLowerCase() : undefined;
+          if (typeof options.timeUnits === 'string') {
+            if (['s', 'ms', 'us', 'ns'].indexOf(options.timeUnits.trim().toLowerCase()) > -1) {
+              return options.timeUnits.trim().toLowerCase();
+            } else {
+              validationErrors.push("Invalid timeUnits: expected {".concat(options.timeUnits, "} to be {'s'|'ms'|'us'|'ns'}"));
+            }
+          } else if (isDefined(options.timeUnits)) {
+            validationErrors.push("Invalid timeUnits: expected {".concat(_typeof(options.timeUnits), "} to be {'s'|'ms'|'us'|'ns'}"));
+          }
         });
         maybeOverrideValue('reportOrder', function (options) {
-          return typeof options.reportOrder === 'string' && [REPORT_ORDERS.DETERMINISTIC, REPORT_ORDERS.NON_DETERMINISTIC].indexOf(options.reportOrder.trim()) > -1 ? options.reportOrder.trim().toLowerCase() : undefined;
+          if (typeof options.reportOrder === 'string') {
+            if ([REPORT_ORDERS.DETERMINISTIC, REPORT_ORDERS.NON_DETERMINISTIC].indexOf(options.reportOrder.trim().toLowerCase()) > -1) {
+              return options.reportOrder.trim().toLowerCase();
+            } else {
+              validationErrors.push("Invalid reportOrder: expected {".concat(options.reportOrder, "} to be {'").concat(REPORT_ORDERS.DETERMINISTIC, "'|'").concat(REPORT_ORDERS.NON_DETERMINISTIC, "'}"));
+            }
+          } else if (isDefined(options.reportOrder)) {
+            validationErrors.push("Invalid reportOrder: expected {".concat(_typeof(options.reportOrder), "} to be {'").concat(REPORT_ORDERS.DETERMINISTIC, "'|'").concat(REPORT_ORDERS.NON_DETERMINISTIC, "'}"));
+          }
         });
         maybeOverrideValue('match', function (options) {
           if (typeof options.match === 'string') {
@@ -852,6 +911,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           } else if (options.match === null) {
             // let hard coded options override (I use this in the tests)
             return options.match;
+          } else if (isDefined(options.match)) {
+            validationErrors.push("Invalid match: expected {".concat(_typeof(options.match), "} to be {string|{ test (behavior: string): boolean}}"));
           }
         });
         maybeOverrideValue('file', function (options) {
@@ -859,35 +920,77 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             return new RegExp(options.file);
           } else if (options.file && typeof options.file.test === 'function') {
             return options.file;
+          } else if (options.file === null) {
+            // let hard coded options override (I use this in the tests)
+            return options.file;
+          } else if (isDefined(options.file)) {
+            validationErrors.push("Invalid file: expected {".concat(_typeof(options.file), "} to be {string|{ test (fileName: string): boolean}}"));
           }
         });
         maybeOverrideValue('givenSynonyms', function (options) {
           if (Array.isArray(options.givenSynonyms)) {
-            var synonyms = options.givenSynonyms.filter(function (synonym) {
-              return typeof synonym === 'string' && synonym.trim().length;
-            }).map(function (synonym) {
-              return synonym.trim();
-            });
+            var _parseSynonyms = parseSynonyms('givenSynonym', options.givenSynonyms),
+                synonyms = _parseSynonyms.synonyms,
+                errors = _parseSynonyms.errors;
+
+            if (errors.length) {
+              errors.forEach(function (message) {
+                return validationErrors.push(message);
+              });
+            }
 
             if (synonyms.length) {
               return synonyms;
             }
+          } else if (isDefined(options.givenSynonyms)) {
+            validationErrors.push("Invalid givenSynonyms: expected {".concat(options.givenSynonyms.join(','), "} to be a {string[]}"));
           }
         });
         maybeOverrideValue('whenSynonyms', function (options) {
           if (Array.isArray(options.whenSynonyms)) {
-            var synonyms = options.whenSynonyms.filter(function (synonym) {
-              return typeof synonym === 'string' && synonym.trim().length;
-            }).map(function (synonym) {
-              return synonym.trim();
-            });
+            var _parseSynonyms2 = parseSynonyms('whenSynonym', options.whenSynonyms),
+                synonyms = _parseSynonyms2.synonyms,
+                errors = _parseSynonyms2.errors;
+
+            if (errors.length) {
+              errors.forEach(function (message) {
+                return validationErrors.push(message);
+              });
+            }
 
             if (synonyms.length) {
               return synonyms;
             }
+          } else if (isDefined(options.whenSynonyms)) {
+            validationErrors.push("Invalid whenSynonyms: expected {".concat(options.whenSynonyms.join(','), "} to be a {string[]}"));
           }
         });
-      };
+        maybeOverrideValue('verbosity', function (options) {
+          if (typeof options.verbosity === 'string') {
+            var verbosity = options.verbosity.trim().toLowerCase();
+
+            if (['debug', 'info'].indexOf(verbosity) > -1) {
+              return verbosity;
+            } else {
+              throw new Error("Invalid verbosity: expected {".concat(verbosity, "} to be {'debug'|'info'}"));
+            }
+          } else if (isDefined(options.verbosity)) {
+            validationErrors.push("Invalid verbosity: expected {".concat(_typeof(options.verbosity), "} to be {'debug'|'info'}"));
+          }
+        });
+        maybeOverrideValue('exit', function (options) {
+          if (['function', 'promise', 'asyncfunction'].indexOf(getType(options.exit)) > -1) {
+            return options.exit;
+          } else if (isDefined(options.exit)) {
+            validationErrors.push("Invalid exit: expected {".concat(getType(options.exit), "} to be {'function'|'promise'|'asyncfunction'}"));
+          }
+        });
+
+        if (validationErrors.length) {
+          throw new Error(validationErrors.join(', '));
+        }
+      }; // /addValues
+
 
       var addReporters = function addReporters(suiteConfig, options) {
         var maybeOverrideValue = maybeOverrideValueFactory(suiteConfig, _objectSpread({}, options));
@@ -954,7 +1057,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           planBuffer: 5,
           reporters: [],
           givenSynonyms: ['given', 'arrange'],
-          whenSynonyms: ['when', 'act', 'topic']
+          whenSynonyms: ['when', 'act', 'topic'],
+          verbosity: 'info'
         }; // TODO: support flipping the priority, and make envvars the top of the hierarchy
         // this will require that we set the priority in all of the tests for this library
 
@@ -1329,39 +1433,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           return Promise.resolve({
             plan: plan
           }).then(function (context) {
-            if (!runnerMode) {
-              return pubsub.publish({
-                type: TestEvent.types.START,
-                suiteId: config.name,
-                plan: context.plan
-              }).then(function () {
-                return context;
-              });
-            }
-
-            return Promise.resolve(context);
-          }).then(function (context) {
             return Promise.all(context.plan.batches.map(function (batch) {
               return runBatch(batch, context.plan);
             }));
-          }).then(function (context) {
-            if (!runnerMode) {
-              return pubsub.publish({
-                type: TestEvent.types.END_TALLY,
-                suiteId: config.name
-              }).then(function () {
-                return pubsub.publish({
-                  type: TestEvent.types.END,
-                  suiteId: config.name,
-                  totals: Tally.getSimpleTally(),
-                  plan: plan
-                });
-              }).then(function () {
-                return context;
-              });
-            }
-
-            return Promise.resolve(context);
           }).then(function (context) {
             if (Array.isArray(context) && context.length === 1) {
               return context[0];
@@ -1379,6 +1453,24 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             throw e;
           });
         };
+      };
+
+      var reduceOutputToResults = function reduceOutputToResults(output) {
+        if (!Array.isArray(output) && output && output.results) {
+          return output.results;
+        } else if (!Array.isArray(output) && output) {
+          return [output.results];
+        } else if (!Array.isArray(output)) {
+          return [];
+        } else {
+          return output.reduce(function (results, batchResult) {
+            if (batchResult) {
+              return results.concat(batchResult.results);
+            } else {
+              return results;
+            }
+          }, []);
+        }
       };
 
       var runner = function runner(config, registerReporters, suite, publishOneBrokenTest, execute) {
@@ -1431,17 +1523,27 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             }).then(function () {
               return context;
             }); // pass through
-          }).then(function (_ref) {
-            var output = _ref.output,
-                tally = _ref.tally;
+          }).then(function (context) {
+            context.results = reduceOutputToResults(context.output);
+            return context;
+          }).then(function (context) {
             return {
-              files: files,
-              results: output.results,
-              broken: broken,
-              config: planContext.config,
+              files: files || [],
+              results: context.results,
+              broken: broken || [],
+              runConfig: planContext.runConfig,
               suite: suite,
-              totals: tally
+              totals: context.tally
             };
+          }).catch(function (e) {
+            pubsub.publish({
+              type: TestEvent.types.TEST,
+              status: TestEvent.status.BROKEN,
+              behavior: 'Failed to load test',
+              suiteId: config.name,
+              error: e
+            });
+            throw e;
           });
         };
       };
@@ -1467,7 +1569,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
        */
 
 
-      var makeConfig = function makeConfig(suiteConfig, suiteDotConfigureOptions) {
+      var _makeSuiteConfig = function _makeSuiteConfig(suiteConfig, suiteDotConfigureOptions) {
         if (!suiteConfig && !suiteDotConfigureOptions) {
           return envvars; // envvars is the default makeSuiteConfig
         } else if (suiteDotConfigureOptions) {
@@ -1494,18 +1596,20 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         var configure = function configure(suiteDotConfigureOptions) {
           pubsub.reset();
           pubsub.subscribe(reporterFactory.get(Tally.name));
-          var config = makeConfig(suiteConfig, suiteDotConfigureOptions);
-          var registerReporters = reportRegistrar(config);
-          var publishOneBrokenTest = brokenTestPublisher(config.name);
 
-          var _ref2 = new BatchComposer(config),
-              makeBatch = _ref2.makeBatch,
-              makeBatchId = _ref2.makeBatchId;
+          var _suiteConfig = _makeSuiteConfig(suiteConfig, suiteDotConfigureOptions);
 
-          var byMatcher = matcher(config);
-          var mapToBatch = mapper(config, makeBatch, makeBatchId, byMatcher);
-          var runBatch = batchRunner(config, publishOneBrokenTest);
-          var plan = planner(config, mapToBatch);
+          var registerReporters = reportRegistrar(_suiteConfig);
+          var publishOneBrokenTest = brokenTestPublisher(_suiteConfig.name);
+
+          var _ref = new BatchComposer(_suiteConfig),
+              makeBatch = _ref.makeBatch,
+              makeBatchId = _ref.makeBatchId;
+
+          var byMatcher = matcher(_suiteConfig);
+          var mapToBatch = mapper(_suiteConfig, makeBatch, makeBatchId, byMatcher);
+          var runBatch = batchRunner(_suiteConfig, publishOneBrokenTest);
+          var plan = planner(_suiteConfig, mapToBatch);
 
           var waitToRun = function waitToRun() {
             return new Promise(function (resolve, reject) {
@@ -1518,14 +1622,14 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
                 var lastPlanEntry = plan.lastPlanEntry();
                 var now = clock('ms');
 
-                if (lastPlanEntry && now - lastPlanEntry > config.planBuffer) {
+                if (lastPlanEntry && now - lastPlanEntry > _suiteConfig.planBuffer) {
                   test.runner().runTests({
                     plan: plan.getPlan()
                   }).then(resolve).catch(reject);
                 } else {
                   waitToRun();
                 }
-              }, config.planBuffer * 2);
+              }, _suiteConfig.planBuffer * 2);
             });
           };
 
@@ -1538,10 +1642,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             }
           };
 
-          test.id = config.name;
+          test.id = _suiteConfig.name;
           test.plan = plan;
-          test.config = config;
-          test.dependencies = config.inject;
+          test.config = _suiteConfig;
+          test.dependencies = _suiteConfig.inject;
           test.configure = configure;
           test.reporterFactory = reporterFactory;
 
@@ -1550,43 +1654,45 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             return test;
           };
 
-          test.runner = function (options) {
+          test.runner = function (runConfig) {
             runnerMode = true;
-            options = options || {};
+            runConfig = runConfig || {};
 
             if (envvars.file) {
-              options.matchesNamingConvention = envvars.file;
+              runConfig.matchesNamingConvention = envvars.file;
             }
 
-            var findAndStart = browserRunner(config, registerReporters, test);
+            var findAndStart = browserRunner(_suiteConfig, registerReporters, test);
 
             var addPlanToContext = function addPlanToContext() {
               return function (context) {
                 context.plan = plan.getPlan();
-                return context;
+                Object.freeze(context.files);
+                Object.freeze(context.config);
+                return Object.freeze(context);
               };
             };
 
             var findAndPlan = function findAndPlan() {
-              return findFiles(options).then(resolveTests()).then(makePlans(test)).then(addPlanToContext());
+              return findFiles(runConfig).then(resolveTests()).then(makePlans(test)).then(addPlanToContext());
             };
 
             var run = function run() {
-              return runner(config, registerReporters, test, publishOneBrokenTest, tester(config, registerReporters, runBatch, runnerMode));
+              return runner(_suiteConfig, registerReporters, test, publishOneBrokenTest, tester(_suiteConfig, registerReporters, runBatch, runnerMode));
             };
 
             var runTests = function runTests(planOrTests) {
               if (planOrTests && isPlan(planOrTests.plan)) {
-                return Promise.resolve(planOrTests).then(run()).then(config.exit);
+                return Promise.resolve(planOrTests).then(run()).then(_suiteConfig.exit);
               }
 
               if (Array.isArray(planOrTests)) {
-                options.tests = planOrTests;
+                runConfig.tests = planOrTests;
               } else if (typeof planOrTests === 'function') {
-                options.tests = planOrTests();
+                runConfig.tests = planOrTests();
               }
 
-              return makePlans(test)(options).then(addPlanToContext()).then(run()).then(config.exit);
+              return makePlans(test)(runConfig).then(addPlanToContext()).then(run()).then(_suiteConfig.exit);
             };
 
             return {
@@ -1599,7 +1705,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               // run (browser|node)
               runTests: runTests,
               // start test server (browser)
-              startServer: findAndStart(options)
+              startServer: findAndStart(runConfig)
             };
           }; // @deprecated - may go away in the future
 
@@ -1607,7 +1713,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           test.printSummary = function () {
             return pubsub.publish({
               type: TestEvent.types.END,
-              suiteId: config.name,
+              suiteId: _suiteConfig.name,
               totals: Tally.getSimpleTally()
             });
           }; // @deprecated - may go away in the future
@@ -1972,12 +2078,12 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         };
       };
 
-      var mapToResults = function mapToResults(config) {
+      var mapToResults = function mapToResults(runConfig) {
         var paths = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
         return function (results) {
           return {
             files: paths,
-            config: config,
+            runConfig: runConfig,
             broken: results.filter(function (result) {
               return result.status !== 'fullfilled';
             }).map(function (result) {
@@ -1989,7 +2095,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
       var makePlans = function makePlans(suite) {
         return function (context) {
-          var config = context.config,
+          var runConfig = context.runConfig,
               tests = context.tests,
               paths = context.paths;
 
@@ -1997,7 +2103,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             throw new Error('run-tests expects tests to be provided');
           }
 
-          return Promise.resolve(tests.map(toPromise(config || context, suite))).then(allSettled).then(mapToResults(config, paths));
+          return Promise.resolve(tests.map(toPromise(runConfig || context, suite))).then(allSettled).then(mapToResults(runConfig, paths));
         };
       };
 
@@ -2381,11 +2487,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       var newLine = consoleStyles.newLine();
       var space = consoleStyles.space();
 
-      var _ref3 = new SpecFormatter(),
-          addToSpec = _ref3.addToSpec;
+      var _ref2 = new SpecFormatter(),
+          addToSpec = _ref2.addToSpec;
 
-      var _ref4 = new DefaultFormatter(),
-          formatDuration = _ref4.formatDuration;
+      var _ref3 = new DefaultFormatter(),
+          formatDuration = _ref3.formatDuration;
 
       var toBullets = function toBullets(md, SPACE, layer) {
         if (typeof layer === 'undefined') layer = 0;

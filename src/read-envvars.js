@@ -3,8 +3,6 @@ module.exports = {
   factory: (dependencies) => {
     'use strict'
 
-    const { isValidUnit, isValidReportOrder } = dependencies
-
     function Switch (lowercaseLetter) { // eslint-disable-line no-unused-vars
       return { switch: `-${lowercaseLetter}`.toUpperCase() }
     }
@@ -57,11 +55,14 @@ module.exports = {
             process.env.SUPPOSED_NO_COLOR === '1'
         ) ? false
           : undefined,
-        timeUnits: process.env.SUPPOSED_TIME_UNITS && isValidUnit(process.env.SUPPOSED_TIME_UNITS.trim().toLowerCase())
+        timeUnits: process.env.SUPPOSED_TIME_UNITS
           ? process.env.SUPPOSED_TIME_UNITS.trim().toLowerCase()
           : undefined,
-        reportOrder: process.env.SUPPOSED_REPORT_ORDER && isValidReportOrder(process.env.SUPPOSED_REPORT_ORDER.trim().toLowerCase())
+        reportOrder: process.env.SUPPOSED_REPORT_ORDER
           ? process.env.SUPPOSED_REPORT_ORDER.trim().toLowerCase()
+          : undefined,
+        verbosity: process.env.SUPPOSED_VERBOSITY
+          ? process.env.SUPPOSED_VERBOSITY.trim().toLowerCase()
           : undefined
       }
 
@@ -84,6 +85,7 @@ module.exports = {
         const noColor = findMatch(Swatch('no-color'), value, idx, args)
         const timeUnits = findMatch(Option('u', 'time-units'), value, idx, args)
         const reportOrder = findMatch(Option('o', 'report-order'), value, idx, args)
+        const verbosity = findMatch(Option('v', 'verbosity'), value, idx, args)
 
         if (reporters) {
           output.reporters = reporters.split(',').map((reporter) => reporter.trim().toUpperCase())
@@ -101,16 +103,16 @@ module.exports = {
           output.useColors = false
         }
 
-        if (timeUnits && isValidUnit(timeUnits.trim().toLowerCase())) {
+        if (timeUnits) {
           output.timeUnits = timeUnits.trim().toLowerCase()
-        } else if (timeUnits) {
-          console.log(`${timeUnits} is not a supported time unit`)
         }
 
-        if (reportOrder && isValidReportOrder(reportOrder.trim().toLowerCase())) {
+        if (reportOrder) {
           output.reportOrder = reportOrder.trim().toLowerCase()
-        } else if (reportOrder) {
-          console.log(`${reportOrder} is not a supported report order`)
+        }
+
+        if (verbosity) {
+          output.verbosity = verbosity
         }
       }) // /forEach
 

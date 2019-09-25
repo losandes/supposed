@@ -14,41 +14,85 @@ module.exports = {
       }
     }
 
+    const getType = (obj) => Object.prototype.toString.call(obj)
+      .replace(/(^\[object )|(\]$)/g, '')
+      .toLowerCase()
+    const isDefined = (obj) => typeof obj !== 'undefined' && obj !== null
+    const parseSynonyms = (propName, input) => {
+      const synonyms = input
+        .filter((synonym) => typeof synonym === 'string' && synonym.trim().length)
+        .map((synonym) => synonym.trim())
+
+      const errors = input
+        .filter((synonym) => typeof synonym !== 'string' || !synonym.trim().length)
+        .map((synonym) => `Invalid ${propName}: expected {${typeof synonym}} to be a non-empty {string}`)
+
+      return { synonyms, errors }
+    }
+
     const addValues = (suiteConfig, options) => {
       const maybeOverrideValue = maybeOverrideValueFactory(suiteConfig, { ...options })
+      const validationErrors = []
 
       maybeOverrideValue('assertionLibrary', (options) => options.assertionLibrary)
       maybeOverrideValue('inject', (options) => options.inject)
-      maybeOverrideValue('name', (options) => typeof options.name === 'string' && options.name.trim().length
-        ? options.name.trim()
-        : undefined
-      )
-      maybeOverrideValue('timeout', (options) => typeof options.timeout === 'number' && options.timeout > 0
-        ? options.timeout
-        : undefined
-      )
-      maybeOverrideValue('planBuffer', (options) => typeof options.planBuffer === 'number' && options.planBuffer > 0
-        ? options.planBuffer
-        : undefined
-      )
-      maybeOverrideValue('exit', (options) => typeof options.exit === 'function'
-        ? options.exit
-        : undefined
-      )
-      maybeOverrideValue('useColors', (options) => typeof options.useColors === 'boolean'
-        ? options.useColors
-        : undefined
-      )
-      maybeOverrideValue('timeUnits', (options) => typeof options.timeUnits === 'string' &&
-        options.timeUnits.trim().length
-        ? options.timeUnits.trim().toLowerCase()
-        : undefined
-      )
-      maybeOverrideValue('reportOrder', (options) => typeof options.reportOrder === 'string' &&
-        [REPORT_ORDERS.DETERMINISTIC, REPORT_ORDERS.NON_DETERMINISTIC]
-          .indexOf(options.reportOrder.trim()) > -1
-        ? options.reportOrder.trim().toLowerCase()
-        : undefined)
+      maybeOverrideValue('name', (options) => {
+        if (typeof options.name === 'string' && options.name.trim().length) {
+          return options.name.trim()
+        } else if (isDefined(options.name)) {
+          validationErrors.push(`Invalid name: expected {${typeof options.name}} to be a {string}`)
+        }
+      })
+      maybeOverrideValue('timeout', (options) => {
+        if (typeof options.timeout === 'number' && options.timeout > 0) {
+          return options.timeout
+        } else if (isDefined(options.timeout)) {
+          validationErrors.push(`Invalid timeout: expected {${typeof options.timeout}} to be a {number} greater than 0`)
+        }
+      })
+      maybeOverrideValue('planBuffer', (options) => {
+        if (typeof options.planBuffer === 'number' && options.planBuffer > 0) {
+          return options.planBuffer
+        } else if (isDefined(options.planBuffer)) {
+          validationErrors.push(`Invalid planBuffer: expected {${typeof options.planBuffer}} to be a {number} greater than 0`)
+        }
+      })
+      maybeOverrideValue('useColors', (options) => {
+        if (typeof options.useColors === 'boolean') {
+          return options.useColors
+        } else if (options.useColors === 0) {
+          return false
+        } else if (options.useColors === 1) {
+          return true
+        } else if (isDefined(options.useColors)) {
+          validationErrors.push(`Invalid useColors: expected {${typeof options.useColors}} to be {boolean}`)
+        }
+      })
+      maybeOverrideValue('timeUnits', (options) => {
+        if (typeof options.timeUnits === 'string') {
+          if (['s', 'ms', 'us', 'ns'].indexOf(options.timeUnits.trim().toLowerCase()) > -1) {
+            return options.timeUnits.trim().toLowerCase()
+          } else {
+            validationErrors.push(`Invalid timeUnits: expected {${options.timeUnits}} to be {'s'|'ms'|'us'|'ns'}`)
+          }
+        } else if (isDefined(options.timeUnits)) {
+          validationErrors.push(`Invalid timeUnits: expected {${typeof options.timeUnits}} to be {'s'|'ms'|'us'|'ns'}`)
+        }
+      })
+      maybeOverrideValue('reportOrder', (options) => {
+        if (typeof options.reportOrder === 'string') {
+          if (
+            [REPORT_ORDERS.DETERMINISTIC, REPORT_ORDERS.NON_DETERMINISTIC]
+              .indexOf(options.reportOrder.trim().toLowerCase()) > -1
+          ) {
+            return options.reportOrder.trim().toLowerCase()
+          } else {
+            validationErrors.push(`Invalid reportOrder: expected {${options.reportOrder}} to be {'${REPORT_ORDERS.DETERMINISTIC}'|'${REPORT_ORDERS.NON_DETERMINISTIC}'}`)
+          }
+        } else if (isDefined(options.reportOrder)) {
+          validationErrors.push(`Invalid reportOrder: expected {${typeof options.reportOrder}} to be {'${REPORT_ORDERS.DETERMINISTIC}'|'${REPORT_ORDERS.NON_DETERMINISTIC}'}`)
+        }
+      })
       maybeOverrideValue('match', (options) => {
         if (typeof options.match === 'string') {
           return new RegExp(options.match)
@@ -57,6 +101,8 @@ module.exports = {
         } else if (options.match === null) {
           // let hard coded options override (I use this in the tests)
           return options.match
+        } else if (isDefined(options.match)) {
+          validationErrors.push(`Invalid match: expected {${typeof options.match}} to be {string|{ test (behavior: string): boolean}}`)
         }
       })
       maybeOverrideValue('file', (options) => {
@@ -64,31 +110,68 @@ module.exports = {
           return new RegExp(options.file)
         } else if (options.file && typeof options.file.test === 'function') {
           return options.file
+        } else if (options.file === null) {
+          // let hard coded options override (I use this in the tests)
+          return options.file
+        } else if (isDefined(options.file)) {
+          validationErrors.push(`Invalid file: expected {${typeof options.file}} to be {string|{ test (fileName: string): boolean}}`)
         }
       })
       maybeOverrideValue('givenSynonyms', (options) => {
         if (Array.isArray(options.givenSynonyms)) {
-          const synonyms = options.givenSynonyms
-            .filter((synonym) => typeof synonym === 'string' && synonym.trim().length)
-            .map((synonym) => synonym.trim())
+          const { synonyms, errors } = parseSynonyms('givenSynonym', options.givenSynonyms)
+
+          if (errors.length) {
+            errors.forEach((message) => validationErrors.push(message))
+          }
 
           if (synonyms.length) {
             return synonyms
           }
+        } else if (isDefined(options.givenSynonyms)) {
+          validationErrors.push(`Invalid givenSynonyms: expected {${options.givenSynonyms.join(',')}} to be a {string[]}`)
         }
       })
       maybeOverrideValue('whenSynonyms', (options) => {
         if (Array.isArray(options.whenSynonyms)) {
-          const synonyms = options.whenSynonyms
-            .filter((synonym) => typeof synonym === 'string' && synonym.trim().length)
-            .map((synonym) => synonym.trim())
+          const { synonyms, errors } = parseSynonyms('whenSynonym', options.whenSynonyms)
+
+          if (errors.length) {
+            errors.forEach((message) => validationErrors.push(message))
+          }
 
           if (synonyms.length) {
             return synonyms
           }
+        } else if (isDefined(options.whenSynonyms)) {
+          validationErrors.push(`Invalid whenSynonyms: expected {${options.whenSynonyms.join(',')}} to be a {string[]}`)
         }
       })
-    }
+      maybeOverrideValue('verbosity', (options) => {
+        if (typeof options.verbosity === 'string') {
+          const verbosity = options.verbosity.trim().toLowerCase()
+
+          if (['debug', 'info'].indexOf(verbosity) > -1) {
+            return verbosity
+          } else {
+            throw new Error(`Invalid verbosity: expected {${verbosity}} to be {'debug'|'info'}`)
+          }
+        } else if (isDefined(options.verbosity)) {
+          validationErrors.push(`Invalid verbosity: expected {${typeof options.verbosity}} to be {'debug'|'info'}`)
+        }
+      })
+      maybeOverrideValue('exit', (options) => {
+        if (['function', 'promise', 'asyncfunction'].indexOf(getType(options.exit)) > -1) {
+          return options.exit
+        } else if (isDefined(options.exit)) {
+          validationErrors.push(`Invalid exit: expected {${getType(options.exit)}} to be {'function'|'promise'|'asyncfunction'}`)
+        }
+      })
+
+      if (validationErrors.length) {
+        throw new Error(validationErrors.join(', '))
+      }
+    } // /addValues
 
     const addReporters = (suiteConfig, options) => {
       const maybeOverrideValue = maybeOverrideValueFactory(suiteConfig, { ...options })
@@ -148,7 +231,8 @@ module.exports = {
         planBuffer: 5,
         reporters: [],
         givenSynonyms: ['given', 'arrange'],
-        whenSynonyms: ['when', 'act', 'topic']
+        whenSynonyms: ['when', 'act', 'topic'],
+        verbosity: 'info'
       }
 
       // TODO: support flipping the priority, and make envvars the top of the hierarchy
