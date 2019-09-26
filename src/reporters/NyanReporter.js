@@ -184,6 +184,7 @@ module.exports = {
 
       const write = (event) => {
         if (event.type === TestEvent.types.START) {
+          print(format(event) + newLine)
           draw.begin(stats)
         } else if (event.type === TestEvent.types.END) {
           draw.end(stats)

@@ -1,5 +1,8 @@
 const { execFile } = require('child_process')
 const path = require('path')
+const suite = require('supposed').Suite({ name: 'tests.examples' })
+const isVerbose = suite.config.verbosity === 'debug'
+suite.registerReporters()
 
 const suites = [
   // './browser-tests/index.js',
@@ -31,7 +34,7 @@ const suites = [
 ]
 
 const promises = suites.map((suite) => new Promise((resolve, reject) => {
-  execFile('node', [path.join(__dirname, suite)], (error, stdout, stderr) => {
+  execFile('node', [path.join(__dirname, 'tests.examples', suite)], (error, stdout, stderr) => {
     if (error) {
       return reject(error)
     }
@@ -55,24 +58,85 @@ const promises = suites.map((suite) => new Promise((resolve, reject) => {
   })
 }))
 
-Promise.all(promises)
+module.exports = suite.publish({
+  type: 'START',
+  suiteId: suite.config.name,
+  plan: {
+    count: promises.length,
+    completed: 0
+  }
+}).then(() => Promise.all(promises)
   .then((results) => {
     const rows = results
       .filter((result) => result.match)
       .map((result) => result.match)
 
-    // const noMatchRows = results.filter((result) => !result.match)
-    // console.log(noMatchRows.map((result) => result.stdout))
-    console.table(rows)
+    const totals = rows.reduce((totals, row) => {
+      [
+        'total',
+        'passed',
+        'failed',
+        'broken',
+        'skipped'
+      ].forEach((key) => {
+        if (row[key] && !isNaN(row[key])) {
+          totals[key] += row[key]
+        }
+      })
+
+      if (row.duration && !isNaN(row.duration)) {
+        totals.duration.milliseconds += row.duration
+      }
+
+      return totals
+    }, {
+      total: 0,
+      passed: 0,
+      failed: 0,
+      broken: 0,
+      skipped: 0,
+      duration: {
+        seconds: -1,
+        milliseconds: 0,
+        microseconds: -1,
+        nanoseconds: -1
+      }
+    })
 
     const errors = results
       .filter((result) => result.match && result.match.failed > 0)
 
+    return { rows, totals, errors }
+  }).then((processed) => {
+    const { rows, totals, errors } = processed
+
+    if (isVerbose) {
+      // const noMatchRows = results.filter((result) => !result.match)
+      // console.log(noMatchRows.map((result) => result.stdout))
+      console.table(rows)
+    }
+
     if (errors.length) {
-      console.log(errors)
+      errors.forEach((result) => {
+        suite.publish({
+          type: 'TEST',
+          status: 'FAILED',
+          behavior: `Suite failed: ${result.suite}`,
+          error: new Error(result.stdout)
+        })
+      })
+    }
+
+    suite.publish({ type: 'END', totals })
+
+    return processed
+  }).then((processed) => {
+    if (processed.errors.length) {
       process.exit(1)
     }
+
+    return processed
   }).catch((err) => {
     console.log(err)
     process.exit(1)
-  })
+  }))

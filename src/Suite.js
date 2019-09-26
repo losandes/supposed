@@ -427,6 +427,10 @@ module.exports = {
         test.dependencies = _suiteConfig.inject
         test.configure = configure
         test.reporterFactory = reporterFactory
+        test.registerReporters = registerReporters
+        test.publish = (event) => {
+          return pubsub.publish(event).then(() => test)
+        }
         test.subscribe = (subscription) => {
           pubsub.subscribe(subscription)
           return test

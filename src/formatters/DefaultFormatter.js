@@ -71,7 +71,7 @@ module.exports = {
     function DefaultFormatter () {
       const _format = (event) => {
         if (event.type === TestEvent.types.START) {
-          return `${newLine}${SYMBOLS.INFO}Running tests...`
+          return `${newLine}${SYMBOLS.INFO}Running tests (${event.suiteId})...`
         } if (event.type === TestEvent.types.END) {
           const totals = event.totals
           return `${newLine}${SYMBOLS.INFO}total: ${consoleStyles.cyan(totals.total)}` +

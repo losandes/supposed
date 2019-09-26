@@ -1,8 +1,8 @@
 const chai = require('chai')
 const path = require('path')
-const supposed = require('../index.js')
+const supposed = require('supposed')
 const suite = supposed.Suite({
-  name: 'supposed-tests',
+  name: 'tests.node',
   exit: (results) => results,
   inject: {
     describe: supposed,
@@ -22,11 +22,15 @@ const suite = supposed.Suite({
 // })
 
 module.exports = suite.runner({
-  cwd: path.join(__dirname),
+  cwd: path.join(__dirname, 'tests'),
   matchesIgnoredConvention: /discoverer-meta-specs|node_modules/i
 })
   // .plan()
   // .then((plan) => { console.log(plan) })
   .run()
   // .then((results) => { console.log(results); return results })
-  .then((results) => process.exit(results.totals.failed))
+  .then((results) => {
+    if (results.totals.failed > 0) {
+      process.exit(results.totals.failed)
+    }
+  })
