@@ -88,6 +88,18 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       var publish = pubsub.publish;
 
       function noop() {}
+
+      var getType = function getType(obj) {
+        return Object.prototype.toString.call(obj).replace(/(^\[object )|(\]$)/g, '').toLowerCase();
+      };
+
+      var isExecutable = function isExecutable(value) {
+        return ['function', 'promise', 'asyncfunction'].indexOf(getType(value)) > -1;
+      };
+
+      var isNullOrUndefined = function isNullOrUndefined(value) {
+        return typeof value === 'undefined' || value === null;
+      };
       /**
        * If the test is skipped, sets noops for given and when,
        * otherwise sets given and when to associated test variables
@@ -122,13 +134,13 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
 
       function runGiven(context) {
-        if (typeof context.given !== 'function' && _typeof(context.given) !== 'object') {
+        if (isNullOrUndefined(context.given)) {
           return Promise.resolve(context);
         }
 
         try {
           var startTime = clock();
-          var actual = context.given();
+          var actual = isExecutable(context.given) ? context.given() : context.given;
 
           if (isPromise(actual)) {
             return actual.then(function (value) {
@@ -155,13 +167,13 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
 
       function runWhen(context) {
-        if (typeof context.when !== 'function' && _typeof(context.when) !== 'object') {
+        if (isNullOrUndefined(context.when)) {
           return Promise.resolve(context);
         }
 
         try {
           var startTime = clock();
-          var actual = context.when(context.resultOfGiven);
+          var actual = isExecutable(context.when) ? context.when(context.resultOfGiven) : context.when;
 
           if (isPromise(actual)) {
             return actual.then(function (value) {

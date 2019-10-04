@@ -30,6 +30,36 @@ module.exports = function (describe, dependencies) {
           t.strictEqual(actual, 42)
         }
       }
+    },
+    'when given is a primitive': {
+      given: 42,
+      when: (given) => given / 0,
+      'it should use the primitive': (t) => (err, actual) => {
+        t.ifError(err)
+        t.strictEqual(actual, Infinity)
+      }
+    },
+    'when given is an object': {
+      given: { num: 42 },
+      when: (given) => given.num / 0,
+      'it should use the primitive': (t) => (err, actual) => {
+        t.ifError(err)
+        t.strictEqual(actual, Infinity)
+      }
+    },
+    'when when is a primitive': {
+      when: 42,
+      'it should use the primitive': (t) => (err, actual) => {
+        t.ifError(err)
+        t.strictEqual(actual, 42)
+      }
+    },
+    'when when is an object': {
+      when: { num: 42 },
+      'it should use the primitive': (t) => (err, actual) => {
+        t.ifError(err)
+        t.strictEqual(actual.num, 42)
+      }
     }
   })
 

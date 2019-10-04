@@ -7,6 +7,11 @@ module.exports = {
     const { publish } = pubsub
 
     function noop () { }
+    const getType = (obj) => Object.prototype.toString.call(obj)
+      .replace(/(^\[object )|(\]$)/g, '')
+      .toLowerCase()
+    const isExecutable = (value) => ['function', 'promise', 'asyncfunction'].indexOf(getType(value)) > -1
+    const isNullOrUndefined = (value) => typeof value === 'undefined' || value === null
 
     /**
      * If the test is skipped, sets noops for given and when,
@@ -41,13 +46,13 @@ module.exports = {
      * @param {Object} context
      */
     function runGiven (context) {
-      if (typeof context.given !== 'function' && typeof context.given !== 'object') {
+      if (isNullOrUndefined(context.given)) {
         return Promise.resolve(context)
       }
 
       try {
         const startTime = clock()
-        const actual = context.given()
+        const actual = isExecutable(context.given) ? context.given() : context.given
         if (isPromise(actual)) {
           return actual.then((value) => {
             context.resultOfGiven = value
@@ -72,13 +77,13 @@ module.exports = {
      * @param {Object} context
      */
     function runWhen (context) {
-      if (typeof context.when !== 'function' && typeof context.when !== 'object') {
+      if (isNullOrUndefined(context.when)) {
         return Promise.resolve(context)
       }
 
       try {
         const startTime = clock()
-        const actual = context.when(context.resultOfGiven)
+        const actual = isExecutable(context.when) ? context.when(context.resultOfGiven) : context.when
         if (isPromise(actual)) {
           return actual.then((value) => {
             context.resultOfWhen = value
