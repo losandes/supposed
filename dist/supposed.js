@@ -193,9 +193,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             if (assertion.test.length > 1) {
               // the assertion accepts all arguments to a single function
               return assertion.test(context.config.assertionLibrary, context.err, context.resultOfWhen);
-            }
+            } // the assertion may or may not curry: (t, err, actual) => { ... }
 
-            var maybeFunc = assertion.test(context.config.assertionLibrary);
+
+            var maybeFunc = assertion.test(context.config.assertionLibrary, context.err, context.resultOfWhen);
 
             if (typeof maybeFunc === 'function') {
               // the assertion curries: (t) => (err, actual) => { ... }
@@ -1648,6 +1649,13 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           test.dependencies = _suiteConfig.inject;
           test.configure = configure;
           test.reporterFactory = reporterFactory;
+          test.registerReporters = registerReporters;
+
+          test.publish = function (event) {
+            return pubsub.publish(event).then(function () {
+              return test;
+            });
+          };
 
           test.subscribe = function (subscription) {
             pubsub.subscribe(subscription);
@@ -2432,7 +2440,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       function DefaultFormatter() {
         var _format = function _format(event) {
           if (event.type === TestEvent.types.START) {
-            return "".concat(newLine).concat(SYMBOLS.INFO, "Running tests...");
+            return "".concat(newLine).concat(SYMBOLS.INFO, "Running tests (").concat(event.suiteId, ")...");
           }
 
           if (event.type === TestEvent.types.END) {
