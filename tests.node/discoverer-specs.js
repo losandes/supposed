@@ -6,7 +6,7 @@ module.exports = function (describe, dependencies) {
       when: () => {
         const sut = describe.Suite(defaultConfig)
         const runner = sut.runner({
-          cwd: path.join(process.cwd(), '/tests/discoverer-meta-specs'),
+          cwd: path.join(process.cwd(), '/tests.node/discoverer-meta-specs'),
           matchesNamingConvention: /.\/namingspec\.js$/i,
           matchesIgnoredConvention: /^ignore$/i
         })
@@ -21,7 +21,7 @@ module.exports = function (describe, dependencies) {
       },
       'the config that is returned should have the overrides': (t) => (err, actual) => {
         t.ifError(err)
-        t.strictEqual(actual.runConfig.cwd.indexOf('tests/discoverer-meta-specs') > -1, true)
+        t.strictEqual(actual.runConfig.cwd.indexOf('tests.node/discoverer-meta-specs') > -1, true)
         t.deepStrictEqual(actual.runConfig.directories, ['.'])
         t.strictEqual(actual.runConfig.matchesNamingConvention.toString(), '/.\\/namingspec\\.js$/i')
         t.strictEqual(actual.runConfig.matchesIgnoredConvention.toString(), '/^ignore$/i')
@@ -31,7 +31,7 @@ module.exports = function (describe, dependencies) {
       when: () => {
         const sut = describe.Suite(defaultConfig)
         const runner = sut.runner({
-          directories: ['./tests/discoverer-meta-specs'],
+          directories: ['./tests.node/discoverer-meta-specs'],
           matchesNamingConvention: /.\/namingspec\.js$/i,
           matchesIgnoredConvention: /^ignore$/i
         })
@@ -46,7 +46,7 @@ module.exports = function (describe, dependencies) {
       },
       'the config that is returned should have the overrides': (t) => (err, actual) => {
         t.ifError(err)
-        t.deepStrictEqual(actual.runConfig.directories, ['./tests/discoverer-meta-specs'])
+        t.deepStrictEqual(actual.runConfig.directories, ['./tests.node/discoverer-meta-specs'])
         t.strictEqual(actual.runConfig.matchesNamingConvention.toString(), '/.\\/namingspec\\.js$/i')
         t.strictEqual(actual.runConfig.matchesIgnoredConvention.toString(), '/^ignore$/i')
       }
@@ -55,7 +55,7 @@ module.exports = function (describe, dependencies) {
       when: () => {
         const sut = describe.Suite(defaultConfig)
         const runner = sut.runner({
-          directories: ['./tests/discoverer-meta-specs'],
+          directories: ['./tests.node/discoverer-meta-specs'],
           matchesNamingConvention: {
             test: (input) => {
               return input.indexOf('namingspec.js') > -1
@@ -76,7 +76,7 @@ module.exports = function (describe, dependencies) {
       when: () => {
         const sut = describe.Suite({ ...defaultConfig, ...{ assertionLibrary: chai.expect } })
         const runner = sut.runner({
-          directories: ['./tests/discoverer-meta-specs'],
+          directories: ['./tests.node/discoverer-meta-specs'],
           matchesNamingConvention: /.\/injectionspec\.js$/i
         })
 
@@ -93,7 +93,7 @@ module.exports = function (describe, dependencies) {
       when: () => {
         const sut = describe.Suite(defaultConfig)
         const runner = sut.runner({
-          directories: ['./tests/discoverer-meta-specs'],
+          directories: ['./tests.node/discoverer-meta-specs'],
           matchesNamingConvention: /.\/ignorespec\.js$/i,
           matchesIgnoredConvention: /^ignore$/i
         })
@@ -111,7 +111,7 @@ module.exports = function (describe, dependencies) {
       when: () => {
         const sut = describe.Suite(defaultConfig)
         const runner = sut.runner({
-          directories: ['./tests/discoverer-meta-specs'],
+          directories: ['./tests.node/discoverer-meta-specs'],
           matchesNamingConvention: /.\/ignorespec\.js$/i,
           matchesIgnoredConvention: {
             test: (input) => {
@@ -133,7 +133,7 @@ module.exports = function (describe, dependencies) {
       when: () => {
         const sut = describe.Suite(defaultConfig)
         const runner = sut.runner({
-          directories: ['./tests/discoverer-meta-specs'],
+          directories: ['./tests.node/discoverer-meta-specs'],
           matchesNamingConvention: /.\/ignorespec\.js$/i,
           matchesIgnoredConvention: /.\/other-ignorespec\.js$/i
         })
@@ -152,7 +152,7 @@ module.exports = function (describe, dependencies) {
       when: () => {
         const sut = describe.Suite(defaultConfig)
         const runner = sut.runner({
-          directories: ['./tests/discoverer-meta-specs'],
+          directories: ['./tests.node/discoverer-meta-specs'],
           matchesNamingConvention: /.\/no-injectionspec\.js$/i
         })
 
@@ -169,7 +169,7 @@ module.exports = function (describe, dependencies) {
       when: () => {
         const sut = describe.Suite(defaultConfig)
         const runner = sut.runner({
-          directories: ['./tests/discoverer-meta-specs'],
+          directories: ['./tests.node/discoverer-meta-specs'],
           matchesNamingConvention: /.\/no-promisespec\.js$/i
         })
 
@@ -186,7 +186,7 @@ module.exports = function (describe, dependencies) {
       when: () => {
         const sut = describe.Suite(defaultConfig)
         const runner = sut.runner({
-          directories: ['./tests/discoverer-meta-specs'],
+          directories: ['./tests.node/discoverer-meta-specs'],
           matchesNamingConvention: /.\/nestspec\.js$/i
         })
 

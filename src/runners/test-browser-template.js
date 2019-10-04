@@ -1,8 +1,6 @@
 /* eslint-disable */
 (function (root) {
-  // eslint-disable-line no-extra-semi
-  'use strict';
-
+  // don't use strict - that should be up to the consumer of this library
   var tests = []
 
   var module = {};

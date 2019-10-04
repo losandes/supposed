@@ -114,7 +114,8 @@ module.exports = {
             )
           }
 
-          const maybeFunc = assertion.test(context.config.assertionLibrary)
+          // the assertion may or may not curry: (t, err, actual) => { ... }
+          const maybeFunc = assertion.test(context.config.assertionLibrary, context.err, context.resultOfWhen)
 
           if (typeof maybeFunc === 'function') {
             // the assertion curries: (t) => (err, actual) => { ... }

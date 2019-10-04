@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import * as supposed from '..'
 
-supposed.Suite({
+module.exports = supposed.Suite({
   name: 'supposed-tests.typescript',
   assertionLibrary: expect
 }).runner({

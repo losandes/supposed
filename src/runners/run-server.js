@@ -195,10 +195,14 @@ module.exports = {
 
       server.listen(port, (err) => {
         if (err) {
-          return console.log('something bad happened', err)
+          return console.log(err)
         }
 
-        console.log(`# supposed server is listening at http://localhost:${port}`)
+        if (process.stdout.isTTY) {
+          // if the output is being piped into something else, this could cause problems
+          // only write this when in a text terminal
+          console.log(`# supposed server is listening at http://localhost:${port}`)
+        }
       })
 
       return server
