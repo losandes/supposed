@@ -1,20 +1,20 @@
 module.exports = {
   name: 'readEnvvars',
-  factory: (dependencies) => {
+  factory: () => {
     'use strict'
 
     function Switch (lowercaseLetter) { // eslint-disable-line no-unused-vars
       return { switch: `-${lowercaseLetter}`.toUpperCase() }
     }
 
-    function Swatch (name) { // eslint-disable-line no-unused-vars
-      return { swatch: `--${name}`.toUpperCase() }
+    function Swatch (name) {
+      return { switch: `--${name}`.toUpperCase() }
     }
 
     function Option (lowercaseLetter, name) {
       return {
-        switch: `-${lowercaseLetter}`.toUpperCase(),
-        option: `--${name}`.toUpperCase()
+        switch: Switch(lowercaseLetter).switch,
+        option: Swatch(name).switch
       }
     }
 
@@ -30,16 +30,17 @@ module.exports = {
         )
       ) {
         return args[idx + 1]
-      } else if (target.swatch === _argValue) {
-        return true
-      } else if (target.switch === _argValue) {
+      } else if (
+        target.switch === _argValue ||
+        target.option === _argValue
+      ) {
         return true
       }
 
       return false
     }
 
-    const readEnvvars = () => {
+    const _readEnvvars = () => {
       const output = {
         reporters: process.env.SUPPOSED_REPORTERS
           ? process.env.SUPPOSED_REPORTERS.split(',').map((reporter) => reporter.trim().toUpperCase())
@@ -66,13 +67,11 @@ module.exports = {
           : undefined
       }
 
-      if (process.env.SUPPOSED_TIME_UNITS && !output.timeUnits) {
-        console.log(`${process.env.SUPPOSED_TIME_UNITS} is not a supported time unit`)
-      }
+      return output
+    }
 
-      if (process.env.SUPPOSED_REPORT_ORDER && !output.reportOrder) {
-        console.log(`${process.env.SUPPOSED_REPORT_ORDER} is not a supported report order`)
-      }
+    const _readArgs = () => {
+      const output = {}
 
       if (!Array.isArray(process.argv)) {
         return output
@@ -117,6 +116,10 @@ module.exports = {
       }) // /forEach
 
       return output
+    }
+
+    const readEnvvars = () => {
+      return { ..._readEnvvars(), ..._readArgs() }
     } // /readEnvvars
 
     return { readEnvvars }

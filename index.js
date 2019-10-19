@@ -61,12 +61,7 @@ let supposed = null
 // resolve the dependency graph
 function Supposed (options) {
   const { allSettled } = allSettledFactory({})
-  const { readEnvvars } = readEnvvarsFactory({
-    isValidUnit: time.isValidUnit,
-    isValidReportOrder: (value) => {
-      return value === REPORT_ORDERS.NON_DETERMINISTIC || value === REPORT_ORDERS.DETERMINISTIC
-    }
-  })
+  const { readEnvvars } = readEnvvarsFactory({})
 
   const envvars = {
     ...{
