@@ -2595,12 +2595,22 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       var _ref3 = new DefaultFormatter(),
           formatDuration = _ref3.formatDuration;
 
+      var STARTS_WITH_HEADING = /^#/;
+
+      var escape = function escape(behavior) {
+        if (STARTS_WITH_HEADING.test(behavior)) {
+          return behavior.substring(behavior.indexOf(' ') + 1);
+        }
+
+        return behavior;
+      };
+
       var toBullets = function toBullets(md, SPACE, layer) {
         if (typeof layer === 'undefined') layer = 0;
         var output = '';
         Object.keys(md).forEach(function (key) {
           var line = key.replace(/\n/g, newLine + SPACE.substring(0, (layer + 1) * 2));
-          output += SPACE.substring(0, layer * 2) + "* ".concat(line).concat(newLine);
+          output += SPACE.substring(0, layer * 2) + "-   ".concat(escape(line)).concat(newLine);
 
           if (md[key].type && md[key].type === TestEvent.types.TEST) {// done
           } else {
@@ -2612,6 +2622,22 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
       var makeTotalsH2 = function makeTotalsH2(totals) {
         return "## Totals".concat(newLine) + "".concat(newLine, "- **total**: ").concat(totals.total) + "".concat(newLine, "- **passed**: ").concat(totals.passed) + "".concat(newLine, "- **failed**: ").concat(totals.failed) + "".concat(newLine, "- **skipped**: ").concat(totals.skipped) + "".concat(newLine, "- **duration**: ").concat(formatDuration(totals.duration));
+      };
+
+      var makeInfoH2 = function makeInfoH2(specs) {
+        var found = specs.filter(function (event) {
+          return event.status === TestEvent.status.PASSED && event.log;
+        });
+
+        if (!found.length) {
+          return;
+        }
+
+        var output = "## Details".concat(newLine);
+        found.forEach(function (event) {
+          output += "".concat(newLine, "#### ").concat(escape(event.behavior)).concat(newLine).concat(newLine) + '```JSON' + "".concat(newLine).concat(JSON.stringify(event.log, null, 2)).concat(newLine) + '```' + newLine;
+        });
+        return output;
       };
 
       var makeErrorsH2 = function makeErrorsH2(specs) {
@@ -2626,9 +2652,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         var output = "## Errors".concat(newLine);
         found.forEach(function (event) {
           if (event.error && event.error.stack) {
-            output += "".concat(newLine).concat(event.behavior).concat(newLine) + '```' + "".concat(newLine).concat(event.error.stack).concat(newLine) + '```' + newLine;
+            output += "".concat(newLine, "#### ").concat(escape(event.behavior)).concat(newLine).concat(newLine) + '```' + "".concat(newLine).concat(event.error.stack).concat(newLine) + '```' + newLine;
           } else {
-            output += "".concat(newLine).concat(event.behavior).concat(newLine);
+            output += "".concat(newLine, "#### ").concat(escape(event.behavior)).concat(newLine);
           }
         });
         return output;
@@ -2648,9 +2674,14 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               return addToSpec(_event.behaviors, spec, _event);
             });
             var errors = makeErrorsH2(event.testEvents);
+            var logs = makeInfoH2(event.testEvents);
 
-            if (errors) {
+            if (errors && logs) {
+              return "# ".concat(title).concat(newLine).concat(newLine).concat(toBullets(spec, SPACE)).concat(newLine).concat(logs).concat(newLine).concat(errors).concat(newLine).concat(makeTotalsH2(event.endEvent.totals));
+            } else if (errors) {
               return "# ".concat(title).concat(newLine).concat(newLine).concat(toBullets(spec, SPACE)).concat(newLine).concat(errors).concat(newLine).concat(makeTotalsH2(event.endEvent.totals));
+            } else if (logs) {
+              return "# ".concat(title).concat(newLine).concat(newLine).concat(toBullets(spec, SPACE)).concat(newLine).concat(logs).concat(newLine).concat(makeTotalsH2(event.endEvent.totals));
             } else {
               return "# ".concat(title).concat(newLine).concat(newLine).concat(toBullets(spec, SPACE)).concat(newLine).concat(makeTotalsH2(event.endEvent.totals));
             }

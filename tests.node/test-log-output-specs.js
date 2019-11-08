@@ -20,6 +20,10 @@ module.exports = (describe, dependencies) => {
         t.strictEqual(found[1].type, 'TEST')
         t.strictEqual(found[1].status, 'PASSED')
         t.strictEqual(found[1].log, expectedLog.log)
+
+        return {
+          log: expectedLog.log
+        }
       }
     },
     'when an assertion passes, and returns a Promise with a `log` property': {
@@ -35,6 +39,10 @@ module.exports = (describe, dependencies) => {
         t.strictEqual(found[1].type, 'TEST')
         t.strictEqual(found[1].status, 'PASSED')
         t.strictEqual(found[1].log, expectedLog.log)
+
+        return {
+          log: expectedLog.log
+        }
       }
     }
   })
