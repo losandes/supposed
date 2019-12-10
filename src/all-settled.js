@@ -8,7 +8,7 @@ module.exports = {
         return new Promise((resolve) => {
           try {
             promise.then((value) => {
-              resolve({ status: 'fullfilled', value })
+              resolve({ status: 'fulfilled', value })
             }).catch((err) => {
               resolve({ status: 'rejected', reason: err })
             })

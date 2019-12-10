@@ -169,7 +169,7 @@ module.exports = {
         : output.concat([current[prop]])
     }
 
-    const fullfilledToOneArray = toOneArray('value')
+    const fulfilledToOneArray = toOneArray('value')
     const failedToOneArray = toOneArray('reason')
 
     const batchRunner = (config, publishOneBrokenTest) => (batch, plan) => {
@@ -189,10 +189,10 @@ module.exports = {
         .then((results) => {
           return {
             results: results
-              .filter((result) => result.status === 'fullfilled')
-              .reduce(fullfilledToOneArray, []),
+              .filter((result) => result.status === 'fulfilled')
+              .reduce(fulfilledToOneArray, []),
             broken: results
-              .filter((result) => result.status !== 'fullfilled')
+              .filter((result) => result.status !== 'fulfilled')
               .reduce(failedToOneArray, []),
             batchTotals: Tally.getTally().batches[batch.batchId]
           }

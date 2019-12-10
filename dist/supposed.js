@@ -49,7 +49,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             try {
               promise.then(function (value) {
                 resolve({
-                  status: 'fullfilled',
+                  status: 'fulfilled',
                   value: value
                 });
               }).catch(function (err) {
@@ -1365,7 +1365,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         };
       };
 
-      var fullfilledToOneArray = toOneArray('value');
+      var fulfilledToOneArray = toOneArray('value');
       var failedToOneArray = toOneArray('reason');
 
       var batchRunner = function batchRunner(config, publishOneBrokenTest) {
@@ -1386,10 +1386,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           }).then(function (results) {
             return {
               results: results.filter(function (result) {
-                return result.status === 'fullfilled';
-              }).reduce(fullfilledToOneArray, []),
+                return result.status === 'fulfilled';
+              }).reduce(fulfilledToOneArray, []),
               broken: results.filter(function (result) {
-                return result.status !== 'fullfilled';
+                return result.status !== 'fulfilled';
               }).reduce(failedToOneArray, []),
               batchTotals: Tally.getTally().batches[batch.batchId]
             };
@@ -2128,7 +2128,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             files: paths,
             runConfig: runConfig,
             broken: results.filter(function (result) {
-              return result.status !== 'fullfilled';
+              return result.status !== 'fulfilled';
             }).map(function (result) {
               return result.reason;
             })
