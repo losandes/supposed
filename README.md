@@ -1468,7 +1468,71 @@ module.exports = setup.then((dependencies) =>
 > NOTE if any of your test files don't return a promise, or resolve a promise before they are complete, `then` will execute before your tests finish running. Whether or not they show upin the context/results depends on a race condition.
 
 ### Test Setup and Teardown
-All supposed tests are promises, so we can chain them together, feed them with setup, and tear down afterwards:
+
+Given, and when (or synonyms) can be used for test setup and teardown:
+
+```JavaScript
+// ./index.js
+const supposed = require('supposed')
+
+supposed.Suite({
+  givenSynonyms: ['given', 'setup'],
+  whenSynonyms: ['when', 'teardown']
+}).runner({
+  cwd: __dirname
+}).run()
+
+// ./first-spec.js
+module.exports = (test) => {
+  const db = []
+
+  return test('if you want to setup and teardown for test(s)', {
+    'you can do the work with the existing DSLs': {
+      given: async () => {
+        // setup
+        db.push({ id: 1, name: 'Jane' })
+      },
+      when: async () => {
+        const byId = (record) => record.id === 1
+        const actual = db.find(byId)
+
+        // teardown
+        db.splice(db.findIndex(byId), 1)
+
+        return actual
+      },
+      'it should have inserted, and removed records':
+        (t) => (err, actual) => {
+          t.strictEqual(err, null)
+          t.strictEqual(actual.id, 1)
+          t.strictEqual(db.find((record) => record.id === 1), undefined)
+        }
+    },
+    'or you can define your own DSL so it makes more sense to you': {
+      setup: async () => {
+        db.push({ id: 1, name: 'Jane' })
+        const actual = db.find((record) => record.id === 1)
+
+        return actual
+      },
+      teardown: async (actual) => {
+        // NOTE that this runs *before* the 'it...'
+        db.splice(db.findIndex((record) => record.id === 1), 1)
+
+        return actual
+      },
+      'it should have inserted, and removed records':
+        (t) => (err, actual) => {
+          t.strictEqual(err, null)
+          t.strictEqual(actual.id, 1)
+          t.strictEqual(db.find((record) => record.id === 1), undefined)
+        }
+    }
+  })
+}
+```
+
+If you aren't using a test runner, then you can also chain tests together. However, this will not work if you later decide to use the runner:
 
 ```JavaScript
 const test = require('supposed')
