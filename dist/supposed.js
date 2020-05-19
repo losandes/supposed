@@ -1,20 +1,24 @@
 "use strict";
 
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
 
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 
-function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
 
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 // Node, or global
 ;
@@ -894,6 +898,17 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             validationErrors.push("Invalid useColors: expected {".concat(_typeof(options.useColors), "} to be {boolean}"));
           }
         });
+        maybeOverrideValue('suppressLogs', function (options) {
+          if (typeof options.suppressLogs === 'boolean') {
+            return options.suppressLogs;
+          } else if (options.suppressLogs === 0) {
+            return false;
+          } else if (options.suppressLogs === 1) {
+            return true;
+          } else if (isDefined(options.suppressLogs)) {
+            validationErrors.push("Invalid suppressLogs: expected {".concat(_typeof(options.suppressLogs), "} to be {boolean}"));
+          }
+        });
         maybeOverrideValue('timeUnits', function (options) {
           if (typeof options.timeUnits === 'string') {
             if (['s', 'ms', 'us', 'ns'].indexOf(options.timeUnits.trim().toLowerCase()) > -1) {
@@ -1615,9 +1630,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           var registerReporters = reportRegistrar(_suiteConfig);
           var publishOneBrokenTest = brokenTestPublisher(_suiteConfig.name);
 
-          var _ref = new BatchComposer(_suiteConfig),
-              makeBatch = _ref.makeBatch,
-              makeBatchId = _ref.makeBatchId;
+          var _BatchComposer = new BatchComposer(_suiteConfig),
+              makeBatch = _BatchComposer.makeBatch,
+              makeBatchId = _BatchComposer.makeBatchId;
 
           var byMatcher = matcher(_suiteConfig);
           var mapToBatch = mapper(_suiteConfig, makeBatch, makeBatchId, byMatcher);
@@ -2389,11 +2404,12 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
       var consoleStyles = dependencies.consoleStyles,
           TestEvent = dependencies.TestEvent,
-          SYMBOLS = dependencies.SYMBOLS;
+          SYMBOLS = dependencies.SYMBOLS,
+          config = dependencies.config;
       var newLine = consoleStyles.newLine();
 
       var formatInfo = function formatInfo(log) {
-        if (typeof log === 'undefined') {
+        if (typeof log === 'undefined' || config.suppressLogs) {
           return '';
         }
 
@@ -2589,11 +2605,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       var newLine = consoleStyles.newLine();
       var space = consoleStyles.space();
 
-      var _ref2 = new SpecFormatter(),
-          addToSpec = _ref2.addToSpec;
+      var _SpecFormatter = new SpecFormatter(),
+          addToSpec = _SpecFormatter.addToSpec;
 
-      var _ref3 = new DefaultFormatter(),
-          formatDuration = _ref3.formatDuration;
+      var _DefaultFormatter = new DefaultFormatter(),
+          formatDuration = _DefaultFormatter.formatDuration;
 
       var STARTS_WITH_HEADING = /^#/;
 
@@ -2765,13 +2781,13 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         INFO: consoleStyles.cyan('# ')
       };
 
-      var _DefaultFormatter = DefaultFormatter({
+      var _DefaultFormatter2 = DefaultFormatter({
         SYMBOLS: SYMBOLS
       }),
-          format = _DefaultFormatter.format,
-          formatInfo = _DefaultFormatter.formatInfo,
-          formatExpectedAndActual = _DefaultFormatter.formatExpectedAndActual,
-          formatStack = _DefaultFormatter.formatStack;
+          format = _DefaultFormatter2.format,
+          formatInfo = _DefaultFormatter2.formatInfo,
+          formatExpectedAndActual = _DefaultFormatter2.formatExpectedAndActual,
+          formatStack = _DefaultFormatter2.formatStack;
 
       var addToSpec = function addToSpec(parts, spec, event) {
         if (!parts.length) {
@@ -2892,7 +2908,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       'use strict';
 
       var consoleStyles = dependencies.consoleStyles,
-          TestEvent = dependencies.TestEvent;
+          TestEvent = dependencies.TestEvent,
+          config = dependencies.config;
       var newLine = consoleStyles.newLine();
       var whitespace = '        ';
 
@@ -2911,7 +2928,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       };
 
       var formatInfo = function formatInfo(behavior, log, severity) {
-        if (typeof log === 'undefined') {
+        if (typeof log === 'undefined' || config.suppressLogs) {
           return '';
         }
 
@@ -2970,7 +2987,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             return formatTest(event);
           } else if (event.isDeterministicOutput) {
             var output = event.testEvents.map(function (_event, idx) {
-              return formatTest(_objectSpread({}, _event, {}, {
+              return formatTest(_objectSpread(_objectSpread({}, _event), {
                 count: idx + 1
               }));
             }).join('\n');
@@ -3041,9 +3058,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       };
 
       function ConsoleReporter(options) {
-        options = _objectSpread({}, {
+        options = _objectSpread(_objectSpread(_objectSpread({}, {
           reportOrder: REPORT_ORDERS.NON_DETERMINISTIC
-        }, {}, envvars, {}, options);
+        }), envvars), options);
         var testEvents = [];
 
         var writeOne = function writeOne(event) {
@@ -3144,9 +3161,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       };
 
       function DomReporter(options) {
-        options = _objectSpread({}, {
+        options = _objectSpread(_objectSpread(_objectSpread({}, {
           reportOrder: REPORT_ORDERS.NON_DETERMINISTIC
-        }, {}, envvars, {}, options);
+        }), envvars), options);
         var testEvents = [];
         initDom();
 
