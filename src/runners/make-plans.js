@@ -59,7 +59,7 @@ module.exports = {
         files: paths,
         runConfig,
         broken: results
-          .filter((result) => result.status !== 'fullfilled')
+          .filter((result) => result.status !== 'fulfilled')
           .map((result) => result.reason)
       }
     }

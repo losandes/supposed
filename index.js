@@ -139,7 +139,8 @@ function Supposed (options) {
         BROKEN: ' !!!! ',
         SKIPPED: ' SKIP ',
         INFO: ' INFO '
-      }
+      },
+      config
     }).DefaultFormatter()
   }
 
@@ -239,7 +240,7 @@ function Supposed (options) {
   }).add(function TapReporter () {
     return {
       write: ConsoleReporter({
-        formatter: TapFormatterFactory({ consoleStyles, TestEvent }).TapFormatter()
+        formatter: TapFormatterFactory({ consoleStyles, TestEvent, config }).TapFormatter()
       }).write
     }
   })

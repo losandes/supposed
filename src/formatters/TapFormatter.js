@@ -3,7 +3,7 @@ module.exports = {
   factory: (dependencies) => {
     'use strict'
 
-    const { consoleStyles, TestEvent } = dependencies
+    const { consoleStyles, TestEvent, config } = dependencies
     const newLine = consoleStyles.newLine()
     const whitespace = '        '
 
@@ -24,7 +24,7 @@ module.exports = {
     }
 
     const formatInfo = (behavior, log, severity) => {
-      if (typeof log === 'undefined') {
+      if (typeof log === 'undefined' || config.suppressLogs) {
         return ''
       }
 
