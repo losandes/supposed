@@ -1,6 +1,6 @@
 {
   "name": "supposed",
-  "version": "1.0.8-beta.1",
+  "version": "1.1.0",
   "description": "a test library for node.js",
   "main": "index.js",
   "scripts": {
@@ -42,21 +42,21 @@
   },
   "homepage": "https://github.com/losandes/supposed#readme",
   "devDependencies": {
-    "@babel/core": "~7.6.0",
-    "@babel/preset-env": "~7.6.0",
-    "@types/chai": "~4.2.3",
-    "@types/node": "~12.7.5",
+    "@babel/core": "~7.9.6",
+    "@babel/preset-env": "~7.9.6",
+    "@types/chai": "~4.2.11",
+    "@types/node": "~14.0.1",
     "chai": "~4.2.0",
-    "eslint": "~6.4.0",
-    "eslint-config-standard": "~14.1.0",
-    "eslint-plugin-import": "~2.18.2",
-    "eslint-plugin-node": "~10.0.0",
+    "eslint": "~7.0.0",
+    "eslint-config-standard": "~14.1.1",
+    "eslint-plugin-import": "~2.20.2",
+    "eslint-plugin-node": "~11.1.0",
     "eslint-plugin-promise": "~4.2.1",
     "eslint-plugin-standard": "~4.0.1",
     "pre-push": "~0.1.1",
-    "puppeteer": "~1.20.0",
-    "supposed": ".",
-    "tap-parser": "~9.3.3",
-    "typescript": "~3.6.3"
+    "puppeteer": "~3.1.0",
+    "supposed": "link:",
+    "tap-parser": "~10.0.1",
+    "typescript": "~3.9.2"
   }
 }

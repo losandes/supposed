@@ -52,7 +52,7 @@ Supposed is a fast, hackable test framework for Node.js, TypeScript, and the Bro
       * [Configuring the NodeJS Runner](#configuring-the-nodejs-runner)
       * [Skipping File Discovery With the NodeJS Runner](#skipping-file-discovery-with-the-nodejs-runner)
       * [Running Multiple Suites](#running-multiple-suites)
-      * [Running Multiple Suites In Multiple Processes](#running-multiple-suites-in-multiple-processes)    
+      * [Running Multiple Suites In Multiple Processes](#running-multiple-suites-in-multiple-processes)
     * [Using the Browser Test Server](#using-the-browser-test-server)
       * [Configuring the Browser Test Server](#configuring-the-browser-test-server)
       * [Skipping File Discovery With the Browser Test Server](#skipping-file-discovery-with-the-browser-test-server)
@@ -275,6 +275,7 @@ Supposed has options that can be set with command-line arguments, or envvars. Th
 * **match description**: run only tests whose descriptions/behaviors match the regular expression
 * **match file name**: run only tests whose file names match the regular expression (only used with runner)
 * **no-color**: (default is based on TTY) force supposed to display all output without color
+* **no-logs**: suppress [log context](#adding-information-to-report-output-eventlog) in the output of some reporters
 * **report-order**: (`deterministic|non-deterministic`) (default is per-reporter) Some reporters print test outcomes in a non-deterministic order because tests run concurrently. You can override this by setting the order to "deterministic"
 * **time-units**: (`s|ms|us|ns`) (default is `us`) the units to use for event timestamps
 * **verbosity**: (`info|debug`) (default is `info`) TestEvents that include plans, and totals can be very verbose. By default the TestEvents just expose metrics, but if you need to glean more information from the events, such as the planned tests, or the results of the tests, set the verbosity to 'debug'
@@ -292,6 +293,7 @@ Supposed has options that can be set with command-line arguments, or envvars. Th
 * `-u` or `--time-units` (the units to use for timestamps)
 * `-v` or `--verbosity` (how much detail is included in TestEvents)
 * `--no-color` (b+w terminal output)
+* `--no-logs` (suppress log context in the output of some reporters)
 
 
 ```Shell
@@ -316,6 +318,7 @@ $ node tests --no-color
 * `SUPPOSED_TIME_UNITS` (the units to use for timestamps)
 * `SUPPOSED_VERBOSITY` (how much detail is included in TestEvents)
 * `SUPPOSED_NO_COLOR` (b+w terminal output)
+* `SUPPOSED_NO_LOGS` (suppress log context in the output of some reporters)
 
 ```Shell
 $ npm install --save-dev tap-parser
@@ -325,6 +328,7 @@ $ export SUPPOSED_REPORT_ORDER=deterministic
 $ export SUPPOSED_TIME_UNITS=ms
 $ export SUPPOSED_VERBOSITY=info
 $ export SUPPOSED_NO_COLOR=true
+$ export SUPPOSED_NO_LOGS=true
 $ node tests -r tap | npx tap-parser -j | jq
 ```
 
@@ -1407,8 +1411,8 @@ module.exports = require('supposed')
      scripts: [
        fs.readFileSync(path.join(__dirname, 'first-spec.js')).toString(),
        fs.readFileSync(path.join(__dirname, 'second-spec.js')).toString()
-     ],      
-     */   
+     ],
+     */
     // The template will run after all of the dependencies, and/or scripts,
     // so it's safe to compose whatever you need to, and run the suite
     template: fs.readFileSync(path.join(__dirname, 'test-template.js')).toString()

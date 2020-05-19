@@ -68,6 +68,17 @@ module.exports = {
           validationErrors.push(`Invalid useColors: expected {${typeof options.useColors}} to be {boolean}`)
         }
       })
+      maybeOverrideValue('suppressLogs', (options) => {
+        if (typeof options.suppressLogs === 'boolean') {
+          return options.suppressLogs
+        } else if (options.suppressLogs === 0) {
+          return false
+        } else if (options.suppressLogs === 1) {
+          return true
+        } else if (isDefined(options.suppressLogs)) {
+          validationErrors.push(`Invalid suppressLogs: expected {${typeof options.suppressLogs}} to be {boolean}`)
+        }
+      })
       maybeOverrideValue('timeUnits', (options) => {
         if (typeof options.timeUnits === 'string') {
           if (['s', 'ms', 'us', 'ns'].indexOf(options.timeUnits.trim().toLowerCase()) > -1) {

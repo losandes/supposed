@@ -56,6 +56,11 @@ module.exports = {
             process.env.SUPPOSED_NO_COLOR === '1'
         ) ? false
           : undefined,
+        suppressLogs: process.env.SUPPOSED_NO_LOGS && (
+          process.env.SUPPOSED_NO_LOGS === 'true' ||
+            process.env.SUPPOSED_NO_LOGS === '1'
+        ) ? true
+          : undefined,
         timeUnits: process.env.SUPPOSED_TIME_UNITS
           ? process.env.SUPPOSED_TIME_UNITS.trim().toLowerCase()
           : undefined,
@@ -82,6 +87,7 @@ module.exports = {
         const match = findMatch(Option('m', 'match'), value, idx, args)
         const file = findMatch(Option('f', 'file'), value, idx, args)
         const noColor = findMatch(Swatch('no-color'), value, idx, args)
+        const noLogs = findMatch(Swatch('no-logs'), value, idx, args)
         const timeUnits = findMatch(Option('u', 'time-units'), value, idx, args)
         const reportOrder = findMatch(Option('o', 'report-order'), value, idx, args)
         const verbosity = findMatch(Option('v', 'verbosity'), value, idx, args)
@@ -100,6 +106,10 @@ module.exports = {
 
         if (noColor) {
           output.useColors = false
+        }
+
+        if (noLogs) {
+          output.suppressLogs = true
         }
 
         if (timeUnits) {

@@ -3,11 +3,11 @@ module.exports = {
   factory: (dependencies) => {
     'use strict'
 
-    const { consoleStyles, TestEvent, SYMBOLS } = dependencies
+    const { consoleStyles, TestEvent, SYMBOLS, config } = dependencies
     const newLine = consoleStyles.newLine()
 
     const formatInfo = (log) => {
-      if (typeof log === 'undefined') {
+      if (typeof log === 'undefined' || config.suppressLogs) {
         return ''
       }
 
