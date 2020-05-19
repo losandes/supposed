@@ -87,7 +87,8 @@
           BROKEN: ' !!!! ',
           SKIPPED: ' SKIP ',
           INFO: ' INFO '
-        }
+        },
+        config
       }).DefaultFormatter()
     }
 
@@ -191,7 +192,7 @@
     }).add(function TapReporter () {
       return {
         write: ConsoleReporter({
-          formatter: module.factories.TapFormatterFactory({ consoleStyles, TestEvent }).TapFormatter()
+          formatter: module.factories.TapFormatterFactory({ consoleStyles, TestEvent, config }).TapFormatter()
         }).write
       }
     })
