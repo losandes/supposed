@@ -4,12 +4,15 @@
 .vscode
 archive
 npm-debug.log
-tests
 tests.browser
 tests.examples
 tests.manual
+tests.node
 tests.typescript
 build.browser.js
 index.browser.js
 pre-push.js
+test-browser.js
+test-examples.js
+test.js
 tsconfig.json
