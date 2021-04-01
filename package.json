@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "node build.browser.js",
+    "lint": "eslint .",
     "pre-push": "npm test && node pre-push.js",
     "test": "npm run test:ts -- -r nyan && node test-browser -r nyan && node test-examples && node test -r nyan",
     "test:ts": "tsc -p ./tsconfig.json && node tests.typescript/index.js",

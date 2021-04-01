@@ -34,9 +34,6 @@ jobs:
     - name: Install npm dependencies
       run: pnpm install
 
-    - name: Lint the code
-      run: pnpm run lint
-
     - name: Build browser distribution
       run: pnpm run build --if-present
 

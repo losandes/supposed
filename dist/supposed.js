@@ -3548,7 +3548,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
           BROKEN: ' !!!! ',
           SKIPPED: ' SKIP ',
           INFO: ' INFO '
-        }
+        },
+        config: config
       }).DefaultFormatter();
     }
 
@@ -3693,7 +3694,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
         write: ConsoleReporter({
           formatter: module.factories.TapFormatterFactory({
             consoleStyles: consoleStyles,
-            TestEvent: TestEvent
+            TestEvent: TestEvent,
+            config: config
           }).TapFormatter()
         }).write
       };
