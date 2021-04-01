@@ -8,6 +8,8 @@
     "pre-push": "npm test && node pre-push.js",
     "test": "npm run test:ts -- -r nyan && node test-browser -r nyan && node test-examples && node test -r nyan",
     "test:ts": "tsc -p ./tsconfig.json && node tests.typescript/index.js",
+    "test:coverage": "nyc node test.js",
+    "test:coverage:ci": "mkdir ./coverage && touch ./coverage/lcov.info && node test-browser.js -r tap && npm run test:ts -- -r tap && nyc node test.js -r tap,summary && nyc report --reporter=text-lcov > ./coverage/lcov.info",
     "watch": "nodemon -e js --exec 'node test.js -r nyan'"
   },
   "pre-push": [
@@ -52,6 +54,7 @@
     "eslint-plugin-import": "~2.22.1",
     "eslint-plugin-node": "~11.1.0",
     "eslint-plugin-promise": "~4.3.1",
+    "nyc": "~15.1.0",
     "pre-push": "~0.1.1",
     "puppeteer": "~8.0.0",
     "supposed": "link:",
