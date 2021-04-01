@@ -9,7 +9,7 @@ const suites = [
   // './runners/skipping-file-discovery-browser/index.js',
   // './runners/using-browser-test-server/index.js',
   // './runners/using-browser-test-server-custom-template/index.js',
-  './coalescing-to-md/index.js',
+  // './coalescing-to-md/index.js',
   './custom-reporters/index.js',
   './custom-reporters/reporter-factory.js',
   './manual-test-requires/index.js',
