@@ -1,4 +1,3 @@
-import * as Chai from 'chai';
 import { ISuppose } from 'supposed';
 
 export = async function (test: ISuppose): Promise<void> {

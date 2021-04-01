@@ -284,7 +284,13 @@ export interface ISuppose {
   };
 }
 
-export default ISuppose;
+export default function (
+  description: string,
+  assertions: IAssert | IBehaviors | IBDD | IAAA | IVow
+): ISuppose;
+export default function (
+  assertions: IAssert | IBehaviors | IBDD | IAAA | IVow
+): ISuppose;
 export function Suite (config?: ISuiteConfig): ISuppose;
 export const suites: ISuites;
 export function configure (config?: ISuiteConfig): ISuppose;
