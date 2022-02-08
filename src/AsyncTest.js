@@ -110,15 +110,6 @@ module.exports = {
     function checkAssertions (context) {
       const promises = context.test.assertions.map((assertion) => {
         return assertOne(context, assertion, () => {
-          if (assertion.test.length > 1) {
-            // the assertion accepts all arguments to a single function
-            return assertion.test(
-              context.config.assertionLibrary,
-              context.err,
-              context.resultOfWhen
-            )
-          }
-
           // the assertion may or may not curry: (t, err, actual) => { ... }
           const maybeFunc = assertion.test(context.config.assertionLibrary, context.err, context.resultOfWhen)
 

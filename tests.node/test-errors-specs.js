@@ -92,6 +92,22 @@ module.exports = function (describe, dependencies) {
         t.ifError(err)
         t.strictEqual(actual.totals.failed, 1)
         t.strictEqual(actual.results[0].error.message, 'assertion ERROR!')
+      },
+      'because of a curry mismatch': {
+        when: () => {
+          return describe.Suite({ ...defaultConfig, ...{ name: 'assertion-throws', timeout: 10 } })({
+            when: () => ({ result: 1 + 2 }),
+            'it should': (err, actual) => () => {
+              t.ifError(err)
+              t.strictEqual(actual.result, 3)
+            }
+          })
+        },
+        'the test should fail': (t) => (err, actual) => {
+          t.ifError(err)
+          t.strictEqual(actual.totals.failed, 1)
+          t.strictEqual(actual.results[0].error.message, 't is not defined')
+        }
       }
     },
     'when `given` is never resolved': {
