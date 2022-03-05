@@ -1,0 +1,53 @@
+# This workflow will publish the npm package when a release is created
+
+name: NPM publish
+
+on:
+  release:
+    # This specifies that the build will be triggered when we publish a release
+    types: [published]
+
+jobs:
+  build:
+
+    # Run on latest version of ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        # "ref" specifies the branch to check out.
+        # "github.event.release.target_commitish" is a global variable and specifies the branch the release targeted
+        ref: ${{ github.event.release.target_commitish }}
+    # install Node.js
+    - name: Use Node.js 14
+      uses: actions/setup-node@v1
+      with:
+        node-version: 14
+        # Specifies the registry, this field is required!
+        registry-url: https://registry.npmjs.org/
+
+    - run: node --version
+    - run: npm --version
+
+    - name: Install pnpm
+      run: npm i -g pnpm
+
+    - name: Install npm dependencies
+      run: pnpm install
+
+    - name: Build browser distribution
+      run: pnpm run build --if-present
+
+    - name: Run tests
+      run: pnpm run test:coverage:ci
+      env:
+        CI: true
+    - run: npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    # push the version changes to GitHub
+    - run: git push
+      env:
+        # The secret is passed automatically. Nothing to configure.
+        github-token: ${{ secrets.GITHUB_TOKEN }}
