@@ -56,7 +56,6 @@
     "eslint-plugin-node": "~11.1.0",
     "eslint-plugin-promise": "~6.0.0",
     "nyc": "~15.1.0",
-    "pre-push": "~0.1.1",
     "puppeteer": "~13.4.1",
     "supposed": "link:",
     "tap-parser": "~11.0.0",
