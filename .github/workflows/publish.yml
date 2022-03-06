@@ -20,41 +20,56 @@ jobs:
         # "github.event.release.target_commitish" is a global variable and specifies the branch the release targeted
         ref: ${{ github.event.release.target_commitish }}
     # install Node.js
-    - name: Use Node.js 14
+    - name: Use Node.js 16
       uses: actions/setup-node@v1
       with:
-        node-version: 14
+        node-version: 16
         # Specifies the registry, this field is required!
         registry-url: https://registry.npmjs.org/
 
-    - run: node --version
-    - run: npm --version
+    - name: ENVVARS
+      run: |
+        git config --global user.name "losandes cicd"
+        git config --global user.email "andes.collab+ghcicd@gmail.com"
+        node --version
+        npm --version
+        echo "${{ toJson(${{ github.event) }}"
 
-    - name: Install pnpm
-      run: npm i -g pnpm
+    - name: Install Packages
+      run: |
+        npm i -g pnpm
+        pnpm install
 
-    - name: Install npm dependencies
-      run: pnpm install
-
-    - name: Build browser distribution
+    - name: Build Browser Distribution
       run: pnpm run build --if-present
 
-    - name: Run tests
+    - name: Run Tests
       run: pnpm run test:coverage:ci
       env:
         CI: true
 
+    - name: Commit Browser Build
+      run: |
+        git add -A
+        git commit -m "cicd: updates browser distribution"
+
     # upgrade npm version in package.json to the tag used in the release.
-    - run: npm version ${{ github.event.release.tag_name }}
+    - name: Set Package Version
+      run: npm version ${{ github.event.release.tag_name }}
 
     # publish the package to NPM and set the tag name to the branch name that
     # the release is targeting (i.e. latest, latest-v1, etc.)
     # alsosee: https://michaelzanggl.com/articles/github-actions-cd-setup/
-    - run: npm publish --tag ${{ github.event.release.target_commitish }}
+    - name: Publish to NPM
+      run: npm publish --tag ${{ github.event.release.target_commitish }}
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    # push the version changes to GitHub
-    - run: git push
+
+    - name: Push Version Change to latest
+      run: |
+        git add -A
+        git commit -m "cicd: updates version number"
+        git push
       env:
         # The secret is passed automatically. Nothing to configure.
         github-token: ${{ secrets.GITHUB_TOKEN }}
