@@ -43,7 +43,14 @@ jobs:
       run: pnpm run test:coverage:ci
       env:
         CI: true
-    - run: npm publish
+
+    # upgrade npm version in package.json to the tag used in the release.
+    - run: npm version ${{ github.event.release.tag_name }}
+
+    # publish the package to NPM and set the tag name to the branch name that
+    # the release is targeting (i.e. latest, latest-v1, etc.)
+    # alsosee: https://michaelzanggl.com/articles/github-actions-cd-setup/
+    - run: npm publish --tag ${{ github.event.release.target_commitish }}
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     # push the version changes to GitHub
