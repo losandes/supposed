@@ -29,7 +29,6 @@ jobs:
       run: |
         node --version
         npm --version
-        echo "${{ toJson(${{ github.event) }}"
 
     - name: Install Packages
       run: |

@@ -33,7 +33,6 @@ jobs:
         git config --global user.email "andes.collab+ghcicd@gmail.com"
         node --version
         npm --version
-        echo "${{ toJson(${{ github.event) }}"
 
     - name: Install Packages
       run: |
