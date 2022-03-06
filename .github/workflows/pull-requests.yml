@@ -5,9 +5,9 @@ name: tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ latest ]
   pull_request:
-    branches: [ main ]
+    branches: [ latest ]
 
 jobs:
   build:
@@ -25,19 +25,21 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
 
-    - run: node --version
-    - run: npm --version
+    - name: ENVVARS
+      run: |
+        node --version
+        npm --version
+        echo "${{ toJson(${{ github.event) }}"
 
-    - name: Install pnpm
-      run: npm i -g pnpm
+    - name: Install Packages
+      run: |
+        npm i -g pnpm
+        pnpm install
 
-    - name: Install npm dependencies
-      run: pnpm install
-
-    - name: Build browser distribution
+    - name: Build Browser Distribution
       run: pnpm run build --if-present
 
-    - name: Run tests
+    - name: Run Tests
       run: pnpm run test:coverage:ci
       env:
         CI: true
