@@ -58,6 +58,7 @@ jobs:
 
     # publish the package to NPM and set the tag name to the branch name that
     # the release is targeting (i.e. latest, latest-v1, etc.)
+    # Note that npm publish commits a tag to git
     # alsosee: https://michaelzanggl.com/articles/github-actions-cd-setup/
     - name: Publish to NPM
       run: npm publish --tag ${{ github.event.release.target_commitish }}
@@ -65,10 +66,7 @@ jobs:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     - name: Push Version Change to latest
-      run: |
-        git add -A
-        git commit -m "cicd: updates version number"
-        git push
+      run: git push
       env:
         # The secret is passed automatically. Nothing to configure.
         github-token: ${{ secrets.GITHUB_TOKEN }}
