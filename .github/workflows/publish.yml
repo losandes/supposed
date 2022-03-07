@@ -35,7 +35,8 @@ jobs:
         git config --global user.email "andes.collab+ghcicd@gmail.com"
         echo "node: $(node --version)"
         echo "npm: $(npm --version)"
-        echo "$EVENT_CONTEXT"
+      # echo "EVENT_CONTEXT:"
+      # echo "$EVENT_CONTEXT"
 
     - name: Install Packages
       run: |

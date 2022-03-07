@@ -31,7 +31,8 @@ jobs:
       run: |
         echo "node: $(node --version)"
         echo "npm: $(npm --version)"
-        echo "$EVENT_CONTEXT"
+      # echo "EVENT_CONTEXT:"
+      # echo "$EVENT_CONTEXT"
 
     - name: Install Packages
       run: |
