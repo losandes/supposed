@@ -26,9 +26,12 @@ jobs:
         node-version: ${{ matrix.node-version }}
 
     - name: ENVVARS
+      env:
+        EVENT_CONTEXT: ${{ toJson(github.event) }}
       run: |
-        node --version
-        npm --version
+        echo "node: $(node --version)"
+        echo "npm: $(npm --version)"
+        echo "$EVENT_CONTEXT"
 
     - name: Install Packages
       run: |
@@ -39,6 +42,6 @@ jobs:
       run: pnpm run build --if-present
 
     - name: Run Tests
-      run: pnpm run test:coverage:ci
       env:
         CI: true
+      run: pnpm run test:coverage:ci

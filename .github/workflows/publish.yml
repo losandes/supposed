@@ -24,15 +24,18 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 16
-        # Specifies the registry, this field is required!
+        # Specifies the registry, this field is required for publishing below!
         registry-url: https://registry.npmjs.org/
 
     - name: ENVVARS
+      env:
+        EVENT_CONTEXT: ${{ toJson(github.event) }}
       run: |
         git config --global user.name "losandes cicd"
         git config --global user.email "andes.collab+ghcicd@gmail.com"
-        node --version
-        npm --version
+        echo "node: $(node --version)"
+        echo "npm: $(npm --version)"
+        echo "$EVENT_CONTEXT"
 
     - name: Install Packages
       run: |
@@ -43,9 +46,9 @@ jobs:
       run: pnpm run build --if-present
 
     - name: Run Tests
-      run: pnpm run test:coverage:ci
       env:
         CI: true
+      run: pnpm run test:coverage:ci
 
     - name: Commit Browser Build
       run: |
@@ -61,12 +64,12 @@ jobs:
     # Note that npm publish commits a tag to git
     # alsosee: https://michaelzanggl.com/articles/github-actions-cd-setup/
     - name: Publish to NPM
-      run: npm publish --tag ${{ github.event.release.target_commitish }}
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: npm publish --tag ${{ github.event.release.target_commitish }}
 
     - name: Push Version Change to latest
-      run: git push
       env:
         # The secret is passed automatically. Nothing to configure.
         github-token: ${{ secrets.GITHUB_TOKEN }}
+      run: git push
