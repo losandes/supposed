@@ -54,12 +54,14 @@ module.exports = {
         useColors: process.env.SUPPOSED_NO_COLOR && (
           process.env.SUPPOSED_NO_COLOR === 'true' ||
             process.env.SUPPOSED_NO_COLOR === '1'
-        ) ? false
+        )
+          ? false
           : undefined,
         suppressLogs: process.env.SUPPOSED_NO_LOGS && (
           process.env.SUPPOSED_NO_LOGS === 'true' ||
             process.env.SUPPOSED_NO_LOGS === '1'
-        ) ? true
+        )
+          ? true
           : undefined,
         timeUnits: process.env.SUPPOSED_TIME_UNITS
           ? process.env.SUPPOSED_TIME_UNITS.trim().toLowerCase()

@@ -34,7 +34,7 @@ module.exports = function (describe, dependencies) {
     },
     'when an assertion returns a promise': {
       when: () => {
-        var promiseFinished = false
+        let promiseFinished = false
 
         return describe.Suite({ ...defaultConfig, ...{ name: 'assertion-promise' } })({
           t1: (t) => {
@@ -62,7 +62,7 @@ module.exports = function (describe, dependencies) {
     },
     'when an assertion uses async await': {
       when: () => {
-        var promiseFinished = false
+        let promiseFinished = false
 
         return describe.Suite({ ...defaultConfig, ...{ name: 'assertion-async-await' } })({
           t1: async t => {

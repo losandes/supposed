@@ -98,8 +98,8 @@ module.exports = function (describe, dependencies) {
           return describe.Suite({ ...defaultConfig, ...{ name: 'assertion-throws', timeout: 10 } })({
             when: () => ({ result: 1 + 2 }),
             'it should': (err, actual) => () => {
-              t.ifError(err)
-              t.strictEqual(actual.result, 3)
+              t.ifError(err)                  // eslint-disable-line no-undef
+              t.strictEqual(actual.result, 3) // eslint-disable-line no-undef
             }
           })
         },

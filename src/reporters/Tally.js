@@ -65,8 +65,8 @@ module.exports = {
 
           totals.results.push(event)
         } catch (e) {
-          console.log(event)
-          console.log(e)
+          console.log(event) // eslint-disable-line no-console
+          console.log(e)     // eslint-disable-line no-console
         }
       }
 

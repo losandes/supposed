@@ -6,16 +6,12 @@
   "scripts": {
     "build": "node build.browser.js",
     "lint": "eslint .",
-    "pre-push": "npm test && node pre-push.js",
-    "test": "npm run test:ts -- -r nyan && node test-browser -r nyan && node test-examples && node test -r nyan",
+    "test": "pnpm run test:ts -- -r nyan && node test-browser -r nyan && node test-examples && node test -r nyan",
     "test:ts": "tsc -p ./tsconfig.json && node tests.typescript/index.js",
     "test:coverage": "nyc node test.js",
     "test:coverage:ci": "mkdir ./coverage && touch ./coverage/lcov.info && node test-browser.js -r tap && npm run test:ts -- -r tap && nyc node test.js -r tap,summary && nyc report --reporter=text-lcov > ./coverage/lcov.info",
     "watch": "nodemon -e js --exec 'node test.js -r nyan'"
   },
-  "pre-push": [
-    "pre-push"
-  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/losandes/supposed.git"
@@ -45,10 +41,10 @@
   },
   "homepage": "https://github.com/losandes/supposed#readme",
   "devDependencies": {
-    "@babel/core": "~7.17.5",
+    "@babel/core": "~7.17.9",
     "@babel/preset-env": "~7.16.11",
     "@types/chai": "~4.3.0",
-    "@types/node": "~17.0.21",
+    "@types/node": "~17.0.23",
     "chai": "~4.3.6",
     "eslint": "~8.10.0",
     "eslint-config-standard": "~16.0.3",
@@ -58,12 +54,13 @@
     "nyc": "~15.1.0",
     "puppeteer": "~13.4.1",
     "supposed": "link:",
-    "tap-parser": "~11.0.0",
-    "typescript": "~4.6.2"
+    "tap-parser": "~11.0.1",
+    "typescript": "~4.6.3"
   },
   "pnpm": {
     "overrides": {
-      "shelljs@<0.8.5": ">=0.8.5"
+      "shelljs@<0.8.5": ">=0.8.5",
+      "minimist@<1.2.6": ">=1.2.6"
     }
   }
 }

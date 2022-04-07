@@ -35,17 +35,17 @@ module.exports = {
     function MurmurHashV3 (key, seed) {
       if (!isBuffer(key)) key = createBuffer(key)
 
-      var remainder, bytes, h1, h1b, c1, c2, k1, i
-
-      remainder = key.length & 3 // key.length % 4
-      bytes = key.length - remainder
-      h1 = seed
-      c1 = 0xcc9e2d51
-      c2 = 0x1b873593
-      i = 0
+      const remainder = key.length & 3 // key.length % 4
+      const bytes = key.length - remainder
+      const c1 = 0xcc9e2d51
+      const c2 = 0x1b873593
+      let i = 0
+      let h1 = seed
+      let h1b
+      let k1
 
       while (i < bytes) {
-        k1 =
+        let k1 =
             ((key[i] & 0xff)) |
             ((key[++i] & 0xff) << 8) |
             ((key[++i] & 0xff) << 16) |

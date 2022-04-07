@@ -65,6 +65,7 @@ module.exports = {
           return
         }
 
+        // eslint-disable-next-line no-console
         console.log(line)
         reportPre.append(`${line}\n`)
         scrollToBottom()
