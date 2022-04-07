@@ -46,3 +46,6 @@ jobs:
       env:
         CI: true
       run: pnpm run test:coverage:ci
+
+    - name: Lint the repo
+      run: pnpm run lint
