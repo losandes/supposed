@@ -195,12 +195,14 @@ module.exports = {
 
       server.listen(port, (err) => {
         if (err) {
+          // eslint-disable-next-line no-console
           return console.log(err)
         }
 
         if (process.stdout.isTTY) {
           // if the output is being piped into something else, this could cause problems
           // only write this when in a text terminal
+          // eslint-disable-next-line no-console
           console.log(`# supposed server is listening at http://localhost:${port}`)
         }
       })

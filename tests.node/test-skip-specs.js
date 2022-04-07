@@ -136,9 +136,9 @@ module.exports = function (describe, dependencies) {
   })
 
   function behaviorIsSkipped () {
-    var behaviorRan = false
-    var assertion1Ran = false
-    var assertion2Ran = false
+    let behaviorRan = false
+    let assertion1Ran = false
+    let assertion2Ran = false
 
     return describe.Suite({ ...defaultConfig, ...{ name: 'behavior-is-skipped' } })({
       '// when behavior': {
@@ -163,9 +163,9 @@ module.exports = function (describe, dependencies) {
   }
 
   function namedBehaviorIsSkipped () {
-    var behaviorRan = false
-    var assertion1Ran = false
-    var assertion2Ran = false
+    let behaviorRan = false
+    let assertion1Ran = false
+    let assertion2Ran = false
 
     return describe.Suite({ ...defaultConfig, ...{ name: 'named-behavior-is-skipped' } })('named', {
       '// when behavior': {
@@ -190,9 +190,9 @@ module.exports = function (describe, dependencies) {
   }
 
   function assertionIsSkipped () {
-    var behaviorRan = false
-    var assertion1Ran = false
-    var assertion2Ran = false
+    let behaviorRan = false
+    let assertion1Ran = false
+    let assertion2Ran = false
 
     return describe.Suite({ ...defaultConfig, ...{ name: 'assertion-is-skipped' } })({
       'when behavior': {
@@ -217,9 +217,9 @@ module.exports = function (describe, dependencies) {
   }
 
   function behaviorIsSkippedWithTapSkipDirective () {
-    var behaviorRan = false
-    var assertion1Ran = false
-    var assertion2Ran = false
+    let behaviorRan = false
+    let assertion1Ran = false
+    let assertion2Ran = false
 
     return describe.Suite({ ...defaultConfig, ...{ name: 'tap-skip-directive' } })({
       'when behavior': {
@@ -244,9 +244,9 @@ module.exports = function (describe, dependencies) {
   }
 
   function behaviorIsSkippedWithTapTodoDirective () {
-    var behaviorRan = false
-    var assertion1Ran = false
-    var assertion2Ran = false
+    let behaviorRan = false
+    let assertion1Ran = false
+    let assertion2Ran = false
 
     return describe.Suite({ ...defaultConfig, ...{ name: 'tap-todo-directive' } })({
       'when behavior': {

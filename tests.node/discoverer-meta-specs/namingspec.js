@@ -1,6 +1,6 @@
 module.exports = (test) => {
   return test('DefaultDiscoverer', {
-    'matchesNamingConvention': t => {
+    matchesNamingConvention: t => {
       t.strictEqual(1, 1)
     }
   })

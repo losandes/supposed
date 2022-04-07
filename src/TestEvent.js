@@ -28,7 +28,7 @@ module.exports = {
     }
 
     const TestEvent = function (event) {
-      var self = {}
+      const self = {}
       event = Object.assign({}, event)
 
       if (event.suiteId) {
@@ -71,11 +71,13 @@ module.exports = {
       }
 
       if (event.plan) {
-        self.plan = envvars.verbosity === 'debug' ? event.plan : {
-          count: event.plan.count,
-          completed: event.plan.completed,
-          order: event.plan.order
-        }
+        self.plan = envvars.verbosity === 'debug'
+          ? event.plan
+          : {
+              count: event.plan.count,
+              completed: event.plan.completed,
+              order: event.plan.order
+            }
       }
 
       if (event.error) {
@@ -95,29 +97,33 @@ module.exports = {
       }
 
       if (event.tally) {
-        self.tally = envvars.verbosity === 'debug' ? event.tally : {
-          total: event.tally.total,
-          passed: event.tally.passed,
-          skipped: event.tally.skipped,
-          failed: event.tally.failed,
-          broken: event.tally.broken,
-          startTime: event.tally.startTime,
-          endTime: event.tally.endTime,
-          duration: event.tally.duration
-        }
+        self.tally = envvars.verbosity === 'debug'
+          ? event.tally
+          : {
+              total: event.tally.total,
+              passed: event.tally.passed,
+              skipped: event.tally.skipped,
+              failed: event.tally.failed,
+              broken: event.tally.broken,
+              startTime: event.tally.startTime,
+              endTime: event.tally.endTime,
+              duration: event.tally.duration
+            }
       }
 
       if (event.totals) {
-        self.totals = envvars.verbosity === 'debug' ? event.totals : {
-          total: event.totals.total,
-          passed: event.totals.passed,
-          skipped: event.totals.skipped,
-          failed: event.totals.failed,
-          broken: event.totals.broken,
-          startTime: event.totals.startTime,
-          endTime: event.totals.endTime,
-          duration: event.totals.duration
-        }
+        self.totals = envvars.verbosity === 'debug'
+          ? event.totals
+          : {
+              total: event.totals.total,
+              passed: event.totals.passed,
+              skipped: event.totals.skipped,
+              failed: event.totals.failed,
+              broken: event.totals.broken,
+              startTime: event.totals.startTime,
+              endTime: event.totals.endTime,
+              duration: event.totals.duration
+            }
       }
 
       return Object.freeze(self)

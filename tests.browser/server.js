@@ -41,6 +41,7 @@ module.exports = suite.runner({
         context.lastEvent = json
         suite.config.reporters.forEach((reporter) => reporter.write(json))
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.log(txt)
         context.lastEvent = txt
       }

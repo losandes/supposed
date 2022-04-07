@@ -70,7 +70,7 @@ module.exports = function (describe, dependencies) {
 
   function whenGivenWhenAndThen (given, when) {
     return () => {
-      var test = {
+      const test = {
         'sut-description': {
           'sut-assertion': (t) => (err, actual) => {
             t.ifError(err)
@@ -97,8 +97,8 @@ module.exports = function (describe, dependencies) {
 
   function whenGivenThenAndNoWhen (given) {
     return () => {
-      var givenRan = false
-      var test = {
+      let givenRan = false
+      const test = {
         'sut-description': {
           'sut-assertion': (t) => (err, actual) => {
             t.ifError(err)

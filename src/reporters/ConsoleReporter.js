@@ -28,6 +28,7 @@ module.exports = {
         const line = format(event)
 
         if (line) {
+          // eslint-disable-next-line no-console
           console.log(line)
         }
       }
