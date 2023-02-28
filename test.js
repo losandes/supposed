@@ -22,7 +22,7 @@ const suite = supposed.Suite({
 // })
 
 module.exports = suite.runner({
-  cwd: path.join(__dirname, 'tests.node'),
+  directories: ['./tests.node', './tests.es'],
   matchesIgnoredConvention: /discoverer-meta-specs|node_modules/i
 })
   // .plan()
