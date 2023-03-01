@@ -3,6 +3,9 @@
   "version": "1.2.0",
   "description": "a test library for node.js",
   "main": "index.js",
+  "bin": {
+    "supposed": "./bin/supposed.js"
+  },
   "scripts": {
     "build": "node build.browser.js",
     "lint": "eslint .",
