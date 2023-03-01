@@ -160,6 +160,26 @@ supposed.Suite({
 }).run()
 ```
 
+## The built in runner
+If you are writing traditional tests and:
+
+-   aren't injecting anything
+-   don't need special configurations for cwd, directories, etc.
+
+Then you can use the built in runner to find and execute the tests in your project:
+
+```
+npx supposed -r nyan
+```
+
+Or add it to your package.json:
+
+```
+"scripts": {
+    "test": "supposed -r nyan"
+}
+```
+
 ## Test Syntax and Domain Service Languages (DSLs)
 
 ### The BDD DSL (Given, When, Then)

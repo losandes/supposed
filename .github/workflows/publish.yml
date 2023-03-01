@@ -52,6 +52,7 @@ jobs:
       run: pnpm run test:coverage:ci
 
     - name: Commit Browser Build
+      continue-on-error: true # this will fail if there were no changes to the dist
       run: |
         git add -A
         git commit -m "cicd: updates browser distribution"
