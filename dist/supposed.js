@@ -463,22 +463,24 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
       function MurmurHashV3(key, seed) {
         if (!isBuffer(key)) key = createBuffer(key);
-        var remainder, bytes, h1, h1b, c1, c2, k1, i;
-        remainder = key.length & 3; // key.length % 4
+        var remainder = key.length & 3; // key.length % 4
 
-        bytes = key.length - remainder;
-        h1 = seed;
-        c1 = 0xcc9e2d51;
-        c2 = 0x1b873593;
-        i = 0;
+        var bytes = key.length - remainder;
+        var c1 = 0xcc9e2d51;
+        var c2 = 0x1b873593;
+        var i = 0;
+        var h1 = seed;
+        var h1b;
+        var k1;
 
         while (i < bytes) {
-          k1 = key[i] & 0xff | (key[++i] & 0xff) << 8 | (key[++i] & 0xff) << 16 | (key[++i] & 0xff) << 24;
+          var _k = key[i] & 0xff | (key[++i] & 0xff) << 8 | (key[++i] & 0xff) << 16 | (key[++i] & 0xff) << 24;
+
           ++i;
-          k1 = (k1 & 0xffff) * c1 + (((k1 >>> 16) * c1 & 0xffff) << 16) & 0xffffffff;
-          k1 = k1 << 15 | k1 >>> 17;
-          k1 = (k1 & 0xffff) * c2 + (((k1 >>> 16) * c2 & 0xffff) << 16) & 0xffffffff;
-          h1 ^= k1;
+          _k = (_k & 0xffff) * c1 + (((_k >>> 16) * c1 & 0xffff) << 16) & 0xffffffff;
+          _k = _k << 15 | _k >>> 17;
+          _k = (_k & 0xffff) * c2 + (((_k >>> 16) * c2 & 0xffff) << 16) & 0xffffffff;
+          h1 ^= _k;
           h1 = h1 << 13 | h1 >>> 19;
           h1b = (h1 & 0xffff) * 5 + (((h1 >>> 16) * 5 & 0xffff) << 16) & 0xffffffff;
           h1 = (h1b & 0xffff) + 0x6b64 + (((h1b >>> 16) + 0xe654 & 0xffff) << 16);
@@ -3062,6 +3064,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           var line = format(event);
 
           if (line) {
+            // eslint-disable-next-line no-console
             console.log(line);
           }
         };
@@ -3167,7 +3170,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
           if (!line) {
             return;
-          }
+          } // eslint-disable-next-line no-console
+
 
           console.log(line);
           reportPre.append("".concat(line, "\n"));
@@ -3364,8 +3368,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
             totals.results.push(event);
           } catch (e) {
-            console.log(event);
-            console.log(e);
+            console.log(event); // eslint-disable-line no-console
+
+            console.log(e); // eslint-disable-line no-console
           }
         };
 
