@@ -22,7 +22,7 @@ module.exports = function (describe, dependencies) {
         actual.results.results.forEach(result => {
           t.strictEqual(result.status, 'SKIPPED')
         })
-      }
+      },
     },
     'when a named behavior is skipped': {
       when: namedBehaviorIsSkipped,
@@ -44,7 +44,7 @@ module.exports = function (describe, dependencies) {
         actual.results.results.forEach(result => {
           t.strictEqual(result.status, 'SKIPPED')
         })
-      }
+      },
     },
     'when an assertion is skipped': {
       when: assertionIsSkipped,
@@ -73,7 +73,7 @@ module.exports = function (describe, dependencies) {
             t.strictEqual(result.status, 'PASSED')
           }
         })
-      }
+      },
     },
     'when a test is skipped using TAP\'s SKIP directive': {
       when: behaviorIsSkippedWithTapSkipDirective,
@@ -102,7 +102,7 @@ module.exports = function (describe, dependencies) {
             t.strictEqual(result.status, 'PASSED')
           }
         })
-      }
+      },
     },
     'when a test is skipped using TAP\'s TODO directive': {
       when: behaviorIsSkippedWithTapTodoDirective,
@@ -131,8 +131,8 @@ module.exports = function (describe, dependencies) {
             t.strictEqual(result.status, 'PASSED')
           }
         })
-      }
-    }
+      },
+    },
   })
 
   function behaviorIsSkipped () {
@@ -150,14 +150,14 @@ module.exports = function (describe, dependencies) {
         },
         'assertion 2': t => {
           assertion2Ran = true
-        }
-      }
+        },
+      },
     }).then(results => {
       return {
         behaviorRan: behaviorRan,
         assertion1Ran: assertion1Ran,
         assertion2Ran: assertion2Ran,
-        results: results
+        results: results,
       }
     })
   }
@@ -177,14 +177,14 @@ module.exports = function (describe, dependencies) {
         },
         'assertion 2': t => {
           assertion2Ran = true
-        }
-      }
+        },
+      },
     }).then(results => {
       return {
         behaviorRan: behaviorRan,
         assertion1Ran: assertion1Ran,
         assertion2Ran: assertion2Ran,
-        results: results
+        results: results,
       }
     })
   }
@@ -204,14 +204,14 @@ module.exports = function (describe, dependencies) {
         },
         'assertion 2': t => {
           assertion2Ran = true
-        }
-      }
+        },
+      },
     }).then(results => {
       return {
         behaviorRan: behaviorRan,
         assertion1Ran: assertion1Ran,
         assertion2Ran: assertion2Ran,
-        results: results
+        results: results,
       }
     })
   }
@@ -231,14 +231,14 @@ module.exports = function (describe, dependencies) {
         },
         'assertion 2': t => {
           assertion2Ran = true
-        }
-      }
+        },
+      },
     }).then(results => {
       return {
         behaviorRan: behaviorRan,
         assertion1Ran: assertion1Ran,
         assertion2Ran: assertion2Ran,
-        results: results
+        results: results,
       }
     })
   }
@@ -258,14 +258,14 @@ module.exports = function (describe, dependencies) {
         },
         'assertion 2': t => {
           assertion2Ran = true
-        }
-      }
+        },
+      },
     }).then(results => {
       return {
         behaviorRan: behaviorRan,
         assertion1Ran: assertion1Ran,
         assertion2Ran: assertion2Ran,
-        results: results
+        results: results,
       }
     })
   }

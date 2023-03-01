@@ -9,7 +9,7 @@ module.exports = {
       FAILED: 'FAIL',
       BROKEN: '!!!!',
       SKIPPED: 'SKIP',
-      INFO: 'INFO'
+      INFO: 'INFO',
     }
     const COLUMNS = 'STATUS,BEHAVIOR'
     const formatBehavior = (behavior) => {
@@ -37,5 +37,5 @@ module.exports = {
     }
 
     return { CsvFormatter }
-  }
+  },
 }

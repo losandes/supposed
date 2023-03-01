@@ -17,7 +17,7 @@ module.exports = {
       Tally,
       TestEvent,
       clock,
-      envvars
+      envvars,
     } = dependencies
 
     const makeNormalBatch = (description, assertions) => {
@@ -97,7 +97,7 @@ module.exports = {
 
       return {
         batchId: theories.length ? theories[0].id : makeBatchId(),
-        theories
+        theories,
       }
     }
 
@@ -116,7 +116,7 @@ module.exports = {
           count: 0,
           completed: 0,
           batches: [],
-          order: []
+          order: [],
         }
       }
 
@@ -155,7 +155,7 @@ module.exports = {
       status: TestEvent.status.BROKEN,
       behavior: `Failed to load test: ${error.filePath}`,
       suiteId,
-      error
+      error,
     })
 
     /**
@@ -176,14 +176,14 @@ module.exports = {
       return pubsub.publish({
         type: TestEvent.types.START_BATCH,
         batchId: batch.batchId,
-        suiteId: config.name
+        suiteId: config.name,
       }).then(() => {
         // map the batch theories to tests
         return batch.theories.map((theory) => new AsyncTest(
           theory,
           config.makeTheoryConfig(theory),
           batch.batchId,
-          config.name
+          config.name,
         ))
       }).then((tests) => allSettled(tests.map((test) => test())))
         .then((results) => {
@@ -194,14 +194,14 @@ module.exports = {
             broken: results
               .filter((result) => result.status !== 'fulfilled')
               .reduce(failedToOneArray, []),
-            batchTotals: Tally.getTally().batches[batch.batchId]
+            batchTotals: Tally.getTally().batches[batch.batchId],
           }
         }).then((context) => {
           const publishEndBatch = () => pubsub.publish({
             type: TestEvent.types.END_BATCH,
             batchId: batch.batchId,
             suiteId: config.name,
-            totals: context.batchTotals
+            totals: context.batchTotals,
           })
 
           if (Array.isArray(context.broken) && context.broken.length) {
@@ -217,7 +217,7 @@ module.exports = {
             batchId: batch.batchId,
             results: context.results,
             broken: context.broken,
-            totals: context.batchTotals
+            totals: context.batchTotals,
           }
         })
     } // /batchRunner
@@ -239,7 +239,7 @@ module.exports = {
 
       return Promise.resolve({ plan })
         .then((context) => Promise.all(context.plan.batches.map(
-          (batch) => runBatch(batch, context.plan)
+          (batch) => runBatch(batch, context.plan),
         )))
         .then((context) => {
           if (Array.isArray(context) && context.length === 1) {
@@ -253,7 +253,7 @@ module.exports = {
             status: TestEvent.status.BROKEN,
             behavior: 'Failed to load test',
             suiteId: config.name,
-            error: e
+            error: e,
           })
           throw e
         })
@@ -284,7 +284,7 @@ module.exports = {
       return pubsub.publish({
         type: TestEvent.types.START,
         suiteId: config.name,
-        plan
+        plan,
       }).then(() => {
         if (broken && broken.length) {
           // these tests failed during the planning stage
@@ -293,14 +293,14 @@ module.exports = {
       }).then(() => execute(plan))
         .then((output) =>
           pubsub.publish({ type: TestEvent.types.END_TALLY, suiteId: config.name })
-            .then(() => output) // pass through
+            .then(() => output), // pass through
         )
         .then((output) =>
           pubsub.publish({
             type: TestEvent.types.FINAL_TALLY,
             suiteId: config.name,
-            totals: Tally.getTally()
-          }).then(() => output) // pass through
+            totals: Tally.getTally(),
+          }).then(() => output), // pass through
         )
         .then((output) => {
           // only get the tally _after_ END_TALLY was emitted
@@ -313,7 +313,7 @@ module.exports = {
             type: TestEvent.types.END,
             suiteId: config.name,
             totals: context.tally,
-            plan
+            plan,
           }).then(() => context) // pass through
         })
         .then((context) => {
@@ -327,7 +327,7 @@ module.exports = {
             broken: broken || [],
             runConfig: planContext.runConfig,
             suite,
-            totals: context.tally
+            totals: context.tally,
           }
         })
         .catch((e) => {
@@ -336,7 +336,7 @@ module.exports = {
             status: TestEvent.status.BROKEN,
             behavior: 'Failed to load test',
             suiteId: config.name,
-            error: e
+            error: e,
           })
           throw e
         })
@@ -463,7 +463,7 @@ module.exports = {
             registerReporters,
             test,
             publishOneBrokenTest,
-            tester(_suiteConfig, registerReporters, runBatch, runnerMode)
+            tester(_suiteConfig, registerReporters, runBatch, runnerMode),
           )
 
           const runTests = (planOrTests) => {
@@ -493,7 +493,7 @@ module.exports = {
             // run (browser|node)
             runTests,
             // start test server (browser)
-            startServer: findAndStart(runConfig)
+            startServer: findAndStart(runConfig),
           }
         }
 
@@ -502,7 +502,7 @@ module.exports = {
           return pubsub.publish({
             type: TestEvent.types.END,
             suiteId: _suiteConfig.name,
-            totals: Tally.getSimpleTally()
+            totals: Tally.getSimpleTally(),
           })
         }
         // @deprecated - may go away in the future
@@ -518,5 +518,5 @@ module.exports = {
 
     // Suite.suites = []
     return { Suite }
-  } // /factory
+  }, // /factory
 } // /module

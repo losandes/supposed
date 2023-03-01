@@ -16,8 +16,8 @@ module.exports = (test) => {
       'it should not be equal to itself': (then) => (err, actual) => {
         then.ifError(err)
         then.notEqual(actual, actual)
-      }
-    }
+      },
+    },
   })
 }
 

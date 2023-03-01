@@ -105,5 +105,5 @@ module.exports = {
     } // /Formatter
 
     return { DefaultFormatter }
-  }
+  },
 }

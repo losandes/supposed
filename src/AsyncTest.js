@@ -168,10 +168,10 @@ module.exports = {
             given: givenDuration,
             when: whenDuration,
             then: _dur,
-            total: addDurations(givenDuration, whenDuration, _dur)
+            total: addDurations(givenDuration, whenDuration, _dur),
           },
           log: maybeLog(result),
-          context: maybeContext(result)
+          context: maybeContext(result),
         })
       }
       const fail = (e) => publish({
@@ -182,7 +182,7 @@ module.exports = {
         testId: assertion.id,
         behavior: assertion.behavior,
         behaviors: assertion.behaviors,
-        error: e
+        error: e,
       })
 
       try {
@@ -194,7 +194,7 @@ module.exports = {
             batchId,
             testId: assertion.id,
             behavior: assertion.behavior,
-            behaviors: assertion.behaviors
+            behaviors: assertion.behaviors,
           })
         }
 
@@ -206,7 +206,7 @@ module.exports = {
           batchId,
           testId: assertion.id,
           behavior: assertion.behavior,
-          behaviors: assertion.behaviors
+          behaviors: assertion.behaviors,
         }).then(() => {
           startTime = clock()
         }).then(() => test())
@@ -236,16 +236,16 @@ module.exports = {
           seconds: -1,
           milliseconds: -1,
           microseconds: -1,
-          nanoseconds: -1
+          nanoseconds: -1,
         }),
         whenDuration: context.whenDuration || Object.seal({
           seconds: -1,
           milliseconds: -1,
           microseconds: -1,
-          nanoseconds: -1
+          nanoseconds: -1,
         }),
         outcomes: context.outcomes || [],
-        err: context.err
+        err: context.err,
       }
 
       return Object.seal(self)
@@ -279,10 +279,10 @@ module.exports = {
                   batchId,
                   behavior: test.behavior,
                   behaviors: test.behaviors,
-                  error: new Error(`Timeout: the test exceeded ${context.config.timeout} ms`)
+                  error: new Error(`Timeout: the test exceeded ${context.config.timeout} ms`),
                 }).then(resolve)
               }, config.timeout),
-              err: null // null is the default
+              err: null, // null is the default
             })
 
             // run the flow
@@ -303,7 +303,7 @@ module.exports = {
                   batchId,
                   behavior: test.behavior,
                   behaviors: test.behaviors,
-                  error: err && err.error ? err.error : err
+                  error: err && err.error ? err.error : err,
                 }).then(resolve)
               }) // /flow
           }, 0) // /setTimeout
@@ -312,5 +312,5 @@ module.exports = {
     } // /AsyncTest
 
     return { AsyncTest }
-  } // /factory
+  }, // /factory
 } // /module

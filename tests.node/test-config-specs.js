@@ -10,8 +10,8 @@ module.exports = function (describe, dependencies) {
             when: () => { return new Promise(() => { /* should timeout */ }) },
             'sut-assertion': t => {
               t.fail('it should not get here')
-            }
-          }
+            },
+          },
         })
       },
       'the test should be reported as BROKEN': (t) => (err, actual) => {
@@ -30,17 +30,17 @@ module.exports = function (describe, dependencies) {
                 'sut-assertion': (t) => (err, actual) => {
                   t.ifError(err)
                   t.fail('it should not get here')
-                }
-              }
-            }
+                },
+              },
+            },
           })
         },
         'it should use the configured timeout': (t) => (err, actual) => {
           t.ifError(err)
           t.strictEqual(actual.totals.broken, 1)
           t.strictEqual(actual.results[0].error.message, 'Timeout: the test exceeded 7 ms')
-        }
-      }
+        },
+      },
     },
     'when a test sets a timeout, with no description': {
       when: () => {
@@ -50,15 +50,15 @@ module.exports = function (describe, dependencies) {
             when: () => { return new Promise(() => { /* should timeout */ }) },
             'sut-assertion': t => {
               t.fail('it should not get here')
-            }
-          }
+            },
+          },
         })
       },
       'the test should be reported as BROKEN': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual.totals.broken, 1)
         t.strictEqual(actual.results[0].error.message, 'Timeout: the test exceeded 5 ms')
-      }
+      },
     },
     'when a test sets the assertion library': {
       assertionLibrary: chai.expect,
@@ -66,7 +66,7 @@ module.exports = function (describe, dependencies) {
       'it should use the configured assertion library': (expect) => (err, actual) => {
         expect(err).to.equal(null)
         expect(actual).to.equal(42)
-      }
-    }
+      },
+    },
   })
 }

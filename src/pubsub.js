@@ -51,5 +51,5 @@ module.exports = {
     }
 
     return { Pubsub }
-  }
+  },
 }

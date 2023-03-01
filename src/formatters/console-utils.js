@@ -22,9 +22,9 @@ module.exports = {
       show: () => '\u001b[?25h',
       deleteLine: () => '\u001b[2K',
       beginningOfLine: () => '\u001b[0G',
-      clear: () => `${consoleUtils.deleteLine}${consoleUtils.beginningOfLine}`
+      clear: () => `${consoleUtils.deleteLine}${consoleUtils.beginningOfLine}`,
     }
 
     return { consoleUtils }
-  }
+  },
 }

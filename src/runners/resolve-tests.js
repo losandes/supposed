@@ -23,10 +23,10 @@ module.exports = {
 
       return {
         ...context,
-        ...{ tests }
+        ...{ tests },
       }
     }
 
     return { resolveTests }
-  } // /factory
+  }, // /factory
 } // /module

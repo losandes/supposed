@@ -29,7 +29,7 @@ module.exports = {
           const durations = [
             `given: ${formatDuration(event.duration.given)}`,
             `when: ${formatDuration(event.duration.when)}`,
-            `then: ${formatDuration(event.duration.then)}`
+            `then: ${formatDuration(event.duration.then)}`,
           ]
 
           return `${consoleStyles.cyan('# ')}  duration: ${formatDuration(event.duration.total)} (${durations.join(', ')})`
@@ -40,5 +40,5 @@ module.exports = {
     }
 
     return { PerformanceFormatter }
-  }
+  },
 }

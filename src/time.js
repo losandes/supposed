@@ -7,7 +7,7 @@ module.exports = {
       SECONDS: 's',
       MILLISECONDS: 'ms',
       MICROSECONDS: 'us',
-      NANOSECONDS: 'ns'
+      NANOSECONDS: 'ns',
     }
     const UNITS_ARRAY = Object.keys(UNITS).map((key) => UNITS[key])
     const isValidUnit = (unit) => UNITS_ARRAY.includes(unit)
@@ -28,7 +28,7 @@ module.exports = {
               seconds: makeTime(MULTIPLIERS.SECONDS),
               milliseconds: makeTime(MULTIPLIERS.MILLISECONDS),
               microseconds: makeTime(MULTIPLIERS.MICROSECONDS),
-              nanoseconds: makeTime(MULTIPLIERS.NANOSECONDS)
+              nanoseconds: makeTime(MULTIPLIERS.NANOSECONDS),
             }
         }
       }
@@ -46,26 +46,26 @@ module.exports = {
         SECONDS: 1,
         MILLISECONDS: 1000,
         MICROSECONDS: 1000000,
-        NANOSECONDS: 1000000000
+        NANOSECONDS: 1000000000,
       },
       ms: {
         SECONDS: 0.001,
         MILLISECONDS: 1,
         MICROSECONDS: 1000,
-        NANOSECONDS: 1000000
+        NANOSECONDS: 1000000,
       },
       us: {
         SECONDS: 0.000001,
         MILLISECONDS: 0.001,
         MICROSECONDS: 1,
-        NANOSECONDS: 1000
+        NANOSECONDS: 1000,
       },
       ns: {
         SECONDS: 1e9,
         MILLISECONDS: 0.000001,
         MICROSECONDS: 0.001,
-        NANOSECONDS: 1
-      }
+        NANOSECONDS: 1,
+      },
     }
 
     const duration = (start, end, timeUnits) => {
@@ -75,7 +75,7 @@ module.exports = {
         seconds: (end - start) * conversions.SECONDS,
         milliseconds: (end - start) * conversions.MILLISECONDS,
         microseconds: (end - start) * conversions.MICROSECONDS,
-        nanoseconds: (end - start) * conversions.NANOSECONDS
+        nanoseconds: (end - start) * conversions.NANOSECONDS,
       }
     }
 
@@ -84,7 +84,7 @@ module.exports = {
         seconds: 0,
         milliseconds: 0,
         microseconds: 0,
-        nanoseconds: 0
+        nanoseconds: 0,
       }
 
       durations.forEach((_dur) => {
@@ -103,13 +103,13 @@ module.exports = {
       SECONDS: [1, 1e-9],
       MILLISECONDS: [1e3, 1e-6],
       MICROSECONDS: [1e6, 1e-3],
-      NANOSECONDS: [1e9, 1]
+      NANOSECONDS: [1e9, 1],
     }
     const BROWSER_MULTIPLIERS = {
       SECONDS: 0.001,
       MILLISECONDS: 1,
       MICROSECONDS: 1000,
-      NANOSECONDS: 1000000
+      NANOSECONDS: 1000000,
     }
 
     const nodeClock = (multipliers, hrtime) => {
@@ -126,5 +126,5 @@ module.exports = {
       : makeClock(BROWSER_MULTIPLIERS, browserClock)
 
     return { clock, isValidUnit, duration, addDurations }
-  }
+  },
 }

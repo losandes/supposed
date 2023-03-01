@@ -34,7 +34,7 @@ module.exports = {
       { name: 'bgBlue', value: [44, 49] },
       { name: 'bgMagenta', value: [45, 49] },
       { name: 'bgCyan', value: [46, 49] },
-      { name: 'bgWhite', value: [47, 49] }
+      { name: 'bgWhite', value: [47, 49] },
     ].reduce((styles, style) => {
       styles[style.name] = envvars.useColors
         ? (input) => `\u001b[${style.value[0]}m${input}\u001b[${style.value[1]}m`
@@ -47,5 +47,5 @@ module.exports = {
     consoleStyles.space = () => ' '
 
     return { consoleStyles }
-  }
+  },
 }

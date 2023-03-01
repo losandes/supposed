@@ -17,16 +17,16 @@ module.exports = function (describe, dependencies) {
               'inside of other deep nests': {
                 'it should still execute the assertions': t => {
                   t.strictEqual(true, true)
-                }
-              }
-            }
-          }
+                },
+              },
+            },
+          },
         })
       },
       'it should still execute the assertions': (t, err, actual) => {
         t.ifError(err)
         t.strictEqual(actual.totals.passed, 3)
-      }
-    }
+      },
+    },
   })
 }

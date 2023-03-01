@@ -23,8 +23,8 @@ module.exports = function (describe, dependencies) {
         'it should run the tests': (t) => (err, actual) => {
           t.ifError(err)
           t.strictEqual(actual.totals.passed, 1)
-        }
-      }
+        },
+      },
     },
     'when multiple ava styles tests are added to an object': {
       when: () => {
@@ -32,13 +32,13 @@ module.exports = function (describe, dependencies) {
         return sut({
           t1: t => { t.strictEqual(1, 1) },
           t2: t => { t.strictEqual(1, 1) },
-          t3: t => { t.strictEqual(1, 1) }
+          t3: t => { t.strictEqual(1, 1) },
         })
       },
       'it should provide a way to group tests in a suite, with a single execution': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual.totals.passed, 3)
-      }
-    }
+      },
+    },
   })
 }

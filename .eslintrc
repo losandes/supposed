@@ -2,7 +2,17 @@
   "extends": ["standard"],
   "rules": {
       "no-unused-expressions": "off",
+      "comma-dangle": ["error", "always-multiline"],
       "no-multi-spaces": ["error", { "ignoreEOLComments": true }],
-      "no-console": "error"
+      "no-console": "error",
+      "import/no-unresolved": 2,
+      "import/extensions": [2, "ignorePackages"]
+  },
+  "settings": {
+      "import/resolver": {
+          "node": {
+              "extensions": [".js", ".ts", ".cjs", ".mjs"]
+          }
+      }
   }
 }

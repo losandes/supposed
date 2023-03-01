@@ -41,7 +41,7 @@ module.exports = {
           behaviors: _behaviors,
           behavior: _behavior,
           test: node,
-          skipped: skipped
+          skipped: skipped,
         }
       }
 
@@ -54,7 +54,7 @@ module.exports = {
         return Object.keys(node)
           .filter((key) => isAssertion(node[key], key))
           .map((key) =>
-            makeOneAssertion(key, behaviors, node[key], skipped || isSkipped(key))
+            makeOneAssertion(key, behaviors, node[key], skipped || isSkipped(key)),
           )
       }
 
@@ -157,7 +157,7 @@ module.exports = {
           skipped,
           timeout,
           assertionLibrary,
-          whenIsInheritedGiven
+          whenIsInheritedGiven,
         }
       }
 
@@ -175,7 +175,7 @@ module.exports = {
           whenIsInheritedGiven,
           skipped: skipped || node.skipped,
           timeout: timeout || node.timeout,
-          assertionLibrary: assertionLibrary || node.assertionLibrary
+          assertionLibrary: assertionLibrary || node.assertionLibrary,
         })
 
         if (Array.isArray(parent.assertions) && parent.assertions.length) {
@@ -196,12 +196,12 @@ module.exports = {
               skipped: parent.skipped || isSkipped(childKey),
               // timeout and assertion lib favor the child over the parent
               timeout: node[childKey].timeout || parent.timeout,
-              assertionLibrary: node[childKey].assertionLibrary || parent.assertionLibrary
+              assertionLibrary: node[childKey].assertionLibrary || parent.assertionLibrary,
             })
           }).forEach((mappedLayers) =>
             mappedLayers
               .filter((mappedLayer) => Array.isArray(mappedLayer.assertions) && mappedLayer.assertions.length)
-              .forEach((mappedLayer) => layers.push(mappedLayer))
+              .forEach((mappedLayer) => layers.push(mappedLayer)),
           )
 
         return layers
@@ -234,7 +234,7 @@ module.exports = {
             assertions: theory.assertions,
             skipped: theory.skipped,
             timeout: theory.timeout,
-            assertionLibrary: theory.assertionLibrary
+            assertionLibrary: theory.assertionLibrary,
           }
         })
 
@@ -242,5 +242,5 @@ module.exports = {
     } // /BatchComposer
 
     return { BatchComposer }
-  } // /factory
+  }, // /factory
 } // /exports

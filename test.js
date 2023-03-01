@@ -12,9 +12,9 @@ const suite = supposed.Suite({
       reporter: 'ARRAY',
       exit: (results) => results,
       match: null,
-      verbosity: 'info'
-    }
-  }
+      verbosity: 'info',
+    },
+  },
 })
 
 // suite.subscribe((event) => {
@@ -23,7 +23,7 @@ const suite = supposed.Suite({
 
 module.exports = suite.runner({
   directories: ['./tests.node', './tests.es'],
-  matchesIgnoredConvention: /discoverer-meta-specs|node_modules/i
+  matchesIgnoredConvention: /discoverer-meta-specs|node_modules/i,
 })
   // .plan()
   // .then((plan) => { console.log(plan) })

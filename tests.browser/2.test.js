@@ -4,7 +4,7 @@ module.exports = (test) => {
       const sut = test.Suite({
         reporter: 'ARRAY',
         match: null,
-        assertionLibrary: test.config.assertionLibrary
+        assertionLibrary: test.config.assertionLibrary,
       })
 
       return sut('skip and failure modes', {
@@ -23,21 +23,21 @@ module.exports = (test) => {
           },
           'it should fail (func)': (then) => {
             then.strictEqual('true', () => 'false')
-          }
+          },
         },
         'when given throws, it should report as BROKEN': {
           given: () => { throw new Error('Given BOOM!') },
           when: (number) => { return number / 0 },
           'it should report as BROKEN': (then) => (err, actual) => {
             then.ifError(err)
-          }
+          },
         },
         'when when throws': {
           given: () => 42,
           when: (number) => { throw new Error('When BOOM!') },
           'it should report as FAILED': (then) => (err, actual) => {
             then.ifError(err)
-          }
+          },
         },
         '// when using skip comments': {
           given: () => 42,
@@ -45,7 +45,7 @@ module.exports = (test) => {
           'it should be skipped': (then) => (err, actual) => {
             then.ifError(err)
             then.strictEqual(actual, Infinity)
-          }
+          },
         },
         '# SKIP when using TAP skip comments': {
           given: () => 42,
@@ -53,7 +53,7 @@ module.exports = (test) => {
           'it should be skipped': (then) => (err, actual) => {
             then.ifError(err)
             then.strictEqual(actual, Infinity)
-          }
+          },
         },
         '# TODO when using TAP todo comments': {
           given: () => 42,
@@ -61,18 +61,18 @@ module.exports = (test) => {
           'it should be skipped': (then) => (err, actual) => {
             then.ifError(err)
             then.strictEqual(actual, Infinity)
-          }
+          },
         },
         'when a test returns something to be logged': {
           'some reporters should display a comment': (then) => {
             return {
               log: {
                 message: 'This is a comment',
-                hello: 'world'
-              }
+                hello: 'world',
+              },
             }
-          }
-        }
+          },
+        },
       })
     }, // /when
     'some should pass': (then) => (err, actual) => {
@@ -90,6 +90,6 @@ module.exports = (test) => {
     'some should break': (then) => (err, actual) => {
       then.ifError(err)
       then.strictEqual(actual.totals.broken, 1)
-    }
+    },
   })
 }

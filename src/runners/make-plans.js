@@ -60,7 +60,7 @@ module.exports = {
         runConfig,
         broken: results
           .filter((result) => result.status !== 'fulfilled')
-          .map((result) => result.reason)
+          .map((result) => result.reason),
       }
     }
 
@@ -77,5 +77,5 @@ module.exports = {
     }
 
     return { makePlans }
-  } // /factory
+  }, // /factory
 } // /module

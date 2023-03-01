@@ -15,7 +15,7 @@ module.exports = {
         directories: ['.'],
         matchesNamingConvention: /.([-.]test(s?)\.(js|cjs|mjs))|([-.]spec(s?)\.(js|cjs|mjs))$/i,
         matchesIgnoredConvention: /node_modules/i,
-        injectSuite: true
+        injectSuite: true,
       }
 
       if (isString(config.cwd)) {
@@ -82,7 +82,7 @@ module.exports = {
 
         if (dirExists) {
           return testPaths.concat(walker.walkSync(path.join(config.cwd, directory))
-            .filter(file => config.matchesNamingConvention.test(file))
+            .filter(file => config.matchesNamingConvention.test(file)),
           )
         } else {
           return testPaths
@@ -94,5 +94,5 @@ module.exports = {
     }
 
     return { findFiles }
-  }
+  },
 }

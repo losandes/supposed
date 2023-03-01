@@ -42,7 +42,7 @@ module.exports = {
         supposed: undefined,
         template: undefined,
         stringifiedSuiteConfig: `{ reporter: '${defaultReporters(suite.config)}'}`,
-        page: undefined
+        page: undefined,
       }
 
       if (isString(config.cwd)) {
@@ -81,7 +81,7 @@ module.exports = {
         self.supposed = fs.readFileSync(config.supposedPath).toString()
       } else {
         self.supposed = fs.readFileSync(
-          path.join(__dirname.split('/src/runners')[0], 'dist/supposed.min.js')
+          path.join(__dirname.split('/src/runners')[0], 'dist/supposed.min.js'),
         ).toString()
       }
 
@@ -105,7 +105,7 @@ module.exports = {
         self.testBundle = makeTestBundle({
           paths,
           template: self.template,
-          stringifiedSuiteConfig: self.stringifiedSuiteConfig
+          stringifiedSuiteConfig: self.stringifiedSuiteConfig,
         })
         const scriptTags = self.dependencies.map((filePath) => `<script src="${filePath}"></script>`)
         self.page = /* html */`
@@ -158,7 +158,7 @@ module.exports = {
         }
 
         response.writeHead(200, {
-          'Content-Type': 'text/html'
+          'Content-Type': 'text/html',
         })
         response.end(_page || page)
         _isRefresh = true
@@ -173,7 +173,7 @@ module.exports = {
 
         response.writeHead(200, {
           'Content-Type': 'application/javascript',
-          'Content-Length': stat.size
+          'Content-Length': stat.size,
         })
 
         const readStream = fs.createReadStream(filePath)
@@ -232,12 +232,12 @@ module.exports = {
             port: _serverConfig.port,
             page: _serverConfig.page,
             cwd: _serverConfig.cwd,
-            supposed: _serverConfig.supposed
+            supposed: _serverConfig.supposed,
           }
-        })
+        }),
       }
     }
 
     return { runServer }
-  } // /factory
+  }, // /factory
 } // /module

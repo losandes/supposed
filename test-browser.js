@@ -1,4 +1,4 @@
-const suite = require('./tests.browser/server')
+const suite = require('./tests.browser/server.js')
 module.exports = suite.then((context) => {
   context.server.close()
 

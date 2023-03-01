@@ -7,11 +7,11 @@ supposed.Suite({
   inject: {
     describe: supposed,
     chai,
-    path
-  }
+    path,
+  },
 }).runner({
   cwd: __dirname,
-  matchesIgnoredConvention: /discoverer-meta-specs|node_modules/i
+  matchesIgnoredConvention: /discoverer-meta-specs|node_modules/i,
 }).run()
 // .then((context) => {
 //   console.log(context)
