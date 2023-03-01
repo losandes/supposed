@@ -2,7 +2,7 @@
 
 const supposed = require('supposed')
 
-supposed.Suite().runner().run()
+supposed.Suite({ reporter: 'noop' }).runner().run()
   .then((results) => {
     if (results.totals.failed > 0) {
       process.exit(results.totals.failed)
