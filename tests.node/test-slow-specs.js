@@ -23,7 +23,7 @@ module.exports = (test) => {
 
       await test(description, {
         timeout: timeout > 2000 ? timeout : 2000,
-        'it should be delayed': slowTest(i)
+        'it should be delayed': slowTest(i),
       })
     }
   })()

@@ -10,15 +10,15 @@ module.exports = function (describe, dependencies) {
             when: (given) => { return 42 },
             'it should pass the error to the assertions': (t, err) => {
               t.fail('it should not get here')
-            }
-          }
+            },
+          },
         })
       },
       'it should bail out': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual.totals.broken, 1)
         t.strictEqual(actual.results[0].error.message, 'GIVEN!')
-      }
+      },
     },
     'when the `when` throws an error': {
       when: () => {
@@ -28,14 +28,14 @@ module.exports = function (describe, dependencies) {
             'it should pass the error to the assertions': (t, err) => {
               t.strictEqual(typeof err, 'object')
               t.strictEqual(err.message, 'BOOM!')
-            }
-          }
+            },
+          },
         })
       },
       'it should pass the error to the assertions': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual.totals.passed, 1)
-      }
+      },
     },
     'when the `given` rejects': {
       when: () => {
@@ -49,15 +49,15 @@ module.exports = function (describe, dependencies) {
             },
             'it should pass the rejection to the `err` argument': (t, err) => {
               t.fail('it should not get here')
-            }
-          }
+            },
+          },
         })
       },
       'it should bail out': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual.totals.broken, 1)
         t.strictEqual(actual.results[0].error.message, 'GIVEN!')
-      }
+      },
     },
     'when the `when` rejects': {
       when: () => {
@@ -69,14 +69,14 @@ module.exports = function (describe, dependencies) {
             'it should pass the rejection to the `err` argument': (t, err) => {
               t.strictEqual(typeof err, 'object')
               t.strictEqual(err.message, 'Boom!')
-            }
-          }
+            },
+          },
         })
       },
       'it should pass the error to the assertions': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual.totals.passed, 1)
-      }
+      },
     },
     'when the assertion throws an error': {
       when: () => {
@@ -84,8 +84,8 @@ module.exports = function (describe, dependencies) {
           'when the assertion throws an error': {
             'the test should fail': () => {
               throw new Error('assertion ERROR!')
-            }
-          }
+            },
+          },
         })
       },
       'the test should fail': (t) => (err, actual) => {
@@ -100,15 +100,15 @@ module.exports = function (describe, dependencies) {
             'it should': (err, actual) => () => {
               t.ifError(err)                  // eslint-disable-line no-undef
               t.strictEqual(actual.result, 3) // eslint-disable-line no-undef
-            }
+            },
           })
         },
         'the test should fail': (t) => (err, actual) => {
           t.ifError(err)
           t.strictEqual(actual.totals.failed, 1)
           t.strictEqual(actual.results[0].error.message, 't is not defined')
-        }
-      }
+        },
+      },
     },
     'when `given` is never resolved': {
       when: () => {
@@ -118,15 +118,15 @@ module.exports = function (describe, dependencies) {
             when: (resolve) => (given) => { resolve() },
             'it should throw a timeout exception': t => {
               t.fail('it should not get here')
-            }
-          }
+            },
+          },
         })
       },
       'the test should be reported as BROKEN': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual.totals.broken, 1)
         t.strictEqual(actual.results[0].error.message, 'Timeout: the test exceeded 10 ms')
-      }
+      },
     },
     'when `when` is never resolved': {
       when: () => {
@@ -135,15 +135,15 @@ module.exports = function (describe, dependencies) {
             when: () => { return new Promise(() => { /* should timeout */ }) },
             'it should throw a timeout exception': t => {
               t.fail('it should not get here')
-            }
-          }
+            },
+          },
         })
       },
       'the test should be reported as BROKEN': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual.totals.broken, 1)
         t.strictEqual(actual.results[0].error.message, 'Timeout: the test exceeded 10 ms')
-      }
+      },
     },
     'when async assertions never return': {
       when: () => {
@@ -151,15 +151,15 @@ module.exports = function (describe, dependencies) {
           'when `when` is never resolved': {
             'it should throw a timeout exception': async t => {
               await new Promise(() => { /* should timeout */ })
-            }
-          }
+            },
+          },
         })
       },
       'the test should be reported as BROKEN': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual.totals.broken, 1)
         t.strictEqual(actual.results[0].error.message, 'Timeout: the test exceeded 10 ms')
-      }
+      },
     },
     'when promised assertions never return': {
       when: () => {
@@ -167,15 +167,15 @@ module.exports = function (describe, dependencies) {
           'when `when` is never resolved': {
             'it should throw a timeout exception': t => {
               return new Promise(() => { /* should timeout */ })
-            }
-          }
+            },
+          },
         })
       },
       'the test should be reported as BROKEN': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual.totals.broken, 1)
         t.strictEqual(actual.results[0].error.message, 'Timeout: the test exceeded 10 ms')
-      }
-    }
+      },
+    },
   })
 }

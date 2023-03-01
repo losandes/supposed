@@ -12,11 +12,11 @@ module.exports = {
           FAILED: `${consoleStyles.bgRed(consoleStyles.black(' FAIL '))} `,
           BROKEN: `${consoleStyles.bgMagenta(consoleStyles.black(' !!!! '))} `,
           SKIPPED: `${consoleStyles.bgYellow(consoleStyles.black(' SKIP '))} `,
-          INFO: `${consoleStyles.bgCyan(consoleStyles.black(' INFO '))} `
-        }
+          INFO: `${consoleStyles.bgCyan(consoleStyles.black(' INFO '))} `,
+        },
       })
     }
 
     return { BlockFormatter }
-  }
+  },
 }

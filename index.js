@@ -52,7 +52,7 @@ function isPromise (input) {
 
 const REPORT_ORDERS = {
   NON_DETERMINISTIC: 'non-deterministic',
-  DETERMINISTIC: 'deterministic'
+  DETERMINISTIC: 'deterministic',
 }
 const time = TimeFactory()
 const suites = {}
@@ -75,7 +75,7 @@ function Supposed (options) {
         } else {
           return results
         }
-      }
+      },
     },
     ...(() => {
       const output = {}
@@ -88,7 +88,7 @@ function Supposed (options) {
       })
 
       return output
-    })()
+    })(),
   }
 
   const { ReporterFactory } = ReporterFactoryFactory({})
@@ -96,7 +96,7 @@ function Supposed (options) {
   const { makeSuiteConfig } = makeSuiteConfigFactory({
     envvars,
     reporterFactory,
-    REPORT_ORDERS
+    REPORT_ORDERS,
   })
   const config = makeSuiteConfig(options)
   const clock = (timeUnits) => time.clock(timeUnits || config.timeUnits)
@@ -105,7 +105,7 @@ function Supposed (options) {
   const { Pubsub } = pubsubFactory({
     allSettled,
     isPromise,
-    TestEvent
+    TestEvent,
   })
   // const { publish, subscribe, subscriptionExists, allSubscriptions, reset } = new Pubsub()
   const pubsub = new Pubsub()
@@ -138,9 +138,9 @@ function Supposed (options) {
         FAILED: ' FAIL ',
         BROKEN: ' !!!! ',
         SKIPPED: ' SKIP ',
-        INFO: ' INFO '
+        INFO: ' INFO ',
       },
-      config
+      config,
     }).DefaultFormatter()
   }
 
@@ -149,7 +149,7 @@ function Supposed (options) {
       TestEvent,
       formatter: options.formatter,
       envvars: config,
-      REPORT_ORDERS
+      REPORT_ORDERS,
     }).ConsoleReporter(options)
   }
 
@@ -158,57 +158,57 @@ function Supposed (options) {
 
   reporterFactory.add(function ListReporter () {
     return {
-      write: ConsoleReporter({ formatter: listFormatter }).write
+      write: ConsoleReporter({ formatter: listFormatter }).write,
     }
   }).add(function BlockReporter () {
     return {
       write: ConsoleReporter({
-        formatter: BlockFormatterFactory({ consoleStyles, DefaultFormatter }).BlockFormatter()
-      }).write
+        formatter: BlockFormatterFactory({ consoleStyles, DefaultFormatter }).BlockFormatter(),
+      }).write,
     }
   }).add(function BriefReporter () {
     return {
       write: ConsoleReporter({
-        formatter: BriefFormatterFactory({ consoleStyles, DefaultFormatter, TestEvent }).BriefFormatter()
-      }).write
+        formatter: BriefFormatterFactory({ consoleStyles, DefaultFormatter, TestEvent }).BriefFormatter(),
+      }).write,
     }
   }).add(function CsvReporter () {
     return {
       write: ConsoleReporter({
-        formatter: CsvFormatterFactory({ TestEvent }).CsvFormatter()
-      }).write
+        formatter: CsvFormatterFactory({ TestEvent }).CsvFormatter(),
+      }).write,
     }
   }).add(function EventReporter () {
     return {
       write: ConsoleReporter({
-        formatter: { format: (event) => JSON.stringify(event, null, 2) }
-      }).write
+        formatter: { format: (event) => JSON.stringify(event, null, 2) },
+      }).write,
     }
   }).add(function JsonReporter () {
     return {
       write: ConsoleReporter({
-        formatter: JsonFormatterFactory({ TestEvent }).JsonFormatter()
-      }).write
+        formatter: JsonFormatterFactory({ TestEvent }).JsonFormatter(),
+      }).write,
     }
   }).add(function MarkdownReporter () {
     return {
       write: ConsoleReporter({
         formatter: MarkdownFormatterFactory({ consoleStyles, TestEvent, SpecFormatter, DefaultFormatter }).MarkdownFormatter(),
-        reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
-      }).write
+        reportOrder: REPORT_ORDERS.DETERMINISTIC, // non-deterministic not supported
+      }).write,
     }
   }).add(function MdReporter () {
     return {
       write: ConsoleReporter({
         formatter: MarkdownFormatterFactory({ consoleStyles, TestEvent, SpecFormatter, DefaultFormatter }).MarkdownFormatter(),
-        reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
-      }).write
+        reportOrder: REPORT_ORDERS.DETERMINISTIC, // non-deterministic not supported
+      }).write,
     }
   }).add(function PerformanceReporter () {
     return {
       write: ConsoleReporter({
-        formatter: PerformanceFormatterFactory({ consoleStyles, TestEvent }).PerformanceFormatter()
-      }).write
+        formatter: PerformanceFormatterFactory({ consoleStyles, TestEvent }).PerformanceFormatter(),
+      }).write,
     }
   }).add(function JustTheDescriptionsReporter () {
     return {
@@ -220,28 +220,28 @@ function Supposed (options) {
             } else {
               return listFormatter.format(event)
             }
-          }
-        }
-      }).write
+          },
+        },
+      }).write,
     }
   }).add(function SpecReporter () {
     return {
       write: ConsoleReporter({
         formatter: new SpecFormatter(),
-        reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
-      }).write
+        reportOrder: REPORT_ORDERS.DETERMINISTIC, // non-deterministic not supported
+      }).write,
     }
   }).add(function SummaryReporter () {
     return {
       write: ConsoleReporter({
-        formatter: SummaryFormatterFactory({ consoleStyles, DefaultFormatter, TestEvent }).SummaryFormatter()
-      }).write
+        formatter: SummaryFormatterFactory({ consoleStyles, DefaultFormatter, TestEvent }).SummaryFormatter(),
+      }).write,
     }
   }).add(function TapReporter () {
     return {
       write: ConsoleReporter({
-        formatter: TapFormatterFactory({ consoleStyles, TestEvent, config }).TapFormatter()
-      }).write
+        formatter: TapFormatterFactory({ consoleStyles, TestEvent, config }).TapFormatter(),
+      }).write,
     }
   })
 
@@ -250,14 +250,14 @@ function Supposed (options) {
       consoleStyles,
       consoleUtils,
       DefaultFormatter,
-      TestEvent
+      TestEvent,
     }).NyanReporter)
   } else {
     reporterFactory.add(function NyanReporter () {
       return {
         write: () => {
           throw new Error('Nyan Reporter Is Only Supported in TTY Terminals (it can\'t be piped)')
-        }
+        },
       }
     })
   }
@@ -268,7 +268,7 @@ function Supposed (options) {
     TestEvent,
     clock,
     duration,
-    addDurations: time.addDurations
+    addDurations: time.addDurations,
   })
   const { hash } = HashFactory()
   const { BatchComposer } = makeBatchFactory({ hash })
@@ -287,7 +287,7 @@ function Supposed (options) {
     Tally,
     TestEvent,
     clock,
-    envvars: config
+    envvars: config,
   })
 
   const suite = new Suite()

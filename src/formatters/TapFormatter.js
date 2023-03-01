@@ -94,7 +94,7 @@ module.exports = {
           return formatTest(event)
         } else if (event.isDeterministicOutput) {
           const output = event.testEvents.map((_event, idx) =>
-            formatTest({ ..._event, ...{ count: idx + 1 } })
+            formatTest({ ..._event, ...{ count: idx + 1 } }),
           ).join('\n')
           return output
         }
@@ -104,5 +104,5 @@ module.exports = {
     } // /Formatter
 
     return { TapFormatter }
-  }
+  },
 }

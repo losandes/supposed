@@ -48,7 +48,7 @@ module.exports = {
     const makeInfoH2 = (specs) => {
       const found = specs.filter((event) =>
         event.status === TestEvent.status.PASSED &&
-        event.log
+        event.log,
       )
 
       if (!found.length) {
@@ -71,7 +71,7 @@ module.exports = {
     const makeErrorsH2 = (specs) => {
       const found = specs.filter((event) =>
         event.status === TestEvent.status.FAILED ||
-        event.status === TestEvent.status.BROKEN
+        event.status === TestEvent.status.BROKEN,
       )
 
       if (!found.length) {
@@ -124,5 +124,5 @@ module.exports = {
     } // /Formatter
 
     return { MarkdownFormatter }
-  }
+  },
 }

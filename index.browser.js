@@ -14,7 +14,7 @@
     // this property should show up when this object's property names are enumerated
     enumerable: true,
     // this property may not be deleted
-    configurable: false
+    configurable: false,
   })
 
   // MODULES_HERE
@@ -26,7 +26,7 @@
 
   const REPORT_ORDERS = {
     NON_DETERMINISTIC: 'non-deterministic',
-    DETERMINISTIC: 'deterministic'
+    DETERMINISTIC: 'deterministic',
   }
   const time = module.factories.timeFactory()
   const suites = {}
@@ -43,7 +43,7 @@
       useColors: true,
       timeUnits: 'us',
       reportOrder: REPORT_ORDERS.NON_DETERMINISTIC,
-      exit: (results) => results
+      exit: (results) => results,
     }
 
     const { ReporterFactory } = module.factories.reporterFactoryFactory({})
@@ -51,7 +51,7 @@
     const { makeSuiteConfig } = module.factories.makeSuiteConfigFactory({
       envvars,
       reporterFactory,
-      REPORT_ORDERS
+      REPORT_ORDERS,
     })
     const config = makeSuiteConfig(options)
     const clock = (timeUnits) => time.clock(timeUnits || config.timeUnits)
@@ -60,7 +60,7 @@
     const { Pubsub } = module.factories.pubsubFactory({
       allSettled,
       isPromise,
-      TestEvent
+      TestEvent,
     })
     const pubsub = new Pubsub()
 
@@ -86,9 +86,9 @@
           FAILED: ' FAIL ',
           BROKEN: ' !!!! ',
           SKIPPED: ' SKIP ',
-          INFO: ' INFO '
+          INFO: ' INFO ',
         },
-        config
+        config,
       }).DefaultFormatter()
     }
 
@@ -97,7 +97,7 @@
         TestEvent,
         formatter: options.formatter,
         envvars: config,
-        REPORT_ORDERS
+        REPORT_ORDERS,
       }).DomReporter(options)
     }
 
@@ -106,57 +106,57 @@
 
     reporterFactory.add(function ListReporter () {
       return {
-        write: ConsoleReporter({ formatter: listFormatter }).write
+        write: ConsoleReporter({ formatter: listFormatter }).write,
       }
     }).add(function BlockReporter () {
       return {
         write: ConsoleReporter({
-          formatter: module.factories.BlockFormatterFactory({ consoleStyles, DefaultFormatter }).BlockFormatter()
-        }).write
+          formatter: module.factories.BlockFormatterFactory({ consoleStyles, DefaultFormatter }).BlockFormatter(),
+        }).write,
       }
     }).add(function BriefReporter () {
       return {
         write: ConsoleReporter({
-          formatter: module.factories.BriefFormatterFactory({ consoleStyles, DefaultFormatter, TestEvent }).BriefFormatter()
-        }).write
+          formatter: module.factories.BriefFormatterFactory({ consoleStyles, DefaultFormatter, TestEvent }).BriefFormatter(),
+        }).write,
       }
     }).add(function CsvReporter () {
       return {
         write: ConsoleReporter({
-          formatter: module.factories.CsvFormatterFactory({ TestEvent }).CsvFormatter()
-        }).write
+          formatter: module.factories.CsvFormatterFactory({ TestEvent }).CsvFormatter(),
+        }).write,
       }
     }).add(function EventReporter () {
       return {
         write: ConsoleReporter({
-          formatter: { format: (event) => JSON.stringify(event, null, 2) }
-        }).write
+          formatter: { format: (event) => JSON.stringify(event, null, 2) },
+        }).write,
       }
     }).add(function JsonReporter () {
       return {
         write: ConsoleReporter({
-          formatter: module.factories.JsonFormatterFactory({ TestEvent }).JsonFormatter()
-        }).write
+          formatter: module.factories.JsonFormatterFactory({ TestEvent }).JsonFormatter(),
+        }).write,
       }
     }).add(function MarkdownReporter () {
       return {
         write: ConsoleReporter({
           formatter: module.factories.MarkdownFormatterFactory({ consoleStyles, TestEvent, SpecFormatter, DefaultFormatter }).MarkdownFormatter(),
-          reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
-        }).write
+          reportOrder: REPORT_ORDERS.DETERMINISTIC, // non-deterministic not supported
+        }).write,
       }
     }).add(function MdReporter () {
       return {
         write: ConsoleReporter({
           formatter: module.factories.MarkdownFormatterFactory({ consoleStyles, TestEvent, SpecFormatter, DefaultFormatter }).MarkdownFormatter(),
-          reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
-        }).write
+          reportOrder: REPORT_ORDERS.DETERMINISTIC, // non-deterministic not supported
+        }).write,
       }
     }).add(function PerformanceReporter () {
       return {
         write: ConsoleReporter({
-          formatter: module.factories.PerformanceFormatterFactory({ consoleStyles, TestEvent }).PerformanceFormatter()
-        }).write
+          formatter: module.factories.PerformanceFormatterFactory({ consoleStyles, TestEvent }).PerformanceFormatter(),
+        }).write,
       }
     }).add(function JustTheDescriptionsReporter () {
       return {
@@ -168,16 +168,16 @@
               } else {
                 return listFormatter.format(event)
               }
-            }
-          }
-        }).write
+            },
+          },
+        }).write,
       }
     }).add(function SpecReporter () {
       return {
         write: ConsoleReporter({
           formatter: SpecFormatter(),
-          reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
-        }).write
+          reportOrder: REPORT_ORDERS.DETERMINISTIC, // non-deterministic not supported
+        }).write,
       }
     }).add(function SummaryReporter () {
       return {
@@ -185,15 +185,15 @@
           formatter: module.factories.SummaryFormatterFactory({
             consoleStyles,
             DefaultFormatter,
-            TestEvent
-          }).SummaryFormatter()
-        }).write
+            TestEvent,
+          }).SummaryFormatter(),
+        }).write,
       }
     }).add(function TapReporter () {
       return {
         write: ConsoleReporter({
-          formatter: module.factories.TapFormatterFactory({ consoleStyles, TestEvent, config }).TapFormatter()
-        }).write
+          formatter: module.factories.TapFormatterFactory({ consoleStyles, TestEvent, config }).TapFormatter(),
+        }).write,
       }
     })
 
@@ -203,7 +203,7 @@
       TestEvent,
       clock,
       duration,
-      addDurations: time.addDurations
+      addDurations: time.addDurations,
     })
     const { hash } = module.factories.hashFactory()
     const { BatchComposer } = module.factories.makeBatchFactory({ hash })
@@ -218,7 +218,7 @@
       Tally,
       TestEvent,
       clock,
-      envvars: config
+      envvars: config,
     })
 
     const suite = new Suite()

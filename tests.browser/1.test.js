@@ -4,7 +4,7 @@ module.exports = (test) => {
       const sut = test.Suite({
         reporter: 'ARRAY',
         match: null,
-        assertionLibrary: test.config.assertionLibrary
+        assertionLibrary: test.config.assertionLibrary,
       })
 
       return sut('when dividing a number by zero', {
@@ -24,13 +24,13 @@ module.exports = (test) => {
           'it should not be equal to itself': (then) => (err, actual) => {
             then.ifError(err)
             then.notEqual(actual, actual)
-          }
-        }
+          },
+        },
       })
     }, // /when
     'they should all pass': (then) => (err, actual) => {
       then.ifError(err)
       then.strictEqual(actual.totals.passed, 3)
-    }
+    },
   })
 }

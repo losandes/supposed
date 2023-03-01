@@ -32,7 +32,7 @@ module.exports = {
       { name: 'bgBlue', value: [44, 49] },
       { name: 'bgMagenta', value: [45, 49] },
       { name: 'bgCyan', value: [46, 49] },
-      { name: 'bgWhite', value: [47, 49] }
+      { name: 'bgWhite', value: [47, 49] },
     ].reduce((styles, style) => {
       styles[style.name] = (input) => input
 
@@ -43,5 +43,5 @@ module.exports = {
     consoleStyles.space = () => ' '
 
     return { consoleStyles }
-  }
+  },
 }

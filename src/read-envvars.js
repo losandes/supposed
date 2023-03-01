@@ -14,7 +14,7 @@ module.exports = {
     function Option (lowercaseLetter, name) {
       return {
         switch: Switch(lowercaseLetter).switch,
-        option: Swatch(name).switch
+        option: Swatch(name).switch,
       }
     }
 
@@ -71,7 +71,7 @@ module.exports = {
           : undefined,
         verbosity: process.env.SUPPOSED_VERBOSITY
           ? process.env.SUPPOSED_VERBOSITY.trim().toLowerCase()
-          : undefined
+          : undefined,
       }
 
       return output
@@ -135,5 +135,5 @@ module.exports = {
     } // /readEnvvars
 
     return { readEnvvars }
-  } // /factory
+  }, // /factory
 } // /module

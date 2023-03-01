@@ -11,7 +11,7 @@ module.exports = {
     const makeJSONStringifiableError = (err) => {
       const error = {
         message: err.message,
-        stack: err.stack
+        stack: err.stack,
       }
 
       Object.keys(err).forEach((key) => {
@@ -76,7 +76,7 @@ module.exports = {
           : {
               count: event.plan.count,
               completed: event.plan.completed,
-              order: event.plan.order
+              order: event.plan.order,
             }
       }
 
@@ -107,7 +107,7 @@ module.exports = {
               broken: event.tally.broken,
               startTime: event.tally.startTime,
               endTime: event.tally.endTime,
-              duration: event.tally.duration
+              duration: event.tally.duration,
             }
       }
 
@@ -122,7 +122,7 @@ module.exports = {
               broken: event.totals.broken,
               startTime: event.totals.startTime,
               endTime: event.totals.endTime,
-              duration: event.totals.duration
+              duration: event.totals.duration,
             }
       }
 
@@ -137,14 +137,14 @@ module.exports = {
       END_BATCH: 'END_BATCH',
       END_TALLY: 'END_TALLY',
       FINAL_TALLY: 'FINAL_TALLY',
-      END: 'END'
+      END: 'END',
     }
 
     TestEvent.status = {
       PASSED: 'PASSED',
       SKIPPED: 'SKIPPED',
       FAILED: 'FAILED',
-      BROKEN: 'BROKEN'
+      BROKEN: 'BROKEN',
     }
 
     function getType (type) {
@@ -156,5 +156,5 @@ module.exports = {
     }
 
     return { TestEvent }
-  } // /factory
+  }, // /factory
 } // /module

@@ -243,7 +243,7 @@ module.exports = {
         reporters: [],
         givenSynonyms: ['given', 'arrange'],
         whenSynonyms: ['when', 'act', 'topic'],
-        verbosity: 'info'
+        verbosity: 'info',
       }
 
       // TODO: support flipping the priority, and make envvars the top of the hierarchy
@@ -261,7 +261,7 @@ module.exports = {
 
         return {
           timeout: theory.timeout || suiteConfig.timeout,
-          assertionLibrary: theory.assertionLibrary || suiteConfig.assertionLibrary
+          assertionLibrary: theory.assertionLibrary || suiteConfig.assertionLibrary,
         }
       }
 
@@ -269,5 +269,5 @@ module.exports = {
     } // /makeSuiteConfig
 
     return { makeSuiteConfig }
-  } // /factory
+  }, // /factory
 } // /module

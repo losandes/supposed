@@ -81,7 +81,7 @@ module.exports = {
             writeOne({
               isDeterministicOutput: true,
               testEvents: testEvents.sort(byPlanOrder(event.plan.order)),
-              endEvent: event
+              endEvent: event,
             })
           }
         } else if (event.type === TestEvent.types.START_TEST) {
@@ -99,5 +99,5 @@ module.exports = {
     }
 
     return { DomReporter }
-  }
+  },
 }

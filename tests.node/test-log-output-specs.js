@@ -2,8 +2,8 @@ module.exports = (describe, dependencies) => {
   const { defaultConfig } = dependencies
   const expectedLog = {
     log: {
-      foo: 'bar'
-    }
+      foo: 'bar',
+    },
   }
 
   return describe('assertion output', {
@@ -22,9 +22,9 @@ module.exports = (describe, dependencies) => {
         t.strictEqual(found[1].log, expectedLog.log)
 
         return {
-          log: expectedLog.log
+          log: expectedLog.log,
         }
-      }
+      },
     },
     'when an assertion passes, and returns a Promise with a `log` property': {
       when: async () => {
@@ -41,9 +41,9 @@ module.exports = (describe, dependencies) => {
         t.strictEqual(found[1].log, expectedLog.log)
 
         return {
-          log: expectedLog.log
+          log: expectedLog.log,
         }
-      }
-    }
+      },
+    },
   })
 }

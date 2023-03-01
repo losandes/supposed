@@ -89,5 +89,5 @@ module.exports = {
     }
 
     return { hash: MurmurHashV3 }
-  }
+  },
 }

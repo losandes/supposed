@@ -2,8 +2,8 @@ module.exports = (describe, dependencies) => {
   const { defaultConfig } = dependencies
   const expectedContext = {
     context: {
-      foo: 'bar'
-    }
+      foo: 'bar',
+    },
   }
 
   return describe('assertion output', {
@@ -20,7 +20,7 @@ module.exports = (describe, dependencies) => {
         t.strictEqual(found[1].type, 'TEST')
         t.strictEqual(found[1].status, 'PASSED')
         t.strictEqual(found[1].context, expectedContext.context)
-      }
+      },
     },
     'when an assertion passes, and returns a Promise with a `context` property': {
       when: async () => {
@@ -35,7 +35,7 @@ module.exports = (describe, dependencies) => {
         t.strictEqual(found[1].type, 'TEST')
         t.strictEqual(found[1].status, 'PASSED')
         t.strictEqual(found[1].context, expectedContext.context)
-      }
-    }
+      },
+    },
   })
 }

@@ -12,8 +12,8 @@ module.exports = {
           FAILED: consoleStyles.red('✗ '), // heavy-x '✘',
           BROKEN: consoleStyles.red('!= '), // heavy-x '✘',
           SKIPPED: consoleStyles.yellow('⸕ '),
-          INFO: consoleStyles.cyan('# ')
-        }
+          INFO: consoleStyles.cyan('# '),
+        },
       }).format
 
       const isFail = (event) => {
@@ -27,7 +27,7 @@ module.exports = {
       const format = (event) => {
         if ([
           TestEvent.types.START,
-          TestEvent.types.END
+          TestEvent.types.END,
         ].indexOf(event.type) > -1) {
           return defaultFormat(event)
         } else if (isFail(event)) {
@@ -43,5 +43,5 @@ module.exports = {
     }
 
     return { BriefFormatter }
-  }
+  },
 }

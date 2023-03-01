@@ -8,7 +8,7 @@ module.exports = function (describe, dependencies) {
       'it should resolve the promise': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual, 42)
-      }
+      },
     },
     'when given returns a value (not a promise)': {
       given: () => 42,
@@ -16,21 +16,21 @@ module.exports = function (describe, dependencies) {
       'it should resolve the value': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual, 42)
-      }
+      },
     },
     'when when returns a promise': {
       when: () => Promise.resolve(42),
       'it should resolve the promise': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual, 42)
-      }
+      },
     },
     'when when returns a value (not a promise)': {
       when: () => 42,
       'it should resolve the value': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual, 42)
-      }
+      },
     },
     'when an assertion returns a promise': {
       when: () => {
@@ -46,11 +46,11 @@ module.exports = function (describe, dependencies) {
               t.strictEqual(actual, 42)
               promiseFinished = true
             })
-          }
+          },
         }).then(results => {
           return {
             results: results,
-            promiseFinished: promiseFinished
+            promiseFinished: promiseFinished,
           }
         })
       },
@@ -58,7 +58,7 @@ module.exports = function (describe, dependencies) {
         t.ifError(err)
         t.strictEqual(actual.promiseFinished, true)
         t.strictEqual(actual.results.totals.passed, 1)
-      }
+      },
     },
     'when an assertion uses async await': {
       when: () => {
@@ -74,11 +74,11 @@ module.exports = function (describe, dependencies) {
 
             t.strictEqual(actual, 42)
             promiseFinished = true
-          }
+          },
         }).then(results => {
           return {
             results: results,
-            promiseFinished: promiseFinished
+            promiseFinished: promiseFinished,
           }
         })
       },
@@ -86,7 +86,7 @@ module.exports = function (describe, dependencies) {
         t.ifError(err)
         t.strictEqual(actual.results.totals.passed, 1)
         t.strictEqual(actual.promiseFinished, true)
-      }
-    }
+      },
+    },
   })
 }

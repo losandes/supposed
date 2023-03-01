@@ -13,8 +13,8 @@ module.exports = {
           FAILED: consoleStyles.red('✗ '),
           BROKEN: consoleStyles.red('!= '),
           SKIPPED: consoleStyles.yellow('⸕ '),
-          INFO: consoleStyles.cyan('# ') // the `#` is important for TAP compliance
-        }
+          INFO: consoleStyles.cyan('# '), // the `#` is important for TAP compliance
+        },
       }).format
 
       const format = (event) => {
@@ -29,5 +29,5 @@ module.exports = {
     }
 
     return { SummaryFormatter }
-  }
+  },
 }

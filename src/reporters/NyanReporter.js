@@ -11,8 +11,8 @@ module.exports = {
         FAILED: consoleStyles.red('✗ '), // heavy-x '✘',
         BROKEN: consoleStyles.red('!= '), // heavy-x '✘',
         SKIPPED: consoleStyles.yellow('⸕ '),
-        INFO: consoleStyles.cyan('# ')
-      }
+        INFO: consoleStyles.cyan('# '),
+      },
     })
     const print = (input, tail) => {
       process.stdout.write(input)
@@ -64,7 +64,7 @@ module.exports = {
 
       return {
         width: size[0],
-        height: size[1]
+        height: size[1],
       }
     }
 
@@ -218,5 +218,5 @@ module.exports = {
     } // /NyanReporter
 
     return { NyanReporter }
-  }
+  },
 }

@@ -5,22 +5,22 @@ module.exports = function (describe, dependencies) {
     AAA: {
       'when arrange, act, and assert(s) exist': {
         act: whenGivenWhenAndThen('arrange', 'act'),
-        'given should produce to when, which should produce to the assertions': itShouldPass
+        'given should produce to when, which should produce to the assertions': itShouldPass,
       },
       'when arrange, and assert(s) exist without act': {
         act: whenGivenThenAndNoWhen('arrange'),
-        '`arrange` should be swapped out for `act`': itShouldPass
-      }
+        '`arrange` should be swapped out for `act`': itShouldPass,
+      },
     },
     BDD: {
       'when given, when, and then(s) exist': {
         when: whenGivenWhenAndThen('given', 'when'),
-        'given should produce to when, which should produce to the assertions': itShouldPass
+        'given should produce to when, which should produce to the assertions': itShouldPass,
       },
       'when given, and then(s) exist without when': {
         when: whenGivenThenAndNoWhen('given'),
-        '`given` should be swapped out for `when`': itShouldPass
-      }
+        '`given` should be swapped out for `when`': itShouldPass,
+      },
     },
     vows: {
       'when topics are used for `when/act`': {
@@ -28,8 +28,8 @@ module.exports = function (describe, dependencies) {
         'it should execute the topic': (t) => (err, actual) => {
           t.ifError(err)
           t.strictEqual(actual, 42)
-        }
-      }
+        },
+      },
     },
     'when given is a primitive': {
       given: 42,
@@ -37,7 +37,7 @@ module.exports = function (describe, dependencies) {
       'it should use the primitive': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual, Infinity)
-      }
+      },
     },
     'when given is an object': {
       given: { num: 42 },
@@ -45,22 +45,22 @@ module.exports = function (describe, dependencies) {
       'it should use the primitive': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual, Infinity)
-      }
+      },
     },
     'when when is a primitive': {
       when: 42,
       'it should use the primitive': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual, 42)
-      }
+      },
     },
     'when when is an object': {
       when: { num: 42 },
       'it should use the primitive': (t) => (err, actual) => {
         t.ifError(err)
         t.strictEqual(actual.num, 42)
-      }
-    }
+      },
+    },
   })
 
   function itShouldPass (t, err, actual) {
@@ -75,8 +75,8 @@ module.exports = function (describe, dependencies) {
           'sut-assertion': (t) => (err, actual) => {
             t.ifError(err)
             t.strictEqual(actual, 42)
-          }
-        }
+          },
+        },
       }
 
       test['sut-description'][given] = () => {
@@ -104,8 +104,8 @@ module.exports = function (describe, dependencies) {
             t.ifError(err)
             t.strictEqual(actual, 42)
             t.strictEqual(givenRan, true)
-          }
-        }
+          },
+        },
       }
 
       test['sut-description'][given] = () => {

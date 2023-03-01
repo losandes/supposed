@@ -19,7 +19,7 @@ module.exports = {
       let _event = event
       if ([
         TestEvent.types.START,
-        TestEvent.types.END
+        TestEvent.types.END,
       ].indexOf(event.type) > -1) {
         _event = cloneWithoutOrder(event)
       }
@@ -36,7 +36,7 @@ module.exports = {
         } else if (
           [
             TestEvent.types.START_TEST,
-            TestEvent.types.END_TALLY
+            TestEvent.types.END_TALLY,
           ].indexOf(event.type) === -1 &&
           !event.isDeterministicOutput
         ) {
@@ -52,5 +52,5 @@ module.exports = {
     }
 
     return { JsonFormatter }
-  }
+  },
 }

@@ -16,7 +16,7 @@ module.exports = {
           broken: 0,
           startTime: -1,
           endTime: -1,
-          duration: undefined
+          duration: undefined,
         }
       }
       // there's only 1 tally per require
@@ -30,7 +30,7 @@ module.exports = {
         endTime: -1,
         duration: undefined,
         results: [],
-        batches: {}
+        batches: {},
       }
 
       const makeBatchTally = (event) => {
@@ -39,7 +39,7 @@ module.exports = {
             type: TestEvent.types.TEST,
             status: TestEvent.status.BROKEN,
             batchId: event.batchId,
-            error: new Error('Duplicate Batch Ids were created, or multiple START_BATCH events were emitted for the same batch')
+            error: new Error('Duplicate Batch Ids were created, or multiple START_BATCH events were emitted for the same batch'),
           }).then(() => {
             return undefined
           })
@@ -90,14 +90,14 @@ module.exports = {
               totals.batches[event.batchId].endTime = now()
               totals.batches[event.batchId].duration = duration(
                 totals.batches[event.batchId].startTime,
-                totals.batches[event.batchId].endTime
+                totals.batches[event.batchId].endTime,
               )
               return Promise.resolve()
             case TestEvent.types.END_TALLY:
               totals.endTime = now()
               totals.duration = duration(
                 totals.startTime,
-                totals.endTime
+                totals.endTime,
               )
               return Promise.resolve()
           } // /switch
@@ -121,7 +121,7 @@ module.exports = {
           broken: tally.broken,
           startTime: tally.startTime,
           endTime: tally.endTime,
-          duration: tally.duration
+          duration: tally.duration,
         }
       }
 
@@ -129,5 +129,5 @@ module.exports = {
     } // /TallyFactory
 
     return { TallyFactory }
-  }
+  },
 }

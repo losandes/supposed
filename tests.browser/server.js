@@ -3,7 +3,7 @@ const puppeteer = require('puppeteer')
 const supposed = require('../index.js')
 
 const suite = supposed.Suite({
-  name: 'supposed-tests.manual'
+  name: 'supposed-tests.manual',
 })
 
 const __projectdir = __dirname.split('tests.browser')[0]
@@ -24,7 +24,7 @@ module.exports = suite.runner({
   port: 42002,
   stringifiedSuiteConfig: '{ name: "tests.browser", reporter: "event", assertionLibrary: browserTestAssert }',
   dependencies: ['/tests.browser/assert.js'],
-  supposedPath: path.join(__projectdir, 'dist/supposed.js')
+  supposedPath: path.join(__projectdir, 'dist/supposed.js'),
   // styles: 'body { color: #2eb815; }' // #b0c9dc
   // template: undefined,
   // page: undefined

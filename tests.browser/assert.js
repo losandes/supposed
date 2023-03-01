@@ -27,6 +27,6 @@
       if (actual === expected) {
         throwError(actual, expected, makeMessage(actual, expected, '!=='), message)
       }
-    }
+    },
   }
 })(window)
