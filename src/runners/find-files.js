@@ -13,7 +13,7 @@ module.exports = {
       const self = {
         cwd: process.cwd(),
         directories: ['.'],
-        matchesNamingConvention: /.([-.]test(s?)\.js)|([-.]spec(s?)\.js)$/i,
+        matchesNamingConvention: /.([-.]test(s?)\.(js|cjs|mjs))|([-.]spec(s?)\.(js|cjs|mjs))$/i,
         matchesIgnoredConvention: /node_modules/i,
         injectSuite: true
       }
