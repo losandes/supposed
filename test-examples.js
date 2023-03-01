@@ -28,7 +28,7 @@ const suites = [
   './event-context.js',
   './event-log.js',
   './no-suite.js',
-  './Suites.js',
+  './readme-suites/index.js',
   './using-async-await.js',
   './using-promises.js'
 ]
