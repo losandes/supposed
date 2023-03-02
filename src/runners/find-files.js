@@ -65,7 +65,7 @@ module.exports = {
         }, [])
       }
 
-      return { walkSync: walkSync }
+      return { walkSync }
     }
 
     function findFiles (options) {
