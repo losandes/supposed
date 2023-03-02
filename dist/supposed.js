@@ -1,28 +1,19 @@
 "use strict";
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
-
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
-
 function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter); }
-
 function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
-
-function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
-
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { _defineProperty(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
+function _defineProperty(obj, key, value) { key = _toPropertyKey(key); if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return _typeof(key) === "symbol" ? key : String(key); }
+function _toPrimitive(input, hint) { if (_typeof(input) !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (_typeof(res) !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
-
 // Node, or global
 ;
-
 (function (root) {
   // eslint-disable-line no-extra-semi
   'use strict';
@@ -72,7 +63,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           });
         }));
       }
-
       return {
         allSettled: allSettled
       };
@@ -84,33 +74,28 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var isPromise = dependencies.isPromise,
-          pubsub = dependencies.pubsub,
-          TestEvent = dependencies.TestEvent,
-          clock = dependencies.clock,
-          duration = dependencies.duration,
-          addDurations = dependencies.addDurations;
+        pubsub = dependencies.pubsub,
+        TestEvent = dependencies.TestEvent,
+        clock = dependencies.clock,
+        duration = dependencies.duration,
+        addDurations = dependencies.addDurations;
       var publish = pubsub.publish;
-
       function noop() {}
-
       var getType = function getType(obj) {
         return Object.prototype.toString.call(obj).replace(/(^\[object )|(\]$)/g, '').toLowerCase();
       };
-
       var isExecutable = function isExecutable(value) {
         return ['function', 'promise', 'asyncfunction'].indexOf(getType(value)) > -1;
       };
-
       var isNullOrUndefined = function isNullOrUndefined(value) {
         return typeof value === 'undefined' || value === null;
       };
+
       /**
        * If the test is skipped, sets noops for given and when,
        * otherwise sets given and when to associated test variables
        * @param {Object} context
        */
-
-
       function useNoopsIfSkipped(context) {
         if (testIsSkipped(context.test)) {
           // there aren't any tests to run
@@ -121,31 +106,27 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           context.given = context.test.given || noop;
           context.when = context.test.when;
         }
-
         return context;
       }
-
       function testIsSkipped(test) {
-        return test.skipped || // the test isn't skipped, but all of it's assertions are
+        return test.skipped ||
+        // the test isn't skipped, but all of it's assertions are
         test.assertions.filter(function (a) {
           return a.skipped;
         }).length === test.assertions.length;
       }
+
       /**
        * Runs `given` and passes any output forward
        * @param {Object} context
        */
-
-
       function runGiven(context) {
         if (isNullOrUndefined(context.given)) {
           return Promise.resolve(context);
         }
-
         try {
           var startTime = clock();
           var actual = isExecutable(context.given) ? context.given() : context.given;
-
           if (isPromise(actual)) {
             return actual.then(function (value) {
               context.resultOfGiven = value;
@@ -155,7 +136,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
               throw e;
             });
           }
-
           context.givenDuration = duration(startTime, clock());
           context.resultOfGiven = actual;
           return Promise.resolve(context);
@@ -164,21 +144,18 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           throw e;
         }
       }
+
       /**
        * Runs `when` and passes any output forward
        * @param {Object} context
        */
-
-
       function runWhen(context) {
         if (isNullOrUndefined(context.when)) {
           return Promise.resolve(context);
         }
-
         try {
           var startTime = clock();
           var actual = isExecutable(context.when) ? context.when(context.resultOfGiven) : context.when;
-
           if (isPromise(actual)) {
             return actual.then(function (value) {
               context.resultOfWhen = value;
@@ -188,7 +165,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
               return context;
             });
           }
-
           context.whenDuration = duration(startTime, clock());
           context.resultOfWhen = actual;
           return Promise.resolve(context);
@@ -197,23 +173,20 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           return context;
         }
       }
+
       /**
        * Executes the assertions
        * @param {Object} context
        */
-
-
       function checkAssertions(context) {
         var promises = context.test.assertions.map(function (assertion) {
           return assertOne(context, assertion, function () {
             // the assertion may or may not curry: (t, err, actual) => { ... }
             var maybeFunc = assertion.test(context.config.assertionLibrary, context.err, context.resultOfWhen);
-
             if (typeof maybeFunc === 'function') {
               // the assertion curries: (t) => (err, actual) => { ... }
               return maybeFunc(context.err, context.resultOfWhen);
             }
-
             return maybeFunc;
           });
         });
@@ -221,7 +194,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           if (!Array.isArray(events)) {
             return context;
           }
-
           events.forEach(function (event) {
             context.outcomes.push(Object.assign({
               behavior: 'anonymous'
@@ -231,31 +203,25 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         });
       } // /checkAssertions
 
-
       function maybeLog(result) {
         return result && typeof result.log !== 'undefined' ? result.log : undefined;
       }
-
       function maybeContext(result) {
         return result && typeof result.context !== 'undefined' ? result.context : undefined;
       }
+
       /**
        * Executes one assertion
        * @param {Object} context
        */
-
-
       function assertOne(context, assertion, test) {
         var batchId = context.batchId,
-            givenDuration = context.givenDuration,
-            whenDuration = context.whenDuration;
-
+          givenDuration = context.givenDuration,
+          whenDuration = context.whenDuration;
         var pass = function pass(startTime) {
           return function (result) {
             var endTime = clock();
-
             var _dur = duration(startTime, endTime);
-
             return publish({
               type: TestEvent.types.TEST,
               status: TestEvent.status.PASSED,
@@ -276,7 +242,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             });
           };
         };
-
         var fail = function fail(e) {
           return publish({
             type: TestEvent.types.TEST,
@@ -289,7 +254,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             error: e
           });
         };
-
         try {
           if (assertion.skipped) {
             return publish({
@@ -302,7 +266,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
               behaviors: assertion.behaviors
             });
           }
-
           var startTime;
           return publish({
             type: TestEvent.types.START_TEST,
@@ -327,8 +290,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
        * The context for one flow
        * @param {Object} context
        */
-
-
       function Context(context) {
         var self = {
           test: context.test,
@@ -357,6 +318,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         };
         return Object.seal(self);
       } // /Context
+
       // {
       //   given: [Function: when],
       //   when: [Function: when],
@@ -365,8 +327,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       //     test: [Function: we get Infinity]
       //   }]
       // }
-
-
       function AsyncTest(test, config, batchId, suiteId) {
         return function () {
           // we need a Promise wrapper, to timout the test if it never returns
@@ -391,9 +351,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
                   }).then(resolve);
                 }, config.timeout),
                 err: null // null is the default
+              });
 
-              }); // run the flow
-
+              // run the flow
               return Promise.resolve(context).then(useNoopsIfSkipped).then(runGiven).then(runWhen).then(checkAssertions).then(function (context) {
                 clearTimeout(context.timer);
                 return resolve(context.outcomes);
@@ -414,12 +374,10 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         }; // /wrapper
       } // /AsyncTest
 
-
       return {
         AsyncTest: AsyncTest
       };
     } // /factory
-
   }; // /module
 
   module.exports = {
@@ -429,22 +387,17 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         if (typeof input !== 'string') {
           throw new Error('I only know how to hash strings');
         }
-
         var _arrBuffer = new ArrayBuffer(input.length * 2); // 2 bytes per char
-
-
         var _intBuffer = new Uint8Array(_arrBuffer);
-
         for (var i = 0; i < input.length; i += 1) {
           _intBuffer[i] = input.charCodeAt(i);
         }
-
         return _intBuffer;
       };
-
       var isBuffer = function isBuffer(input) {
         return input instanceof Uint8Array;
       };
+
       /**
        * JS Implementation of MurmurHash3 (r136) (as of May 20, 2011)
        *
@@ -459,12 +412,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
        * @param {number} seed Positive integer only
        * @return {number} 32-bit positive integer hash
        */
-
-
       function MurmurHashV3(key, seed) {
         if (!isBuffer(key)) key = createBuffer(key);
         var remainder = key.length & 3; // key.length % 4
-
         var bytes = key.length - remainder;
         var c1 = 0xcc9e2d51;
         var c2 = 0x1b873593;
@@ -472,10 +422,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         var h1 = seed;
         var h1b;
         var k1;
-
         while (i < bytes) {
           var _k = key[i] & 0xff | (key[++i] & 0xff) << 8 | (key[++i] & 0xff) << 16 | (key[++i] & 0xff) << 24;
-
           ++i;
           _k = (_k & 0xffff) * c1 + (((_k >>> 16) * c1 & 0xffff) << 16) & 0xffffffff;
           _k = _k << 15 | _k >>> 17;
@@ -485,17 +433,14 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           h1b = (h1 & 0xffff) * 5 + (((h1 >>> 16) * 5 & 0xffff) << 16) & 0xffffffff;
           h1 = (h1b & 0xffff) + 0x6b64 + (((h1b >>> 16) + 0xe654 & 0xffff) << 16);
         }
-
         k1 = 0;
-        /* eslint-disable no-fallthrough */
 
+        /* eslint-disable no-fallthrough */
         switch (remainder) {
           case 3:
             k1 ^= (key[i + 2] & 0xff) << 16;
-
           case 2:
             k1 ^= (key[i + 1] & 0xff) << 8;
-
           case 1:
             k1 ^= key[i] & 0xff;
             k1 = (k1 & 0xffff) * c1 + (((k1 >>> 16) * c1 & 0xffff) << 16) & 0xffffffff;
@@ -505,7 +450,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         }
         /* eslint-enable no-fallthrough */
 
-
         h1 ^= key.length;
         h1 ^= h1 >>> 16;
         h1 = (h1 & 0xffff) * 0x85ebca6b + (((h1 >>> 16) * 0x85ebca6b & 0xffff) << 16) & 0xffffffff;
@@ -514,7 +458,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         h1 ^= h1 >>> 16;
         return h1 >>> 0;
       }
-
       return {
         hash: MurmurHashV3
       };
@@ -526,17 +469,13 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var hash = dependencies.hash;
-
       function BatchComposer(options) {
         var givenSynonyms = options.givenSynonyms; // ['given', 'arrange']
-
         var whenSynonyms = options.whenSynonyms; // ['when', 'act', 'topic']
-
         var config = ['timeout', 'assertionLibrary', 'reporter'];
         var actions = givenSynonyms.concat(whenSynonyms, config);
         var tapSkipPattern = /^# SKIP /i;
         var tapSkipOrTodoPattern = /(^# SKIP )|(^# TODO )/i;
-
         var getBySynonyms = function getBySynonyms(synonyms) {
           return function (node) {
             var key = Object.keys(node).find(function (key) {
@@ -545,27 +484,20 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             return key ? node[key] : undefined;
           };
         };
-
         var getGiven = getBySynonyms(givenSynonyms);
         var getWhen = getBySynonyms(whenSynonyms);
-
         var isAssertion = function isAssertion(node, key) {
           return typeof node === 'function' && actions.indexOf(key) === -1;
         };
-
         var makeBatchId = function makeBatchId(behavior) {
           return typeof behavior === 'string' && behavior.trim().length ? "B".concat(hash(behavior.trim())) : "B".concat((Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase());
         };
-
         var makeTestId = function makeTestId(behavior) {
           return typeof behavior === 'string' && behavior.trim().length ? "T".concat(hash(behavior.trim())) : "T".concat((Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase());
         };
-
         var makeOneAssertion = function makeOneAssertion(behavior, behaviors, node, skipped) {
           var _behaviors = behavior && behavior.trim().length ? behaviors.concat([behavior]) : behaviors;
-
           var _behavior = _behaviors.map(trimBehavior).join(', ');
-
           return {
             id: makeTestId(_behavior),
             behaviors: _behaviors,
@@ -574,13 +506,10 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             skipped: skipped
           };
         };
-
         var getAssertions = function getAssertions(behavior, behaviors, node, skipped) {
           if (isAssertion(node, behavior)) {
             // empty behavior because the behavior should already be in `behaviors`
-            return [makeOneAssertion('', behaviors, node, skipped
-            /* isSkipped(behavior) was called just before this */
-            )];
+            return [makeOneAssertion('', behaviors, node, skipped /* isSkipped(behavior) was called just before this */)];
           }
 
           return Object.keys(node).filter(function (key) {
@@ -589,23 +518,18 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             return makeOneAssertion(key, behaviors, node[key], skipped || isSkipped(key));
           });
         };
-
         var isCommentedOut = function isCommentedOut(behavior) {
           return behavior.length >= 2 && behavior.trim().substring(0, 2) === '//';
         };
-
         var isTapSkipped = function isTapSkipped(behavior) {
           return tapSkipOrTodoPattern.test(behavior);
         };
-
         var isSkipped = function isSkipped(behavior) {
           if (behavior && (isCommentedOut(behavior) || isTapSkipped(behavior))) {
             return true;
           }
-
           return false;
         };
-
         var trimBehavior = function trimBehavior(behavior) {
           if (isCommentedOut(behavior)) {
             // remove the comments
@@ -617,14 +541,13 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             return behavior.trim();
           }
         };
-
         function Layer(input) {
           var id = input.id,
-              behavior = input.behavior,
-              behaviors = input.behaviors,
-              node = input.node,
-              timeout = input.timeout,
-              assertionLibrary = input.assertionLibrary;
+            behavior = input.behavior,
+            behaviors = input.behaviors,
+            node = input.node,
+            timeout = input.timeout,
+            assertionLibrary = input.assertionLibrary;
           var parentSkipped = input.skipped;
           var parentGiven = input.given;
           var parentWhen = input.when;
@@ -639,12 +562,10 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             // an immediate when is present, so this overrides the parent
             whenIsInheritedGiven = false;
           }
-
           if (!when && parentWhen && !whenIsInheritedGiven) {
             // an immediate when is NOT present, there is a parent `when`, and
             // it's not the result if `if (!when && given)` - this when
             // should be inherited
-
             /*
             'when nested assertions have givens (make-batch inline-comments)': {
               given: () => 42,
@@ -666,7 +587,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           } else if (!when && given) {
             // There are neither an immediate when, nor a parent when because the parent
             // when was actually a given (the result of this block)
-
             /*
             'when nested assertions have givens (make-batch if (!when && given))': {
               given: () => 42,
@@ -686,7 +606,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             whenIsInheritedGiven = true;
             when = given;
           }
-
           return {
             id: id || makeTestId(behavior),
             behaviors: behaviors,
@@ -700,17 +619,16 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             whenIsInheritedGiven: whenIsInheritedGiven
           };
         }
-
         function FlattenedTests(input) {
           var behavior = input.behavior,
-              behaviors = input.behaviors,
-              node = input.node,
-              given = input.given,
-              when = input.when,
-              whenIsInheritedGiven = input.whenIsInheritedGiven,
-              skipped = input.skipped,
-              timeout = input.timeout,
-              assertionLibrary = input.assertionLibrary;
+            behaviors = input.behaviors,
+            node = input.node,
+            given = input.given,
+            when = input.when,
+            whenIsInheritedGiven = input.whenIsInheritedGiven,
+            skipped = input.skipped,
+            timeout = input.timeout,
+            assertionLibrary = input.assertionLibrary;
           var layers = [];
           var props = Object.keys(node);
           var parent = new Layer({
@@ -725,11 +643,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             timeout: timeout || node.timeout,
             assertionLibrary: assertionLibrary || node.assertionLibrary
           });
-
           if (Array.isArray(parent.assertions) && parent.assertions.length) {
             layers.push(parent);
           }
-
           props.filter(function (childKey) {
             return _typeof(node[childKey]) === 'object';
           }).map(function (childKey) {
@@ -755,7 +671,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           });
           return layers;
         }
-
         var makeBatch = function makeBatch(tests) {
           return Object.keys(tests).reduce(function (batch, key) {
             return batch.concat(new FlattenedTests({
@@ -790,7 +705,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             };
           });
         };
-
         return {
           makeBatch: makeBatch,
           makeBatchId: makeBatchId,
@@ -798,12 +712,10 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         };
       } // /BatchComposer
 
-
       return {
         BatchComposer: BatchComposer
       };
     } // /factory
-
   }; // /exports
 
   module.exports = {
@@ -812,31 +724,25 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var envvars = dependencies.envvars,
-          reporterFactory = dependencies.reporterFactory,
-          REPORT_ORDERS = dependencies.REPORT_ORDERS;
-
+        reporterFactory = dependencies.reporterFactory,
+        REPORT_ORDERS = dependencies.REPORT_ORDERS;
       var makeSuiteId = function makeSuiteId() {
         return "S".concat((Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase());
       };
-
       var maybeOverrideValueFactory = function maybeOverrideValueFactory(suiteConfig, options) {
         return function (name, factory) {
           var value = factory(options);
-
           if (typeof value !== 'undefined') {
             suiteConfig[name] = value;
           }
         };
       };
-
       var getType = function getType(obj) {
         return Object.prototype.toString.call(obj).replace(/(^\[object )|(\]$)/g, '').toLowerCase();
       };
-
       var isDefined = function isDefined(obj) {
         return typeof obj !== 'undefined' && obj !== null;
       };
-
       var parseSynonyms = function parseSynonyms(propName, input) {
         var synonyms = input.filter(function (synonym) {
           return typeof synonym === 'string' && synonym.trim().length;
@@ -853,7 +759,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           errors: errors
         };
       };
-
       var addValues = function addValues(suiteConfig, options) {
         var maybeOverrideValue = maybeOverrideValueFactory(suiteConfig, _objectSpread({}, options));
         var validationErrors = [];
@@ -955,15 +860,13 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         maybeOverrideValue('givenSynonyms', function (options) {
           if (Array.isArray(options.givenSynonyms)) {
             var _parseSynonyms = parseSynonyms('givenSynonym', options.givenSynonyms),
-                synonyms = _parseSynonyms.synonyms,
-                errors = _parseSynonyms.errors;
-
+              synonyms = _parseSynonyms.synonyms,
+              errors = _parseSynonyms.errors;
             if (errors.length) {
               errors.forEach(function (message) {
                 return validationErrors.push(message);
               });
             }
-
             if (synonyms.length) {
               return synonyms;
             }
@@ -974,15 +877,13 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         maybeOverrideValue('whenSynonyms', function (options) {
           if (Array.isArray(options.whenSynonyms)) {
             var _parseSynonyms2 = parseSynonyms('whenSynonym', options.whenSynonyms),
-                synonyms = _parseSynonyms2.synonyms,
-                errors = _parseSynonyms2.errors;
-
+              synonyms = _parseSynonyms2.synonyms,
+              errors = _parseSynonyms2.errors;
             if (errors.length) {
               errors.forEach(function (message) {
                 return validationErrors.push(message);
               });
             }
-
             if (synonyms.length) {
               return synonyms;
             }
@@ -993,7 +894,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         maybeOverrideValue('verbosity', function (options) {
           if (typeof options.verbosity === 'string') {
             var verbosity = options.verbosity.trim().toLowerCase();
-
             if (['debug', 'info'].indexOf(verbosity) > -1) {
               return verbosity;
             } else {
@@ -1010,24 +910,20 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             validationErrors.push("Invalid exit: expected {".concat(getType(options.exit), "} to be {'function'|'promise'|'asyncfunction'}"));
           }
         });
-
         if (validationErrors.length) {
           throw new Error(validationErrors.join(', '));
         }
       }; // /addValues
 
-
       var addReporters = function addReporters(suiteConfig, options) {
         var maybeOverrideValue = maybeOverrideValueFactory(suiteConfig, _objectSpread({}, options));
         maybeOverrideValue('reporters', function (options) {
           var reporters = [];
-
           var makeReporterArray = function makeReporterArray(input) {
             return input.split(',').map(function (reporter) {
               return reporter.trim().toUpperCase();
             });
           };
-
           var addReporter = function addReporter(nameOrFunc) {
             if (typeof nameOrFunc === 'string') {
               var reporter = reporterFactory.get(nameOrFunc);
@@ -1036,9 +932,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
               reporterFactory.add(nameOrFunc);
               addReporter(nameOrFunc.name);
             }
-          }; // reporter: accept strings, functions, or objects
+          };
 
-
+          // reporter: accept strings, functions, or objects
           if (typeof options.reporter === 'string') {
             makeReporterArray(options.reporter).forEach(addReporter);
           } else if (typeof options.reporter === 'function') {
@@ -1060,21 +956,19 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
                 write: options.reporter.write
               };
             });
-          } // reporters: accept strings, or arrays
+          }
 
-
+          // reporters: accept strings, or arrays
           if (typeof options.reporters === 'string') {
             makeReporterArray(options.reporters).forEach(addReporter);
           } else if (Array.isArray(options.reporters)) {
             options.reporters.forEach(addReporter);
           }
-
           if (reporters.length) {
             return reporters;
           }
         });
       };
-
       var makeSuiteConfig = function makeSuiteConfig(options) {
         var suiteConfig = {
           name: makeSuiteId(),
@@ -1084,12 +978,12 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           givenSynonyms: ['given', 'arrange'],
           whenSynonyms: ['when', 'act', 'topic'],
           verbosity: 'info'
-        }; // TODO: support flipping the priority, and make envvars the top of the hierarchy
-        // this will require that we set the priority in all of the tests for this library
+        };
 
+        // TODO: support flipping the priority, and make envvars the top of the hierarchy
+        // this will require that we set the priority in all of the tests for this library
         addValues(suiteConfig, envvars);
         addValues(suiteConfig, options);
-
         suiteConfig.registerReporters = function () {
           addReporters(suiteConfig, {
             reporter: 'LIST'
@@ -1097,7 +991,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           addReporters(suiteConfig, envvars);
           addReporters(suiteConfig, options);
         };
-
         suiteConfig.makeTheoryConfig = function (theory) {
           theory = _objectSpread({}, theory);
           return {
@@ -1105,16 +998,13 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             assertionLibrary: theory.assertionLibrary || suiteConfig.assertionLibrary
           };
         };
-
         return suiteConfig;
       }; // /makeSuiteConfig
-
 
       return {
         makeSuiteConfig: makeSuiteConfig
       };
     } // /factory
-
   }; // /module
 
   module.exports = {
@@ -1123,16 +1013,13 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var allSettled = dependencies.allSettled,
-          isPromise = dependencies.isPromise,
-          TestEvent = dependencies.TestEvent;
-
+        isPromise = dependencies.isPromise,
+        TestEvent = dependencies.TestEvent;
       var makeId = function makeId() {
         return "S".concat((Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase());
       };
-
       function Pubsub() {
         var subscriptions = [];
-
         var publish = function publish(input) {
           var event = new TestEvent(input);
           return allSettled(subscriptions.map(function (subscription) {
@@ -1142,10 +1029,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             return event;
           });
         };
-
         var subscribe = function subscribe(subscription) {
           var name = subscription.name || makeId();
-
           if (typeof subscription === 'function') {
             subscriptions.push({
               name: name,
@@ -1158,27 +1043,22 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             throw new Error('Invalid subscription: expected either a function, or { name: string, write: function }');
           }
         };
-
         var subscriptionExists = function subscriptionExists(name) {
           if (subscriptions.find(function (subscription) {
             return subscription.name === name;
           })) {
             return true;
           }
-
           return false;
         };
-
         var allSubscriptions = function allSubscriptions() {
           return subscriptions.map(function (subscription) {
             return subscription.name;
           });
         };
-
         var reset = function reset() {
           subscriptions = [];
         };
-
         return {
           publish: publish,
           subscribe: subscribe,
@@ -1187,7 +1067,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           reset: reset
         };
       }
-
       return {
         Pubsub: Pubsub
       };
@@ -1199,25 +1078,25 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var allSettled = dependencies.allSettled,
-          AsyncTest = dependencies.AsyncTest,
-          findFiles = dependencies.findFiles,
-          BatchComposer = dependencies.BatchComposer,
-          makeSuiteConfig = dependencies.makeSuiteConfig,
-          pubsub = dependencies.pubsub,
-          reporterFactory = dependencies.reporterFactory,
-          resolveTests = dependencies.resolveTests,
-          runServer = dependencies.runServer,
-          makePlans = dependencies.makePlans,
-          Tally = dependencies.Tally,
-          TestEvent = dependencies.TestEvent,
-          clock = dependencies.clock,
-          envvars = dependencies.envvars;
-
+        AsyncTest = dependencies.AsyncTest,
+        findFiles = dependencies.findFiles,
+        BatchComposer = dependencies.BatchComposer,
+        makeSuiteConfig = dependencies.makeSuiteConfig,
+        pubsub = dependencies.pubsub,
+        reporterFactory = dependencies.reporterFactory,
+        resolveTests = dependencies.resolveTests,
+        runServer = dependencies.runServer,
+        makePlans = dependencies.makePlans,
+        Tally = dependencies.Tally,
+        TestEvent = dependencies.TestEvent,
+        clock = dependencies.clock,
+        envvars = dependencies.envvars;
       var makeNormalBatch = function makeNormalBatch(description, assertions) {
         var batch = {};
         batch[description] = assertions;
         return batch;
       };
+
       /**
        * Suite accepts ad-hoc polymorphic input. This function figures out what
        * combination of inputs are present, and returns a consistent interface:
@@ -1228,13 +1107,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
        *     [description: string]: IBDD | IBehaviors | IAssert | ICurriedAssert | IPromiseOrFunction
        *   }
        */
-
-
       var normalizeBatch = function normalizeBatch(description, assertions) {
         var descriptionType = _typeof(description);
-
         var assertionsType = _typeof(assertions);
-
         if (descriptionType === 'string' && assertionsType === 'function') {
           // description, IAssert
           return Promise.resolve(makeNormalBatch(description, {
@@ -1263,14 +1138,11 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
        * @param config {object} - the Suite options
        * @param theory {object} - one result of makeBatch (`mapper`) (a batch is an array of theories)
        */
-
-
       var matcher = function matcher(config) {
         return function (theory) {
           if (!config.match) {
             return true;
           }
-
           for (var i = 0; i < theory.assertions.length; i += 1) {
             if (config.match.test(theory.assertions[i].behavior)) {
               return true;
@@ -1278,6 +1150,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           }
         };
       };
+
       /**
        * Maps the result of normalizeBatch to a batch:
        * @curried
@@ -1292,8 +1165,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
        *     tests: IAsyncTest[]
        *   }
        */
-
-
       var mapper = function mapper(config, makeBatch, makeBatchId, byMatcher) {
         return function (batch) {
           var theories = makeBatch(batch).filter(byMatcher);
@@ -1303,11 +1174,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           };
         };
       };
-
       var isPlan = function isPlan(maybePlan) {
         return typeof maybePlan !== 'undefined' && maybePlan !== null && typeof maybePlan.count === 'number' && typeof maybePlan.completed === 'number' && Array.isArray(maybePlan.batches) && Array.isArray(maybePlan.order);
       };
-
       var planner = function planner(config, mapToBatch) {
         var makeEmptyPlan = function makeEmptyPlan() {
           return {
@@ -1317,10 +1186,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             order: []
           };
         };
-
         var plan = makeEmptyPlan();
         var lastPlanEntry;
-
         var addToPlan = function addToPlan(description, assertions) {
           lastPlanEntry = clock('ms');
           return normalizeBatch(description, assertions).then(mapToBatch).then(function (context) {
@@ -1333,26 +1200,20 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
               });
               plan.count = plan.order.length;
             }
-
             return plan;
           });
         };
-
         addToPlan.getPlan = function () {
           return plan;
         };
-
         addToPlan.resetPlan = function () {
           plan = makeEmptyPlan();
         };
-
         addToPlan.lastPlanEntry = function () {
           return lastPlanEntry;
         };
-
         return addToPlan;
       };
-
       var brokenTestPublisher = function brokenTestPublisher(suiteId) {
         return function (error) {
           return pubsub.publish({
@@ -1364,22 +1225,19 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           });
         };
       };
+
       /**
        * Merges the values of allSettled results into a single array of values.
        * > NOTE this does not deal with undefined values
        * @param prop - the name of the property to merge (value, or reason)
        */
-
-
       var toOneArray = function toOneArray(prop) {
         return function (output, current) {
           return Array.isArray(current[prop]) ? output.concat(current[prop]) : output.concat([current[prop]]);
         };
       };
-
       var fulfilledToOneArray = toOneArray('value');
       var failedToOneArray = toOneArray('reason');
-
       var batchRunner = function batchRunner(config, publishOneBrokenTest) {
         return function (batch, plan) {
           return pubsub.publish({
@@ -1414,7 +1272,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
                 totals: context.batchTotals
               });
             };
-
             if (Array.isArray(context.broken) && context.broken.length) {
               // these tests failed during the planning stage
               return allSettled(context.broken.map(publishOneBrokenTest)).then(publishEndBatch).then(function () {
@@ -1436,7 +1293,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         };
       }; // /batchRunner
 
-
       var reportRegistrar = function reportRegistrar(config) {
         return function () {
           config.registerReporters();
@@ -1448,13 +1304,11 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           config.subscriptions = pubsub.allSubscriptions();
         };
       };
-
       var tester = function tester(config, registerReporters, runBatch, runnerMode) {
         return function (plan) {
           if (!runnerMode) {
             registerReporters();
           }
-
           return Promise.resolve({
             plan: plan
           }).then(function (context) {
@@ -1465,7 +1319,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             if (Array.isArray(context) && context.length === 1) {
               return context[0];
             }
-
             return context;
           }).catch(function (e) {
             pubsub.publish({
@@ -1479,7 +1332,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           });
         };
       };
-
       var reduceOutputToResults = function reduceOutputToResults(output) {
         if (!Array.isArray(output) && output && output.results) {
           return output.results;
@@ -1497,12 +1349,11 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           }, []);
         }
       };
-
       var runner = function runner(config, registerReporters, suite, publishOneBrokenTest, execute) {
         return function (planContext) {
           var plan = planContext.plan,
-              files = planContext.files,
-              broken = planContext.broken;
+            files = planContext.files,
+            broken = planContext.broken;
           registerReporters();
           return pubsub.publish({
             type: TestEvent.types.START,
@@ -1572,7 +1423,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           });
         };
       };
-
       var browserRunner = function browserRunner(config, registerReporters, test) {
         return function (options) {
           return function () {
@@ -1581,6 +1431,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           };
         };
       };
+
       /**
        * By default, use the envvars, which are a result of `makeSuiteConfig`
        * in the composition root.
@@ -1592,8 +1443,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
        * @param suiteConfig - the arg that was passed to Suite
        * @param suiteDotConfigureOptions - the arg that was passed to `configure`
        */
-
-
       var _makeSuiteConfig = function _makeSuiteConfig(suiteConfig, suiteDotConfigureOptions) {
         if (!suiteConfig && !suiteDotConfigureOptions) {
           return envvars; // envvars is the default makeSuiteConfig
@@ -1605,48 +1454,40 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           return makeSuiteConfig(suiteConfig);
         }
       };
+
       /**
        * The test library
        * @param {Object} suiteConfig : optional configuration
       */
-
-
       function Suite(suiteConfig) {
         var runnerMode = false;
         var waitingToRun = false;
+
         /**
          * @param suiteDotConfigureOptions - configuration provided in line with `supposed.Suite().configure(suiteDotConfigureOptions)`
          */
-
         var configure = function configure(suiteDotConfigureOptions) {
           pubsub.reset();
           pubsub.subscribe(reporterFactory.get(Tally.name));
-
           var _suiteConfig = _makeSuiteConfig(suiteConfig, suiteDotConfigureOptions);
-
           var registerReporters = reportRegistrar(_suiteConfig);
           var publishOneBrokenTest = brokenTestPublisher(_suiteConfig.name);
-
           var _BatchComposer = new BatchComposer(_suiteConfig),
-              makeBatch = _BatchComposer.makeBatch,
-              makeBatchId = _BatchComposer.makeBatchId;
-
+            makeBatch = _BatchComposer.makeBatch,
+            makeBatchId = _BatchComposer.makeBatchId;
           var byMatcher = matcher(_suiteConfig);
           var mapToBatch = mapper(_suiteConfig, makeBatch, makeBatchId, byMatcher);
           var runBatch = batchRunner(_suiteConfig, publishOneBrokenTest);
           var plan = planner(_suiteConfig, mapToBatch);
-
           var waitToRun = function waitToRun() {
             return new Promise(function (resolve, reject) {
               if (waitingToRun) {
                 return;
               }
-
               waitingToRun = true;
               setTimeout(function () {
                 var lastPlanEntry = plan.lastPlanEntry();
                 var now = clock('ms');
-
                 if (lastPlanEntry && now - lastPlanEntry > _suiteConfig.planBuffer) {
                   test.runner().runTests({
                     plan: plan.getPlan()
@@ -1657,7 +1498,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
               }, _suiteConfig.planBuffer * 2);
             });
           };
-
           var test = function test(description, assertions) {
             if (runnerMode) {
               return plan(description, assertions);
@@ -1666,7 +1506,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
               return plan(description, assertions).then(waitToRun);
             }
           };
-
           test.id = _suiteConfig.name;
           test.plan = plan;
           test.config = _suiteConfig;
@@ -1674,28 +1513,22 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           test.configure = configure;
           test.reporterFactory = reporterFactory;
           test.registerReporters = registerReporters;
-
           test.publish = function (event) {
             return pubsub.publish(event).then(function () {
               return test;
             });
           };
-
           test.subscribe = function (subscription) {
             pubsub.subscribe(subscription);
             return test;
           };
-
           test.runner = function (runConfig) {
             runnerMode = true;
             runConfig = runConfig || {};
-
             if (envvars.file) {
               runConfig.matchesNamingConvention = envvars.file;
             }
-
             var findAndStart = browserRunner(_suiteConfig, registerReporters, test);
-
             var addPlanToContext = function addPlanToContext() {
               return function (context) {
                 context.plan = plan.getPlan();
@@ -1704,29 +1537,23 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
                 return Object.freeze(context);
               };
             };
-
             var findAndPlan = function findAndPlan() {
               return findFiles(runConfig).then(resolveTests()).then(makePlans(test)).then(addPlanToContext());
             };
-
             var run = function run() {
               return runner(_suiteConfig, registerReporters, test, publishOneBrokenTest, tester(_suiteConfig, registerReporters, runBatch, runnerMode));
             };
-
             var runTests = function runTests(planOrTests) {
               if (planOrTests && isPlan(planOrTests.plan)) {
                 return Promise.resolve(planOrTests).then(run()).then(_suiteConfig.exit);
               }
-
               if (Array.isArray(planOrTests)) {
                 runConfig.tests = planOrTests;
               } else if (typeof planOrTests === 'function') {
                 runConfig.tests = planOrTests();
               }
-
               return makePlans(test)(runConfig).then(addPlanToContext()).then(run()).then(_suiteConfig.exit);
             };
-
             return {
               // find and plan (node)
               plan: findAndPlan,
@@ -1739,34 +1566,30 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
               // start test server (browser)
               startServer: findAndStart(runConfig)
             };
-          }; // @deprecated - may go away in the future
+          };
 
-
+          // @deprecated - may go away in the future
           test.printSummary = function () {
             return pubsub.publish({
               type: TestEvent.types.END,
               suiteId: _suiteConfig.name,
               totals: Tally.getSimpleTally()
             });
-          }; // @deprecated - may go away in the future
-
-
+          };
+          // @deprecated - may go away in the future
           test.getTotals = function () {
             return Tally.getSimpleTally();
           };
-
           return test;
         };
-
         return configure();
-      } // Suite.suites = []
+      }
 
-
+      // Suite.suites = []
       return {
         Suite: Suite
       };
     } // /factory
-
   }; // /module
 
   module.exports = {
@@ -1775,11 +1598,10 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var clock = dependencies.clock,
-          envvars = dependencies.envvars;
+        envvars = dependencies.envvars;
       var TYPE_EXPRESSION = /(^START$)|(^START_BATCH$)|(^START_TEST$)|(^TEST$)|(^END_BATCH$)|(^END_TALLY$)|(^FINAL_TALLY$)|(^END$)/;
       var STATUS_EXPRESSION = /(^PASSED$)|(^SKIPPED$)|(^FAILED$)|(^BROKEN$)/;
       var testCount = 0;
-
       var makeJSONStringifiableError = function makeJSONStringifiableError(err) {
         var error = {
           message: err.message,
@@ -1787,7 +1609,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         };
         Object.keys(err).forEach(function (key) {
           var _err = err[key];
-
           if (_err && _err.message) {
             error[key] = makeJSONStringifiableError(err[key]);
           } else {
@@ -1796,50 +1617,39 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         });
         return error;
       };
-
       var TestEvent = function TestEvent(event) {
         var self = {};
         event = Object.assign({}, event);
-
         if (event.suiteId) {
           self.suiteId = event.suiteId;
         }
-
         if (event.batchId) {
           self.batchId = event.batchId;
         }
-
         if (event.testId) {
           self.testId = event.testId;
         }
-
         if (event.type === TestEvent.types.TEST) {
           testCount += 1;
           self.count = testCount;
         }
-
         if (typeof event.time === 'number' || typeof event.time === 'bigint') {
           self.time = event.time;
         } else {
           self.time = clock();
         }
-
         self.type = getType(event.type);
-
         if (typeof event.status === 'string' && STATUS_EXPRESSION.test(event.status)) {
           self.status = event.status;
         } else if (event.status) {
           self.status = 'UNKNOWN';
         }
-
         if (event.behavior) {
           self.behavior = event.behavior;
         }
-
         if (Array.isArray(event.behaviors)) {
           self.behaviors = event.behaviors;
         }
-
         if (event.plan) {
           self.plan = envvars.verbosity === 'debug' ? event.plan : {
             count: event.plan.count,
@@ -1847,23 +1657,18 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             order: event.plan.order
           };
         }
-
         if (event.error) {
           self.error = makeJSONStringifiableError(event.error);
         }
-
         if (typeof event.log !== 'undefined') {
           self.log = event.log;
         }
-
         if (event.context) {
           self.context = event.context;
         }
-
         if (event.duration) {
           self.duration = event.duration;
         }
-
         if (event.tally) {
           self.tally = envvars.verbosity === 'debug' ? event.tally : {
             total: event.tally.total,
@@ -1876,7 +1681,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             duration: event.tally.duration
           };
         }
-
         if (event.totals) {
           self.totals = envvars.verbosity === 'debug' ? event.totals : {
             total: event.totals.total,
@@ -1889,10 +1693,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             duration: event.totals.duration
           };
         }
-
         return Object.freeze(self);
       };
-
       TestEvent.types = {
         START: 'START',
         START_BATCH: 'START_BATCH',
@@ -1909,20 +1711,16 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         FAILED: 'FAILED',
         BROKEN: 'BROKEN'
       };
-
       function getType(type) {
         if (TYPE_EXPRESSION.test(type)) {
           return type;
         }
-
         return 'UNKNOWN';
       }
-
       return {
         TestEvent: TestEvent
       };
     } // /factory
-
   }; // /module
 
   module.exports = {
@@ -1939,26 +1737,20 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       var UNITS_ARRAY = Object.keys(UNITS).map(function (key) {
         return UNITS[key];
       });
-
       var isValidUnit = function isValidUnit(unit) {
         return UNITS_ARRAY.includes(unit);
       };
-
       var makeClock = function makeClock(MULTIPLIERS, makeTime) {
         var clock = function clock(option) {
           switch (option) {
             case 's':
               return makeTime(MULTIPLIERS.SECONDS);
-
             case 'ms':
               return makeTime(MULTIPLIERS.MILLISECONDS);
-
             case 'us':
               return makeTime(MULTIPLIERS.MICROSECONDS);
-
             case 'ns':
               return makeTime(MULTIPLIERS.NANOSECONDS);
-
             default:
               return {
                 seconds: makeTime(MULTIPLIERS.SECONDS),
@@ -1968,26 +1760,20 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
               };
           }
         };
-
         clock.seconds = function () {
           return clock(UNITS.SECONDS);
         };
-
         clock.milliseconds = function () {
           return clock(UNITS.MILLISECONDS);
         };
-
         clock.microseconds = function () {
           return clock(UNITS.MICROSECONDS);
         };
-
         clock.nanoseconds = function () {
           return clock(UNITS.NANOSECONDS);
         };
-
         return clock;
       };
-
       var CONVERSIONS = {
         s: {
           SECONDS: 1,
@@ -2014,7 +1800,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           NANOSECONDS: 1
         }
       };
-
       var duration = function duration(start, end, timeUnits) {
         var conversions = CONVERSIONS[timeUnits];
         return {
@@ -2024,7 +1809,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           nanoseconds: (end - start) * conversions.NANOSECONDS
         };
       };
-
       var addDurations = function addDurations() {
         var duration = {
           seconds: 0,
@@ -2032,11 +1816,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           microseconds: 0,
           nanoseconds: 0
         };
-
         for (var _len = arguments.length, durations = new Array(_len), _key = 0; _key < _len; _key++) {
           durations[_key] = arguments[_key];
         }
-
         durations.forEach(function (_dur) {
           if (typeof _dur.microseconds === 'number' && _dur.microseconds > 0) {
             duration.seconds += _dur.seconds;
@@ -2047,7 +1829,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         });
         return duration;
       };
-
       var NODE_MULTIPLIERS = {
         SECONDS: [1, 1e-9],
         MILLISECONDS: [1e3, 1e-6],
@@ -2060,16 +1841,13 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         MICROSECONDS: 1000,
         NANOSECONDS: 1000000
       };
-
       var nodeClock = function nodeClock(multipliers, hrtime) {
         var time = Array.isArray(hrtime) ? process.hrtime(hrtime) : process.hrtime();
         return time[0] * multipliers[0] + time[1] * multipliers[1];
       };
-
       var browserClock = function browserClock(multiplier, hrtime) {
         return window.performance.now() * multiplier;
       };
-
       var clock = typeof process !== 'undefined' && typeof process.hrtime === 'function' ? makeClock(NODE_MULTIPLIERS, nodeClock) : makeClock(BROWSER_MULTIPLIERS, browserClock);
       return {
         clock: clock,
@@ -2085,15 +1863,12 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var allSettled = dependencies.allSettled;
-
       var hasThen = function hasThen(obj) {
         return obj && typeof obj.then === 'function';
       };
-
       var toPromise = function toPromise(config, suite) {
         return function (input) {
           var err, test, path;
-
           try {
             if (typeof input === 'function') {
               test = input;
@@ -2104,12 +1879,10 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             } else {
               throw new Error("Invalid makePlans entry: expected input ".concat(_typeof(input), " to be a {function}, or { err?: Error; test: Function|Promise; path?: string; }"));
             }
-
             if (err) {
               err.filePath = path;
               return Promise.reject(err);
             }
-
             if (hasThen(test)) {
               // module.exports = test('something', (t) => {...})
               return test;
@@ -2121,10 +1894,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             } else if (suite && config.injectSuite !== false && _typeof(test) === 'object' && typeof test.default === 'function') {
               // export default function (test) {}
               var _maybePromise = test.default(suite, suite.dependencies);
-
               return hasThen(_maybePromise) ? _maybePromise : Promise.resolve(_maybePromise);
             }
-
             return Promise.resolve();
           } catch (e) {
             e.filePath = path;
@@ -2132,7 +1903,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           }
         };
       };
-
       var mapToResults = function mapToResults(runConfig) {
         var paths = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
         return function (results) {
@@ -2147,26 +1917,21 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           };
         };
       };
-
       var makePlans = function makePlans(suite) {
         return function (context) {
           var runConfig = context.runConfig,
-              tests = context.tests,
-              paths = context.paths;
-
+            tests = context.tests,
+            paths = context.paths;
           if (!tests) {
             throw new Error('run-tests expects tests to be provided');
           }
-
           return Promise.resolve(tests.map(toPromise(runConfig || context, suite))).then(allSettled).then(mapToResults(runConfig, paths));
         };
       };
-
       return {
         makePlans: makePlans
       };
     } // /factory
-
   }; // /module
 
   module.exports = {
@@ -2256,18 +2021,14 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         styles[style.name] = function (input) {
           return input;
         };
-
         return styles;
       }, {});
-
       consoleStyles.newLine = function () {
         return '\n';
       };
-
       consoleStyles.space = function () {
         return ' ';
       };
-
       return {
         consoleStyles: consoleStyles
       };
@@ -2279,8 +2040,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var consoleStyles = dependencies.consoleStyles,
-          DefaultFormatter = dependencies.DefaultFormatter;
-
+        DefaultFormatter = dependencies.DefaultFormatter;
       function BlockFormatter() {
         return DefaultFormatter({
           SYMBOLS: {
@@ -2292,7 +2052,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           }
         });
       }
-
       return {
         BlockFormatter: BlockFormatter
       };
@@ -2304,9 +2063,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var consoleStyles = dependencies.consoleStyles,
-          DefaultFormatter = dependencies.DefaultFormatter,
-          TestEvent = dependencies.TestEvent;
-
+        DefaultFormatter = dependencies.DefaultFormatter,
+        TestEvent = dependencies.TestEvent;
       function BriefFormatter() {
         var defaultFormat = DefaultFormatter({
           SYMBOLS: {
@@ -2320,11 +2078,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             INFO: consoleStyles.cyan('# ')
           }
         }).format;
-
         var isFail = function isFail(event) {
           return event.type === TestEvent.types.TEST && (event.status === TestEvent.status.FAILED || event.status === TestEvent.status.BROKEN);
         };
-
         var format = function format(event) {
           if ([TestEvent.types.START, TestEvent.types.END].indexOf(event.type) > -1) {
             return defaultFormat(event);
@@ -2336,12 +2092,10 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             return output;
           }
         };
-
         return {
           format: format
         };
       }
-
       return {
         BriefFormatter: BriefFormatter
       };
@@ -2361,11 +2115,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         INFO: 'INFO'
       };
       var COLUMNS = 'STATUS,BEHAVIOR';
-
       var formatBehavior = function formatBehavior(behavior) {
         return "\"".concat(behavior.replace('"', '""'), "\"");
       };
-
       function CsvFormatter() {
         var _format = function _format(event) {
           if (event.type === TestEvent.types.START) {
@@ -2374,7 +2126,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             return "".concat(SYMBOLS[event.status], ",").concat(formatBehavior(event.behavior));
           }
         };
-
         var format = function format(event) {
           if (event.isDeterministicOutput) {
             return event.testEvents.map(_format).concat([_format(event.endEvent)]).join('\n');
@@ -2383,12 +2134,10 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           }
         }; // /format
 
-
         return {
           format: format
         };
       }
-
       return {
         CsvFormatter: CsvFormatter
       };
@@ -2400,57 +2149,46 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var consoleStyles = dependencies.consoleStyles,
-          TestEvent = dependencies.TestEvent,
-          SYMBOLS = dependencies.SYMBOLS,
-          config = dependencies.config;
+        TestEvent = dependencies.TestEvent,
+        SYMBOLS = dependencies.SYMBOLS,
+        config = dependencies.config;
       var newLine = consoleStyles.newLine();
-
       var formatInfo = function formatInfo(log) {
         if (typeof log === 'undefined' || config.suppressLogs) {
           return '';
         }
-
         return newLine + JSON.stringify(log, null, 2).split(newLine).map(function (line) {
           return "    ".concat(line);
         }).join(newLine);
       };
-
       var formatComparable = function formatComparable(input) {
         var output = JSON.stringify(input, null, 2);
-
         if (input && !output) {
           output = input.toString();
         }
-
         if (output.indexOf(newLine) > -1) {
           return output.split(newLine).map(function (line) {
             return "    ".concat(line);
           }).join(newLine).substring(4) + newLine;
         }
-
         return output;
       };
-
       var formatExpectedAndActual = function formatExpectedAndActual(error) {
         return "    expected: ".concat(consoleStyles.green(formatComparable(error.expected))) + "    actual: ".concat(consoleStyles.red(formatComparable(error.actual)));
       };
-
       var formatStack = function formatStack(error) {
         if (!error.stack) {
           return '';
         }
-
         var stack = error.stack.split(newLine).map(function (line) {
           return "    ".concat(line.trim());
         }).join(newLine);
         return error.expected && error.actual ? "".concat(newLine).concat(newLine).concat(stack).concat(newLine) : "".concat(newLine).concat(stack).concat(newLine);
       };
-
       var formatDuration = function formatDuration(duration) {
         if (!duration) {
           return '';
         }
-
         if (duration.seconds > 1) {
           return "".concat(Math.round(duration.seconds), "s");
         } else if (duration.milliseconds > 1) {
@@ -2461,13 +2199,11 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           return "".concat(Math.round(duration.nanoseconds), "ns");
         }
       };
-
       function DefaultFormatter() {
         var _format = function _format(event) {
           if (event.type === TestEvent.types.START) {
             return "".concat(newLine).concat(SYMBOLS.INFO, "Running tests (").concat(event.suiteId, ")...");
           }
-
           if (event.type === TestEvent.types.END) {
             var totals = event.totals;
             return "".concat(newLine).concat(SYMBOLS.INFO, "total: ").concat(consoleStyles.cyan(totals.total)) + "  passed: ".concat(consoleStyles.green(totals.passed)) + "  failed: ".concat(consoleStyles.red(totals.failed + totals.broken)) + "  skipped: ".concat(consoleStyles.yellow(totals.skipped)) + "  duration: ".concat(formatDuration(totals.duration)).concat(newLine);
@@ -2481,7 +2217,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             }
           }
         };
-
         var format = function format(event) {
           if (event.isDeterministicOutput) {
             return event.testEvents.map(_format).concat([_format(event.endEvent)]).join('\n');
@@ -2489,7 +2224,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             return _format(event);
           }
         }; // /format
-
 
         return {
           format: format,
@@ -2499,7 +2233,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           formatStack: formatStack
         };
       } // /Formatter
-
 
       return {
         DefaultFormatter: DefaultFormatter
@@ -2512,8 +2245,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var consoleStyles = dependencies.consoleStyles,
-          DefaultFormatter = dependencies.DefaultFormatter;
-
+        DefaultFormatter = dependencies.DefaultFormatter;
       function ListFormatter() {
         return DefaultFormatter({
           SYMBOLS: {
@@ -2528,7 +2260,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           }
         });
       }
-
       return {
         ListFormatter: ListFormatter
       };
@@ -2540,29 +2271,22 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var TestEvent = dependencies.TestEvent;
-
       var cloneWithoutOrder = function cloneWithoutOrder(event) {
         var clone = JSON.parse(JSON.stringify(event));
-
         if (clone.plan && Array.isArray(clone.plan.order)) {
           delete clone.plan.order;
         }
-
         return clone;
       };
-
       var stringify = function stringify(event) {
         var _event = event;
-
         if ([TestEvent.types.START, TestEvent.types.END].indexOf(event.type) > -1) {
           _event = cloneWithoutOrder(event);
         }
-
         return "".concat(JSON.stringify({
           event: _event
         }, null, 2));
       };
-
       function JsonFormatter() {
         var format = function format(event) {
           if (event.type === TestEvent.types.START) {
@@ -2579,12 +2303,10 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             return output;
           }
         };
-
         return {
           format: format
         };
       }
-
       return {
         JsonFormatter: JsonFormatter
       };
@@ -2596,72 +2318,59 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var consoleStyles = dependencies.consoleStyles,
-          TestEvent = dependencies.TestEvent,
-          SpecFormatter = dependencies.SpecFormatter,
-          DefaultFormatter = dependencies.DefaultFormatter;
+        TestEvent = dependencies.TestEvent,
+        SpecFormatter = dependencies.SpecFormatter,
+        DefaultFormatter = dependencies.DefaultFormatter;
       var newLine = consoleStyles.newLine();
       var space = consoleStyles.space();
-
       var _SpecFormatter = new SpecFormatter(),
-          addToSpec = _SpecFormatter.addToSpec;
-
+        addToSpec = _SpecFormatter.addToSpec;
       var _DefaultFormatter = new DefaultFormatter(),
-          formatDuration = _DefaultFormatter.formatDuration;
-
+        formatDuration = _DefaultFormatter.formatDuration;
       var STARTS_WITH_HEADING = /^#/;
-
       var escape = function escape(behavior) {
         if (STARTS_WITH_HEADING.test(behavior)) {
           return behavior.substring(behavior.indexOf(' ') + 1);
         }
-
         return behavior;
       };
-
       var toBullets = function toBullets(md, SPACE, layer) {
         if (typeof layer === 'undefined') layer = 0;
         var output = '';
         Object.keys(md).forEach(function (key) {
           var line = key.replace(/\n/g, newLine + SPACE.substring(0, (layer + 1) * 2));
           output += SPACE.substring(0, layer * 2) + "-   ".concat(escape(line)).concat(newLine);
-
-          if (md[key].type && md[key].type === TestEvent.types.TEST) {// done
+          if (md[key].type && md[key].type === TestEvent.types.TEST) {
+            // done
           } else {
             output += toBullets(md[key], SPACE, layer + 1);
           }
         });
         return output;
       };
-
       var makeTotalsH2 = function makeTotalsH2(totals) {
         return "## Totals".concat(newLine) + "".concat(newLine, "- **total**: ").concat(totals.total) + "".concat(newLine, "- **passed**: ").concat(totals.passed) + "".concat(newLine, "- **failed**: ").concat(totals.failed) + "".concat(newLine, "- **skipped**: ").concat(totals.skipped) + "".concat(newLine, "- **duration**: ").concat(formatDuration(totals.duration));
       };
-
       var makeInfoH2 = function makeInfoH2(specs) {
         var found = specs.filter(function (event) {
           return event.status === TestEvent.status.PASSED && event.log;
         });
-
         if (!found.length) {
           return;
         }
-
         var output = "## Details".concat(newLine);
         found.forEach(function (event) {
           output += "".concat(newLine, "#### ").concat(escape(event.behavior)).concat(newLine).concat(newLine) + '```JSON' + "".concat(newLine).concat(JSON.stringify(event.log, null, 2)).concat(newLine) + '```' + newLine;
         });
         return output;
       };
-
       var makeErrorsH2 = function makeErrorsH2(specs) {
         var found = specs.filter(function (event) {
           return event.status === TestEvent.status.FAILED || event.status === TestEvent.status.BROKEN;
         });
-
         if (!found.length) {
           return;
         }
-
         var output = "## Errors".concat(newLine);
         found.forEach(function (event) {
           if (event.error && event.error.stack) {
@@ -2672,23 +2381,19 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         });
         return output;
       };
-
       function MarkdownFormatter() {
         var title = 'Tests';
-
         var format = function format(event) {
           if (event.type === TestEvent.types.START) {
             title = event.suiteId;
           } else if (event.isDeterministicOutput) {
             var SPACE = _toConsumableArray(new Array(event.testEvents.length * 2)).join(space);
-
             var spec = {};
             event.testEvents.forEach(function (_event) {
               return addToSpec(_event.behaviors, spec, _event);
             });
             var errors = makeErrorsH2(event.testEvents);
             var logs = makeInfoH2(event.testEvents);
-
             if (errors && logs) {
               return "# ".concat(title).concat(newLine).concat(newLine).concat(toBullets(spec, SPACE)).concat(newLine).concat(logs).concat(newLine).concat(errors).concat(newLine).concat(makeTotalsH2(event.endEvent.totals));
             } else if (errors) {
@@ -2701,12 +2406,10 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           }
         }; // /format
 
-
         return {
           format: format
         };
       } // /Formatter
-
 
       return {
         MarkdownFormatter: MarkdownFormatter
@@ -2719,14 +2422,12 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var consoleStyles = dependencies.consoleStyles,
-          TestEvent = dependencies.TestEvent;
-
+        TestEvent = dependencies.TestEvent;
       function PerformanceFormatter() {
         var formatDuration = function formatDuration(duration) {
           if (!duration) {
             return 0;
           }
-
           if (typeof duration === 'number' && duration.seconds > 1) {
             return "".concat(Math.round(duration.seconds), "s");
           } else if (duration.milliseconds > 1) {
@@ -2739,19 +2440,16 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             return 0;
           }
         };
-
         var format = function format(event) {
           if (event.type === TestEvent.types.TEST && event.duration) {
             var durations = ["given: ".concat(formatDuration(event.duration.given)), "when: ".concat(formatDuration(event.duration.when)), "then: ".concat(formatDuration(event.duration.then))];
             return "".concat(consoleStyles.cyan('# '), "  duration: ").concat(formatDuration(event.duration.total), " (").concat(durations.join(', '), ")");
           }
         };
-
         return {
           format: format
         };
       }
-
       return {
         PerformanceFormatter: PerformanceFormatter
       };
@@ -2763,8 +2461,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var consoleStyles = dependencies.consoleStyles,
-          TestEvent = dependencies.TestEvent,
-          DefaultFormatter = dependencies.DefaultFormatter;
+        TestEvent = dependencies.TestEvent,
+        DefaultFormatter = dependencies.DefaultFormatter;
       var newLine = consoleStyles.newLine();
       var space = consoleStyles.space();
       var SYMBOLS = {
@@ -2777,22 +2475,18 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         SKIPPED: consoleStyles.yellow('⸕ '),
         INFO: consoleStyles.cyan('# ')
       };
-
       var _DefaultFormatter2 = DefaultFormatter({
-        SYMBOLS: SYMBOLS
-      }),
-          format = _DefaultFormatter2.format,
-          formatInfo = _DefaultFormatter2.formatInfo,
-          formatExpectedAndActual = _DefaultFormatter2.formatExpectedAndActual,
-          formatStack = _DefaultFormatter2.formatStack;
-
+          SYMBOLS: SYMBOLS
+        }),
+        format = _DefaultFormatter2.format,
+        formatInfo = _DefaultFormatter2.formatInfo,
+        formatExpectedAndActual = _DefaultFormatter2.formatExpectedAndActual,
+        formatStack = _DefaultFormatter2.formatStack;
       var addToSpec = function addToSpec(parts, spec, event) {
         if (!parts.length) {
           return;
         }
-
         var part = parts.shift();
-
         if (parts.length) {
           spec[part] = spec[part] || {};
           addToSpec(parts, spec[part], event);
@@ -2800,17 +2494,16 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           spec[part] = event;
         }
       };
-
       var toPrint = function toPrint(spec, SPACE, layer) {
         if (typeof layer === 'undefined') layer = 0;
-        var output = ''; // use getOwnPropertyNames instead of keys because the order is guarnateed back to es2015
-        // (Object.keys order is guaranteed in es6 and newer)
+        var output = '';
 
+        // use getOwnPropertyNames instead of keys because the order is guarnateed back to es2015
+        // (Object.keys order is guaranteed in es6 and newer)
         Object.getOwnPropertyNames(spec).forEach(function (key) {
           if (spec[key].type && spec[key].type === TestEvent.types.TEST) {
             var event = spec[key];
             var line;
-
             if (!event.error) {
               line = "".concat(SYMBOLS[event.status]).concat(key).concat(formatInfo(event.log));
             } else if (event.error.expected && event.error.actual) {
@@ -2818,25 +2511,21 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             } else {
               line = "".concat(SYMBOLS[event.status]).concat(key) + formatStack(event.error);
             }
-
             output += SPACE.substring(0, layer * 2) + "".concat(line).concat(newLine);
           } else {
             var _line = key.replace(/\n/g, newLine + SPACE.substring(0, (layer + 1) * 2));
-
             output += SPACE.substring(0, layer * 2) + "".concat(_line).concat(newLine);
             output += toPrint(spec[key], SPACE, layer + 1);
           }
         });
         return output;
       };
-
       function SpecFormatter() {
         var _format = function _format(event) {
           if (event.type === TestEvent.types.START) {
             return format(event);
           } else if (event.isDeterministicOutput) {
             var SPACE = _toConsumableArray(new Array(event.testEvents.length * 2)).join(space);
-
             var spec = {};
             event.testEvents.forEach(function (_event) {
               return addToSpec(_event.behaviors, spec, _event);
@@ -2845,13 +2534,11 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           }
         }; // /format
 
-
         return {
           format: _format,
           addToSpec: addToSpec
         };
       }
-
       return {
         SpecFormatter: SpecFormatter
       };
@@ -2863,9 +2550,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var consoleStyles = dependencies.consoleStyles,
-          DefaultFormatter = dependencies.DefaultFormatter,
-          TestEvent = dependencies.TestEvent;
-
+        DefaultFormatter = dependencies.DefaultFormatter,
+        TestEvent = dependencies.TestEvent;
       function SummaryFormatter() {
         var defaultFormat = DefaultFormatter({
           // Other than INFO, these aren't actually used, since this doesn't produce TEST output
@@ -2875,25 +2561,20 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             BROKEN: consoleStyles.red('!= '),
             SKIPPED: consoleStyles.yellow('⸕ '),
             INFO: consoleStyles.cyan('# ') // the `#` is important for TAP compliance
-
           }
         }).format;
-
         var format = function format(event) {
           if (event.isDeterministicOutput) {
             return defaultFormat(event.endEvent);
           }
-
           if (event.type === TestEvent.types.END) {
             return defaultFormat(event);
           }
         };
-
         return {
           format: format
         };
       }
-
       return {
         SummaryFormatter: SummaryFormatter
       };
@@ -2905,43 +2586,36 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var consoleStyles = dependencies.consoleStyles,
-          TestEvent = dependencies.TestEvent,
-          config = dependencies.config;
+        TestEvent = dependencies.TestEvent,
+        config = dependencies.config;
       var newLine = consoleStyles.newLine();
       var whitespace = '        ';
-
       var reIndent = function reIndent(input, spaces, trim) {
         var indent = whitespace.substring(0, spaces);
         return input.split(newLine).map(function (line) {
           return "".concat(indent).concat(trim ? line.trim() : line);
         }).join(newLine).substring(spaces);
       };
-
       var formatMessage = function formatMessage(input) {
         var message = input.split(newLine).map(function (line) {
           return line.replace(/\s\s+/g, ' ').replace(/"/g, '\\"');
         }).join(' ');
         return "\"".concat(message, "\"");
       };
-
       var formatInfo = function formatInfo(behavior, log, severity) {
         if (typeof log === 'undefined' || config.suppressLogs) {
           return '';
         }
-
         var message = typeof log.message === 'string' ? log.message : "comment for: ".concat(behavior);
         return newLine + "  ---".concat(newLine) + "  message: \"".concat(message, "\"").concat(newLine) + "  severity: ".concat(severity).concat(newLine) + "  data:".concat(newLine) + "    ".concat(reIndent(JSON.stringify(log, null, 2), 4)).concat(newLine) + '  ...';
       };
-
       var formatError = function formatError(error, severity) {
         if (!error) {
           return '';
         }
-
         var actualAndExpectedExist = error.expected && error.actual;
         var stackExists = typeof error.stack === 'string';
         var output = "".concat(newLine, "  ---").concat(newLine) + "  message: ".concat(formatMessage(error.message)).concat(newLine) + "  severity: ".concat(severity).concat(newLine);
-
         if (actualAndExpectedExist && stackExists) {
           output += "  data:".concat(newLine);
           output += "    got: ".concat(error.actual).concat(newLine);
@@ -2955,28 +2629,22 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           output += "  data:".concat(newLine);
           output += "    stack: ".concat(reIndent(error.stack, 6, true)).concat(newLine);
         }
-
         output += '  ...';
         return output;
       };
-
       function TapFormatter() {
         var formatTest = function formatTest(event) {
           switch (event.status) {
             case TestEvent.status.PASSED:
               return "ok ".concat(event.count, " - ").concat(event.behavior).concat(formatInfo(event.behavior, event.log, 'comment'));
-
             case TestEvent.status.SKIPPED:
               return event.behavior.indexOf('# TODO') > -1 ? "ok ".concat(event.count, " # TODO ").concat(event.behavior.replace('# TODO ', '')) : "ok ".concat(event.count, " # SKIP ").concat(event.behavior);
-
             case TestEvent.status.FAILED:
               return "not ok ".concat(event.count, " - ").concat(event.behavior).concat(formatError(event.error, 'fail'));
-
             case TestEvent.status.BROKEN:
               return "not ok ".concat(event.count, " - ").concat(event.behavior).concat(formatError(event.error, 'broken'));
           }
         };
-
         var format = function format(event) {
           if (event.type === TestEvent.types.START) {
             return "TAP version 13\n1..".concat(event.plan.count);
@@ -2992,12 +2660,10 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           }
         }; // /format
 
-
         return {
           format: format
         };
       } // /Formatter
-
 
       return {
         TapFormatter: TapFormatter
@@ -3011,17 +2677,14 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
       function ArrayReporter() {
         var events = [];
-
         var write = function write(event) {
           return events.push(event);
         };
-
         return {
           write: write,
           events: events
         };
       }
-
       return {
         ArrayReporter: ArrayReporter
       };
@@ -3033,16 +2696,14 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var TestEvent = dependencies.TestEvent,
-          formatter = dependencies.formatter,
-          envvars = dependencies.envvars,
-          REPORT_ORDERS = dependencies.REPORT_ORDERS;
+        formatter = dependencies.formatter,
+        envvars = dependencies.envvars,
+        REPORT_ORDERS = dependencies.REPORT_ORDERS;
       var format = formatter.format;
-
       var byPlanOrder = function byPlanOrder(order) {
         return function (eventA, eventB) {
           var aIdx = order.indexOf(eventA.testId);
           var bIdx = order.indexOf(eventB.testId);
-
           if (aIdx < bIdx) {
             return -1;
           } else if (aIdx > bIdx) {
@@ -3053,22 +2714,18 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           }
         };
       };
-
       function ConsoleReporter(options) {
         options = _objectSpread(_objectSpread(_objectSpread({}, {
           reportOrder: REPORT_ORDERS.NON_DETERMINISTIC
         }), envvars), options);
         var testEvents = [];
-
         var writeOne = function writeOne(event) {
           var line = format(event);
-
           if (line) {
             // eslint-disable-next-line no-console
             console.log(line);
           }
         };
-
         var write = function write(event) {
           if (event.type === TestEvent.types.START) {
             writeOne(event);
@@ -3093,12 +2750,10 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           }
         }; // /write
 
-
         return {
           write: write
         };
       }
-
       return {
         ConsoleReporter: ConsoleReporter
       };
@@ -3110,20 +2765,18 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var TestEvent = dependencies.TestEvent,
-          formatter = dependencies.formatter,
-          envvars = dependencies.envvars,
-          REPORT_ORDERS = dependencies.REPORT_ORDERS;
+        formatter = dependencies.formatter,
+        envvars = dependencies.envvars,
+        REPORT_ORDERS = dependencies.REPORT_ORDERS;
       var format = formatter.format;
       var reportDivId = 'supposed_report';
       var reportPreId = 'supposed_report_results';
       var reportDiv;
       var reportPre;
-
       var byPlanOrder = function byPlanOrder(order) {
         return function (eventA, eventB) {
           var aIdx = order.indexOf(eventA.testId);
           var bIdx = order.indexOf(eventB.testId);
-
           if (aIdx < bIdx) {
             return -1;
           } else if (aIdx > bIdx) {
@@ -3134,16 +2787,13 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           }
         };
       };
-
       var initDom = function initDom() {
         var _reportDiv = document.getElementById(reportDivId);
-
         if (_reportDiv) {
           reportDiv = _reportDiv;
           reportPre = document.getElementById(reportPreId);
           return;
         }
-
         reportDiv = document.createElement('div');
         reportDiv.setAttribute('id', reportDivId);
         document.body.appendChild(reportDiv);
@@ -3151,33 +2801,28 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         reportPre.setAttribute('id', reportPreId);
         reportDiv.appendChild(reportPre);
       };
-
       var scrollToBottom = function scrollToBottom() {
         if (typeof window !== 'undefined' && typeof window.scrollTo === 'function' && typeof document !== 'undefined' && document.body) {
           window.scrollTo(0, document.body.scrollHeight);
         }
       };
-
       function DomReporter(options) {
         options = _objectSpread(_objectSpread(_objectSpread({}, {
           reportOrder: REPORT_ORDERS.NON_DETERMINISTIC
         }), envvars), options);
         var testEvents = [];
         initDom();
-
         var writeOne = function writeOne(event) {
           var line = format(event);
-
           if (!line) {
             return;
-          } // eslint-disable-next-line no-console
+          }
 
-
+          // eslint-disable-next-line no-console
           console.log(line);
           reportPre.append("".concat(line, "\n"));
           scrollToBottom();
         };
-
         var write = function write(event) {
           if (event.type === TestEvent.types.START) {
             writeOne(event);
@@ -3202,12 +2847,10 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           }
         }; // /write
 
-
         return {
           write: write
         };
       }
-
       return {
         DomReporter: DomReporter
       };
@@ -3223,7 +2866,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           write: function write() {}
         };
       }
-
       return {
         NoopReporter: NoopReporter
       };
@@ -3237,60 +2879,44 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       function ReporterFactory() {
         var self = {};
         var map = {};
-
         var uppered = function uppered(name) {
           return typeof name === 'string' ? name.trim().toUpperCase() : undefined;
         };
-
         self.get = function (name) {
           var _name = uppered(name);
-
           if (!map[_name]) {
             throw new Error("A reporter by name, \"".concat(name, "\", is not registered"));
           }
-
           var reporter = map[_name];
           reporter.name = reporter.name || _name;
           return reporter;
         };
-
         self.add = function (reporter) {
           if (typeof reporter !== 'function') {
             throw new Error("Invalid Reporter: expected reporter {".concat(_typeof(reporter), "} to be a {function}"));
           }
-
           var errors = [];
-
           if (typeof reporter.name !== 'string' || reporter.name.trim().length < 1) {
             errors.push("Invalid Reporter: expected reporter.name {".concat(_typeof(reporter.name), "} to be a non-empty {string}"));
           }
-
           var _reporter = reporter();
-
           var write = _reporter && _reporter.write;
-
           if (typeof write !== 'function') {
             errors.push("Invalid Reporter: expected reporter().write {".concat(_typeof(write), "} to be a {function}"));
           }
-
           if (errors.length) {
             throw new Error(errors.join(', '));
           }
-
           var name = uppered(reporter.name);
           map[name] = _reporter;
-
           if (name.indexOf('REPORTER') > -1) {
             var shortName = name.substring(0, name.indexOf('REPORTER'));
             map[shortName] = _reporter;
           }
-
           return self;
         };
-
         return self;
       }
-
       return {
         ReporterFactory: ReporterFactory
       };
@@ -3302,15 +2928,13 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       'use strict';
 
       var pubsub = dependencies.pubsub,
-          TestEvent = dependencies.TestEvent,
-          clock = dependencies.clock,
-          duration = dependencies.duration;
-
+        TestEvent = dependencies.TestEvent,
+        clock = dependencies.clock,
+        duration = dependencies.duration;
       function TallyFactory() {
         var now = function now() {
           return clock();
         };
-
         var makeTally = function makeTally() {
           return {
             total: 0,
@@ -3322,9 +2946,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             endTime: -1,
             duration: undefined
           };
-        }; // there's only 1 tally per require
-
-
+        };
+        // there's only 1 tally per require
         var totals = {
           total: 0,
           passed: 0,
@@ -3337,7 +2960,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           results: [],
           batches: {}
         };
-
         var makeBatchTally = function makeBatchTally(event) {
           if (totals.batches[event.batchId]) {
             return pubsub.publish({
@@ -3349,27 +2971,22 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
               return undefined;
             });
           }
-
           var tally = makeTally();
           tally.startTime = now();
           return Promise.resolve(tally);
         };
-
         var bump = function bump(event) {
           try {
             var name = event.status.toLowerCase();
             totals[name] += 1;
             totals.total += 1;
-
             if (totals.batches[event.batchId]) {
               totals.batches[event.batchId][name] += 1;
               totals.batches[event.batchId].total += 1;
             }
-
             totals.results.push(event);
           } catch (e) {
             console.log(event); // eslint-disable-line no-console
-
             console.log(e); // eslint-disable-line no-console
           }
         };
@@ -3380,31 +2997,25 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
               case TestEvent.types.START:
                 totals.startTime = now();
                 return Promise.resolve();
-
               case TestEvent.types.START_BATCH:
                 return makeBatchTally(event).then(function (tally) {
                   if (tally) {
                     totals.batches[event.batchId] = tally;
                   }
                 });
-
               case TestEvent.types.TEST:
                 bump(event);
                 return Promise.resolve();
-
               case TestEvent.types.END_BATCH:
                 totals.batches[event.batchId].endTime = now();
                 totals.batches[event.batchId].duration = duration(totals.batches[event.batchId].startTime, totals.batches[event.batchId].endTime);
                 return Promise.resolve();
-
               case TestEvent.types.END_TALLY:
                 totals.endTime = now();
                 totals.duration = duration(totals.startTime, totals.endTime);
                 return Promise.resolve();
             } // /switch
-
           }; // /write
-
 
           return {
             name: 'Tally',
@@ -3412,11 +3023,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           };
         } // /Tally
 
-
         Tally.getTally = function () {
           return _objectSpread({}, totals);
         };
-
         Tally.getSimpleTally = function () {
           var tally = Tally.getTally();
           return {
@@ -3430,40 +3039,37 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             duration: tally.duration
           };
         };
-
         return {
           Tally: Tally
         };
       } // /TallyFactory
 
-
       return {
         TallyFactory: TallyFactory
       };
     }
-  }; // resolve the dependency graph
+  };
 
+  // resolve the dependency graph
   function isPromise(input) {
     return input && typeof input.then === 'function';
   }
-
   var REPORT_ORDERS = {
     NON_DETERMINISTIC: 'non-deterministic',
     DETERMINISTIC: 'deterministic'
   };
   var time = module.factories.timeFactory();
   var suites = {};
-  var supposed = null; // resolve the dependency graph
+  var supposed = null;
 
+  // resolve the dependency graph
   function Supposed(options) {
     var _module$factories$all = module.factories.allSettledFactory({}),
-        allSettled = _module$factories$all.allSettled;
-
+      allSettled = _module$factories$all.allSettled;
     var _module$factories$mak = module.factories.makePlansFactory({
-      allSettled: allSettled
-    }),
-        makePlans = _module$factories$mak.makePlans;
-
+        allSettled: allSettled
+      }),
+      makePlans = _module$factories$mak.makePlans;
     var envvars = {
       assertionLibrary: {},
       reporters: ['LIST'],
@@ -3474,62 +3080,50 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         return results;
       }
     };
-
     var _module$factories$rep = module.factories.reporterFactoryFactory({}),
-        ReporterFactory = _module$factories$rep.ReporterFactory;
-
+      ReporterFactory = _module$factories$rep.ReporterFactory;
     var reporterFactory = new ReporterFactory();
-
     var _module$factories$mak2 = module.factories.makeSuiteConfigFactory({
-      envvars: envvars,
-      reporterFactory: reporterFactory,
-      REPORT_ORDERS: REPORT_ORDERS
-    }),
-        makeSuiteConfig = _module$factories$mak2.makeSuiteConfig;
-
+        envvars: envvars,
+        reporterFactory: reporterFactory,
+        REPORT_ORDERS: REPORT_ORDERS
+      }),
+      makeSuiteConfig = _module$factories$mak2.makeSuiteConfig;
     var config = makeSuiteConfig(options);
-
     var clock = function clock(timeUnits) {
       return time.clock(timeUnits || config.timeUnits);
     };
-
     var duration = function duration(start, end) {
       return time.duration(start, end, config.timeUnits);
     };
-
     var _module$factories$Tes = module.factories.TestEventFactory({
-      clock: clock,
-      envvars: config
-    }),
-        TestEvent = _module$factories$Tes.TestEvent;
-
+        clock: clock,
+        envvars: config
+      }),
+      TestEvent = _module$factories$Tes.TestEvent;
     var _module$factories$pub = module.factories.pubsubFactory({
-      allSettled: allSettled,
-      isPromise: isPromise,
-      TestEvent: TestEvent
-    }),
-        Pubsub = _module$factories$pub.Pubsub;
-
+        allSettled: allSettled,
+        isPromise: isPromise,
+        TestEvent: TestEvent
+      }),
+      Pubsub = _module$factories$pub.Pubsub;
     var pubsub = new Pubsub();
     var consoleStyles = module.factories.consoleStylesFactory({
       envvars: config
     }).consoleStyles;
-
     var _module$factories$Tal = module.factories.TallyFactory({
-      pubsub: pubsub,
-      TestEvent: TestEvent,
-      clock: clock,
-      duration: duration
-    }),
-        TallyFactory = _module$factories$Tal.TallyFactory;
-
+        pubsub: pubsub,
+        TestEvent: TestEvent,
+        clock: clock,
+        duration: duration
+      }),
+      TallyFactory = _module$factories$Tal.TallyFactory;
     var _TallyFactory = TallyFactory({}),
-        Tally = _TallyFactory.Tally;
-
+      Tally = _TallyFactory.Tally;
     reporterFactory.add(Tally);
     var ArrayReporter = module.factories.ArrayReporterFactory({}).ArrayReporter;
-    reporterFactory.add(ArrayReporter); // @deprecated - legacy support
-
+    reporterFactory.add(ArrayReporter);
+    // @deprecated - legacy support
     reporterFactory.add(function QuietReporter() {
       // legacy
       return {
@@ -3537,7 +3131,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       };
     });
     reporterFactory.add(module.factories.NoopReporterFactory({}).NoopReporter);
-
     function DefaultFormatter(options) {
       return module.factories.DefaultFormatterFactory({
         consoleStyles: consoleStyles,
@@ -3552,7 +3145,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         config: config
       }).DefaultFormatter();
     }
-
     function ConsoleReporter(options) {
       return module.factories.DomReporterFactory({
         TestEvent: TestEvent,
@@ -3561,7 +3153,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         REPORT_ORDERS: REPORT_ORDERS
       }).DomReporter(options);
     }
-
     var listFormatter = module.factories.ListFormatterFactory({
       consoleStyles: consoleStyles,
       DefaultFormatter: DefaultFormatter
@@ -3632,7 +3223,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             DefaultFormatter: DefaultFormatter
           }).MarkdownFormatter(),
           reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
-
         }).write
       };
     }).add(function MdReporter() {
@@ -3645,7 +3235,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             DefaultFormatter: DefaultFormatter
           }).MarkdownFormatter(),
           reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
-
         }).write
       };
     }).add(function PerformanceReporter() {
@@ -3676,7 +3265,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         write: ConsoleReporter({
           formatter: SpecFormatter(),
           reportOrder: REPORT_ORDERS.DETERMINISTIC // non-deterministic not supported
-
         }).write
       };
     }).add(function SummaryReporter() {
@@ -3700,50 +3288,42 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         }).write
       };
     });
-
     var _module$factories$Asy = module.factories.AsyncTestFactory({
-      isPromise: isPromise,
-      pubsub: pubsub,
-      TestEvent: TestEvent,
-      clock: clock,
-      duration: duration,
-      addDurations: time.addDurations
-    }),
-        AsyncTest = _module$factories$Asy.AsyncTest;
-
+        isPromise: isPromise,
+        pubsub: pubsub,
+        TestEvent: TestEvent,
+        clock: clock,
+        duration: duration,
+        addDurations: time.addDurations
+      }),
+      AsyncTest = _module$factories$Asy.AsyncTest;
     var _module$factories$has = module.factories.hashFactory(),
-        hash = _module$factories$has.hash;
-
+      hash = _module$factories$has.hash;
     var _module$factories$mak3 = module.factories.makeBatchFactory({
-      hash: hash
-    }),
-        BatchComposer = _module$factories$mak3.BatchComposer;
-
+        hash: hash
+      }),
+      BatchComposer = _module$factories$mak3.BatchComposer;
     var _module$factories$Sui = module.factories.SuiteFactory({
-      allSettled: allSettled,
-      AsyncTest: AsyncTest,
-      BatchComposer: BatchComposer,
-      makeSuiteConfig: makeSuiteConfig,
-      pubsub: pubsub,
-      reporterFactory: reporterFactory,
-      makePlans: makePlans,
-      Tally: Tally,
-      TestEvent: TestEvent,
-      clock: clock,
-      envvars: config
-    }),
-        Suite = _module$factories$Sui.Suite;
-
+        allSettled: allSettled,
+        AsyncTest: AsyncTest,
+        BatchComposer: BatchComposer,
+        makeSuiteConfig: makeSuiteConfig,
+        pubsub: pubsub,
+        reporterFactory: reporterFactory,
+        makePlans: makePlans,
+        Tally: Tally,
+        TestEvent: TestEvent,
+        clock: clock,
+        envvars: config
+      }),
+      Suite = _module$factories$Sui.Suite;
     var suite = new Suite();
     suite.Suite = Supposed;
-
     if (!suites[suite.config.name]) {
       suites[suite.config.name] = suite;
     }
-
     return suite;
   }
-
   supposed = Supposed({
     name: 'supposed'
   });
