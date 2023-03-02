@@ -154,10 +154,10 @@ module.exports = function (describe, dependencies) {
       },
     }).then(results => {
       return {
-        behaviorRan: behaviorRan,
-        assertion1Ran: assertion1Ran,
-        assertion2Ran: assertion2Ran,
-        results: results,
+        behaviorRan,
+        assertion1Ran,
+        assertion2Ran,
+        results,
       }
     })
   }
@@ -181,10 +181,10 @@ module.exports = function (describe, dependencies) {
       },
     }).then(results => {
       return {
-        behaviorRan: behaviorRan,
-        assertion1Ran: assertion1Ran,
-        assertion2Ran: assertion2Ran,
-        results: results,
+        behaviorRan,
+        assertion1Ran,
+        assertion2Ran,
+        results,
       }
     })
   }
@@ -208,10 +208,10 @@ module.exports = function (describe, dependencies) {
       },
     }).then(results => {
       return {
-        behaviorRan: behaviorRan,
-        assertion1Ran: assertion1Ran,
-        assertion2Ran: assertion2Ran,
-        results: results,
+        behaviorRan,
+        assertion1Ran,
+        assertion2Ran,
+        results,
       }
     })
   }
@@ -235,10 +235,10 @@ module.exports = function (describe, dependencies) {
       },
     }).then(results => {
       return {
-        behaviorRan: behaviorRan,
-        assertion1Ran: assertion1Ran,
-        assertion2Ran: assertion2Ran,
-        results: results,
+        behaviorRan,
+        assertion1Ran,
+        assertion2Ran,
+        results,
       }
     })
   }
@@ -262,10 +262,10 @@ module.exports = function (describe, dependencies) {
       },
     }).then(results => {
       return {
-        behaviorRan: behaviorRan,
-        assertion1Ran: assertion1Ran,
-        assertion2Ran: assertion2Ran,
-        results: results,
+        behaviorRan,
+        assertion1Ran,
+        assertion2Ran,
+        results,
       }
     })
   }

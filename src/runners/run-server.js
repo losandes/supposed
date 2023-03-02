@@ -218,7 +218,7 @@ module.exports = {
       }
 
       return {
-        paths: paths,
+        paths,
         runConfig: new Config(serverConfig, paths, suite),
         server: start(() => {
           const _serverConfig = new Config(serverConfig, paths, suite)

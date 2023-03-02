@@ -41,7 +41,7 @@ module.exports = {
           behaviors: _behaviors,
           behavior: _behavior,
           test: node,
-          skipped: skipped,
+          skipped,
         }
       }
 

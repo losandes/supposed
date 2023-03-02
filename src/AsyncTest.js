@@ -267,8 +267,8 @@ module.exports = {
           setTimeout(() => {
             // setup the intial context
             const context = new Context({
-              test: test,
-              config: config,
+              test,
+              config,
               suiteId,
               batchId,
               timer: setTimeout(() => {

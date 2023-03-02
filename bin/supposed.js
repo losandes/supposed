@@ -2,13 +2,20 @@
 
 const supposed = require('supposed')
 
-supposed.Suite({ reporter: 'noop' }).runner().run()
+const suite = supposed.Suite({ reporter: 'noop' })
+const runner = suite.runner()
+const plan = runner.plan()
+
+plan.then(runner.runTests)
   .then((results) => {
-    if (results.totals.failed > 0) {
+    if (results.broken.length > 0) {
+      results.broken.forEach((err) => console.log(err)) // eslint-disable-line no-console
+      process.exit(results.broken.length)
+    } else if (results.totals.failed > 0) {
       process.exit(results.totals.failed)
     }
-  }).catch((err) => {
-    // eslint-disable-next-line no-console
-    console.log(err)
+  })
+  .catch((err) => {
+    console.log(err) // eslint-disable-line no-console
     process.exit(1)
   })

@@ -47,7 +47,7 @@ module.exports = function (describe, dependencies) {
           }).then(results2 => {
             return {
               results1: results,
-              results2: results2,
+              results2,
             }
           })
         })

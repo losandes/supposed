@@ -49,8 +49,8 @@ module.exports = function (describe, dependencies) {
           },
         }).then(results => {
           return {
-            results: results,
-            promiseFinished: promiseFinished,
+            results,
+            promiseFinished,
           }
         })
       },
@@ -77,8 +77,8 @@ module.exports = function (describe, dependencies) {
           },
         }).then(results => {
           return {
-            results: results,
-            promiseFinished: promiseFinished,
+            results,
+            promiseFinished,
           }
         })
       },
