@@ -8,12 +8,23 @@
   },
   "scripts": {
     "build": "node build.browser.js",
+    "// linting": "SECTION =====================================================",
     "lint": "eslint .",
-    "test": "pnpm run test:ts -- -r nyan && node test-browser -r nyan && node test-examples && node test -r nyan",
-    "test:ts": "tsc -p ./tsconfig.json && node tests.typescript/index.js",
-    "test:coverage": "nyc node test.js",
-    "test:coverage:ci": "mkdir ./coverage && touch ./coverage/lcov.info && node test-browser.js -r tap && npm run test:ts -- -r tap && nyc node test.js -r tap,summary && nyc report --reporter=text-lcov > ./coverage/lcov.info",
-    "watch": "nodemon -e js --exec 'node test.js -r nyan'"
+    "lint:fix": "eslint . --fix",
+    "// testing": "SECTION =====================================================",
+    "test": "pnpm run test:examples && pnpm run test:ts && pnpm run test:browser && pnpm run test:cjs",
+    "test:ci": "pnpm run test:ts:ci && pnpm run test:browser:ci && pnpm run test:cjs:ci",
+    "test:browser": "node test-browser -r nyan",
+    "test:browser:ci": "node test-browser -r tap",
+    "test:cjs": "node test -r nyan",
+    "test:cjs:ci": "node test -r tap",
+    "test:examples": "node test-examples",
+    "test:ts": "tsc -p ./tsconfig.json && node tests.typescript/index.js -r nyan",
+    "test:ts:ci": "tsc -p ./tsconfig.json && node tests.typescript/index.js -r tap",
+    "watch": "nodemon -e js --exec 'node test.js -r nyan'",
+    "// coverage": "SECTION ====================================================",
+    "test:coverage:ci": "c8 --reporter=text --reporter=text-summary pnpm run test:ci",
+    "coverage:ci": "mkdir -p ./coverage && touch ./coverage/lcov.info; c8 report --reporter=text-lcov > ./coverage/lcov.info"
   },
   "repository": {
     "type": "git",
@@ -44,26 +55,21 @@
   },
   "homepage": "https://github.com/losandes/supposed#readme",
   "devDependencies": {
-    "@babel/core": "~7.17.9",
-    "@babel/preset-env": "~7.16.11",
-    "@types/chai": "~4.3.0",
-    "@types/node": "~17.0.23",
-    "chai": "~4.3.6",
-    "eslint": "~8.10.0",
-    "eslint-config-standard": "~16.0.3",
-    "eslint-plugin-import": "~2.25.4",
-    "eslint-plugin-node": "~11.1.0",
-    "eslint-plugin-promise": "~6.0.0",
-    "nyc": "~15.1.0",
-    "puppeteer": "~13.4.1",
+    "@babel/core": "^7.21.0",
+    "@babel/preset-env": "^7.20.2",
+    "@types/chai": "^4.3.4",
+    "@types/node": "^18.14.4",
+    "c8": "^7.13.0",
+    "chai": "^4.3.7",
+    "eslint": "^8.35.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-n": "^15.6.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "puppeteer": "^19.7.2",
     "supposed": "link:",
-    "tap-parser": "~11.0.1",
-    "typescript": "~4.6.3"
-  },
-  "pnpm": {
-    "overrides": {
-      "shelljs@<0.8.5": ">=0.8.5",
-      "minimist@<1.2.6": ">=1.2.6"
-    }
+    "tap-parser": "^12.0.1",
+    "typescript": "^4.9.5"
   }
 }
